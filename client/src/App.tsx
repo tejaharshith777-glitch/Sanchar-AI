@@ -166,7 +166,7 @@ function useGPSTracker(tripId: string | null) {
         if (err.code === 1) setPermDenied(true);
         console.warn('[GPS]', err);
       },
-      { enableHighAccuracy: true, maximumAge: 10000 }
+      { enableHighAccuracy: true, maximumAge: 2000, timeout: 10000 }
     );
 
     return () => navigator.geolocation.clearWatch(id);
@@ -636,7 +636,7 @@ const HeroSearchForm = ({ preFillDest }: { preFillDest: string }) => {
         destinationCity: destination,
         status: 'created',
         budget: 10000,
-        expectedArrival: when ? new Date(when) : undefined,
+        expectedArrival: when ? new Date(when) : null,
         analyticsConsent: false
       });
       // Start trip and navigate
@@ -670,8 +670,8 @@ const HeroSearchForm = ({ preFillDest }: { preFillDest: string }) => {
       </div>
 
       <div>
-        <label className="text-xs font-semibold text-[#1F2937] mb-1 block">When</label>
-        <input type="date" value={when} onChange={e => setWhen(e.target.value)} className="input-field py-2.5" required />
+        <label className="text-xs font-semibold text-[#1F2937] mb-1 block">Expected Arrival (optional)</label>
+        <input type="datetime-local" value={when} onChange={e => setWhen(e.target.value)} className="input-field py-2.5" />
       </div>
 
       <div>
@@ -869,7 +869,7 @@ const CreateTrip = () => {
         originCity: origin,
         destinationCity: destination,
         budget,
-        expectedArrival: expectedArrival || undefined,
+        expectedArrival: expectedArrival ? new Date(expectedArrival) : null,
         trustedContactLabel: trustedContact || undefined,
         analyticsConsent: consent,
       });
@@ -945,6 +945,38 @@ const CreateTrip = () => {
   );
 };
 
+// Helper to parse expected arrival time with data repair
+const getExpectedArrivalTime = (trip: any) => {
+  if (!trip || !trip.expectedArrival) return null;
+  const t = new Date(trip.expectedArrival).getTime();
+  if (isNaN(t) || t <= 0) return null;
+
+  // Data repair: if expectedArrival <= trip start time + 5s, it was defaulted at creation
+  const tripStart = trip.startTime ? new Date(trip.startTime).getTime() : 0;
+  if (t <= tripStart + 5000) return null;
+
+  // Legacy trip cutoff time: 2026-08-22T14:30:42+05:30 (approx 1787401842000 ms)
+  const FIX_CUTOFF_TIME = 1787401842000;
+  const createdAt = trip.createdAt ? new Date(trip.createdAt).getTime() : 0;
+  if (createdAt < FIX_CUTOFF_TIME && t < Date.now()) {
+    return null;
+  }
+  return t;
+};
+
+// Cooldown checkers (30-minute window)
+const isLateArrivalCooldownActive = (trip: any) => {
+  if (!trip || !trip.lastLateArrivalTriggerAt) return false;
+  const lastTrigger = new Date(trip.lastLateArrivalTriggerAt).getTime();
+  return Date.now() - lastTrigger < 30 * 60 * 1000;
+};
+
+const isRouteDeviationCooldownActive = (trip: any) => {
+  if (!trip || !trip.lastRouteDeviationTriggerAt) return false;
+  const lastTrigger = new Date(trip.lastRouteDeviationTriggerAt).getTime();
+  return Date.now() - lastTrigger < 30 * 60 * 1000;
+};
+
 // ─── M2: ACTIVE TRIP ─────────────────────────────────────────
 const ActiveTrip = () => {
   const { id } = useParams();
@@ -953,15 +985,19 @@ const ActiveTrip = () => {
   const [startTime] = useState(() => Date.now());
   const [elapsed, setElapsed] = useState(0);
   const [trip, setTrip] = useState<any>(null);
-  const [safetyAlert, setSafetyAlert] = useState<{ type: string; msg: string } | null>(null);
+  const [safetyAlert, setSafetyAlert] = useState<{ type: 'late-arrival' | 'route-deviation'; msg: string } | null>(null);
+  const [stillnessAlert, setStillnessAlert] = useState(false);
   const [showSosModal, setShowSosModal] = useState(false);
   const navigate = useNavigate();
 
   // Load trip config
   useEffect(() => {
-    if (tripId) {
-      axios.get(`/api/trips/${tripId}`).then(r => setTrip(r.data)).catch(console.warn);
-    }
+    const fetchTrip = () => {
+      if (tripId) {
+        axios.get(`/api/trips/${tripId}`).then(r => setTrip(r.data)).catch(console.warn);
+      }
+    };
+    fetchTrip();
   }, [tripId]);
 
   // Elapsed timer
@@ -970,13 +1006,12 @@ const ActiveTrip = () => {
     return () => clearInterval(timer);
   }, [startTime]);
 
-  // 1. Late-Arrival Trigger (+15 mins) & bearing deviation triggers check
+  // 1. Late-Arrival Trigger (+15 mins) check
   useEffect(() => {
     if (!trip) return;
     const interval = setInterval(() => {
-      // Late arrival trigger
-      if (trip.expectedArrival) {
-        const expected = new Date(trip.expectedArrival).getTime();
+      const expected = getExpectedArrivalTime(trip);
+      if (expected && !isLateArrivalCooldownActive(trip)) {
         if (Date.now() > expected + 15 * 60 * 1000) {
           setTimeout(() => {
             setSafetyAlert({
@@ -987,13 +1022,12 @@ const ActiveTrip = () => {
         }
       }
     }, 10000);
-
     return () => clearInterval(interval);
   }, [trip]);
 
   // 2. Deviation triggers check
   useEffect(() => {
-    if (points.length < 5) return;
+    if (points.length < 5 || !trip || isRouteDeviationCooldownActive(trip)) return;
     // Rolling direction deviation trigger mock logic
     const lastPoints = points.slice(-5);
     const bearings = lastPoints.map((p, i) => {
@@ -1013,7 +1047,44 @@ const ActiveTrip = () => {
         });
       }, 0);
     }
+  }, [points, trip]);
+
+  // Stillness detector (speed < 1 km/h for 10 minutes)
+  useEffect(() => {
+    if (points.length < 2) return;
+    const now = Date.now();
+    const tenMinsAgo = now - 10 * 60 * 1000;
+    const lastPoints = points.filter(p => new Date(p.timestamp).getTime() > tenMinsAgo);
+    if (lastPoints.length >= 3) {
+      const allStill = lastPoints.every(p => p.speedKmh < 1);
+      if (allStill) {
+        setTimeout(() => {
+          setStillnessAlert(true);
+        }, 0);
+      }
+    }
   }, [points]);
+
+  // Safety Response handler (I'm Safe / Open SOS)
+  const handleSafetyResponse = async (type: 'late-arrival' | 'route-deviation', response: 'im-safe' | 'open-sos') => {
+    setSafetyAlert(null);
+    try {
+      // 1. Post SafetyEvent record to database
+      await axios.post(`/api/trips/${tripId}/safety-events`, {
+        type,
+        userResponse: response,
+        resolvedAt: new Date()
+      });
+      // 2. Patch trip trigger cooldown timestamp
+      const field = type === 'late-arrival' ? 'lastLateArrivalTriggerAt' : 'lastRouteDeviationTriggerAt';
+      const patchRes = await axios.patch(`/api/trips/${tripId}`, {
+        [field]: new Date()
+      });
+      setTrip(patchRes.data);
+    } catch (e) {
+      console.warn('Failed to submit safety response:', e);
+    }
+  };
 
   // SOS button press timer
   const sosPressTimer = useRef<any>(null);
@@ -1079,14 +1150,72 @@ const ActiveTrip = () => {
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2 mt-2">
-            <button onClick={() => setSafetyAlert(null)} className="py-2 px-4 bg-[#2E7D32] text-white text-xs font-bold rounded-full">I'm Safe ✅</button>
-            <button onClick={() => setShowSosModal(true)} className="py-2 px-4 bg-[#D32F2F] text-white text-xs font-bold rounded-full">Open SOS</button>
+            <button
+              onClick={() => handleSafetyResponse(safetyAlert.type, 'im-safe')}
+              className="py-2 px-4 bg-[#2E7D32] text-white text-xs font-bold rounded-full cursor-pointer"
+            >
+              I'm Safe ✅
+            </button>
+            <button
+              onClick={() => {
+                handleSafetyResponse(safetyAlert.type, 'open-sos');
+                setShowSosModal(true);
+              }}
+              className="py-2 px-4 bg-[#D32F2F] text-white text-xs font-bold rounded-full cursor-pointer"
+            >
+              Open SOS
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Stillness Arrival Alert Card */}
+      {stillnessAlert && (
+        <div className="mx-5 md:mx-8 mt-4 p-5 rounded-2xl border border-teal-200 bg-teal-50 flex flex-col gap-3">
+          <div className="flex items-start gap-3">
+            <Check className="text-[#2E7D32] shrink-0 mt-0.5" size={20} />
+            <div>
+              <p className="font-bold text-sm text-[#2E7D32] uppercase tracking-wide">Stillness Detected</p>
+              <p className="text-xs text-[#1F2937] mt-1 font-medium">
+                It looks like you've been stationary for over 10 minutes. Did you arrive at your destination?
+              </p>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2 mt-2">
+            <button
+              onClick={completeTrip}
+              className="py-2 px-4 bg-[#2E7D32] text-white text-xs font-bold rounded-full cursor-pointer"
+            >
+              Yes, Complete Trip ✅
+            </button>
+            <button
+              onClick={() => setStillnessAlert(false)}
+              className="py-2 px-4 bg-gray-300 text-gray-700 text-xs font-bold rounded-full cursor-pointer"
+            >
+              Not Yet
+            </button>
           </div>
         </div>
       )}
 
       {/* Metrics Grid */}
       <div className="p-5 md:p-8 grid grid-cols-2 gap-4">
+        <div className="card metric-card p-5 text-center col-span-2 flex flex-col items-center">
+          <p className="text-xs font-semibold text-[#64748B] uppercase tracking-wider mb-1">Trip Budget Progress</p>
+          <p className="text-2xl font-extrabold text-[#1F2937] font-['Plus_Jakarta_Sans']">
+            ₹{(trip?.amountSpent || 0).toLocaleString('en-IN')} / ₹{(trip?.budget || 0).toLocaleString('en-IN')}
+          </p>
+          <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden mt-3 max-w-sm">
+            <div
+              className={`h-full transition-all duration-300 ${((trip?.amountSpent || 0) > (trip?.budget || 0)) ? 'bg-[#D32F2F]' : 'bg-[#2E7D32]'}`}
+              style={{ width: `${Math.min(100, ((trip?.amountSpent || 0) / (trip?.budget || 1)) * 100)}%` }}
+            />
+          </div>
+          <p className="text-xs text-[#64748B] mt-2">
+            Remaining: <span className="font-bold text-[#00695C]">₹{Math.max(0, (trip?.budget || 0) - (trip?.amountSpent || 0)).toLocaleString('en-IN')}</span>
+          </p>
+        </div>
+
         <div className="card metric-card p-5 text-center">
           <p className="text-xs font-semibold text-[#64748B] uppercase tracking-wider mb-1">Speed</p>
           <p className="text-3xl font-extrabold text-[#00695C] font-['Plus_Jakarta_Sans']">{speed.toFixed(1)}</p>

@@ -8,6 +8,8 @@ export interface ITrip extends Document {
   startTime: Date;
   endTime?: Date;
   expectedArrival?: Date;
+  lastLateArrivalTriggerAt?: Date;
+  lastRouteDeviationTriggerAt?: Date;
   status: 'created' | 'active' | 'paused' | 'completed' | 'arrived-confirmed';
   budget: number;
   amountSpent: number;
@@ -21,7 +23,9 @@ const tripSchema = new Schema<ITrip>({
   destinationLatLng: { lat: Number, lng: Number },
   startTime: { type: Date, default: Date.now },
   endTime: Date,
-  expectedArrival: Date,
+  expectedArrival: { type: Date, default: null },
+  lastLateArrivalTriggerAt: { type: Date, default: null },
+  lastRouteDeviationTriggerAt: { type: Date, default: null },
   status: { type: String, enum: ['created', 'active', 'paused', 'completed', 'arrived-confirmed'], default: 'created' },
   budget: { type: Number, default: 0 },
   amountSpent: { type: Number, default: 0 },

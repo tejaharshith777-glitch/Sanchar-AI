@@ -129,10 +129,17 @@ router.post('/pilot-signups', async (req, res) => {
 // ---------------------------
 router.post('/trips', async (req, res) => {
   try {
+    const tripData = {
+      ...req.body,
+      expectedArrival: req.body.expectedArrival ? new Date(req.body.expectedArrival) : null,
+      lastLateArrivalTriggerAt: null,
+      lastRouteDeviationTriggerAt: null
+    };
+
     if (isMemoryFallback) {
       const trip = {
         _id: generateId(),
-        ...req.body,
+        ...tripData,
         status: req.body.status || 'created',
         amountSpent: 0,
         createdAt: new Date()
@@ -141,7 +148,7 @@ router.post('/trips', async (req, res) => {
       return res.status(201).json(trip);
     }
 
-    const trip = new Trip(req.body);
+    const trip = new Trip(tripData);
     await trip.save();
     res.status(201).json(trip);
   } catch (error) {
