@@ -1,22 +1,57 @@
-# Sanchar AI — Live Capabilities
+# LIVE.md — Sanchar AI Feature Status
 
-Sanchar AI has been rebuilt from a staged demo into a live, working application. This document honestly outlines what is currently live in this web deployment versus what requires the native Android production module.
+> Last updated: 2026-08-22
 
-## Live in this Web App Today (Working Code)
-- **Live Trip State:** Real MongoDB persistence for trips, segments, expenses, and safety events via the Express REST API (`/api/trips`, `/api/expenses`).
-- **Real City Packs:** Real curated packs fetched from the database, driving dynamic language translations and hotel information based on user selection.
-- **PWA Offline Queue:** IndexedDB caching and mutation queuing. Actions taken while offline are saved locally and synced via an idempotency key when the connection returns.
-- **Real GPS Tracking:** Utilizing the HTML5 Geolocation API (`navigator.geolocation.watchPosition`) to calculate live speed, distance, and probabilistic transport segments (Walking, Road Vehicle, Rail) while the tab is open.
-- **Real OCR Ticket Scanning:** Using `Tesseract.js` in the browser to extract text from a camera capture and automatically parse Indian Rupee amounts for expense tracking.
-- **Privacy Pipeline:** A backend geohashing service (`ngeohash`) that strips the endpoints of journeys and bins locations into aggregated cells.
+## ✅ Live in This Web App Today
 
-## Android App (Production Module)
-The following features are **Android app modules** and are represented in the web app as architecture/UI placeholders only. The web app clearly badges these features with an "Android app module" warning.
+| Feature | API Endpoint | Notes |
+|---------|-------------|-------|
+| **Trip Creation** | `POST /api/trips` | Origin/destination city selector (14 cities + Other), budget, expected arrival, trusted contact name, analytics consent (default OFF) |
+| **Live GPS Tracking** | `POST /api/trips/:id/points` | Real `watchPosition`, batched every ~5 points, computes speed/distance/segment in real-time |
+| **Segment Detection** | Client-side (rule-based) | Still / Walking / Road Vehicle / Rail — labelled "probable" with confidence %, user can confirm/correct |
+| **OCR Ticket Scanner** | `POST /api/trips/:id/expenses` | Tesseract.js (WASM), self-hosted worker + traineddata, works offline after first load, shows raw text + detected amount for confirmation |
+| **Expense Management** | `GET/POST/PATCH/DELETE /api/trips/:id/expenses` | Category picker (Transport/Food/Hotel/Other), merchant name, source tag (ocr/manual) |
+| **Offline Mutation Queue** | IndexedDB via `idb` | Queues mutations with idempotency keys when offline, auto-flushes on reconnect, status bar shows Syncing/Synced/Offline |
+| **City Packs** | `GET /api/city-packs/:city` | Emergency numbers (112), local phrases with contentStatus tags, transport guidance, cached in IndexedDB |
+| **Privacy Pipeline** | `POST /api/sync/:tripId` | Drops first/last 500m, ~500m geohash bins, suppresses cells < 3 trips, writes only to MobilityAggregate. Dashboard endpoints NEVER read personal LocationPoints. |
+| **Mobility Dashboard** | `GET /api/mobility/summary` | Reads only MobilityAggregate. Shows honest empty state when N=0. Correction line about occupancy data. |
+| **Trip Diary** | `GET /api/trips/:id` + expenses | Auto-generated from real stored data (duration, distance, expenses, budget remaining). Web Share API for sharing. |
+| **SOS Emergency** | Client-side | `tel:112` dial, Google Maps link with last real GPS point, Web Share with location + emergency phrase |
+| **PWA (Service Worker)** | `vite-plugin-pwa` | App shell precached, OCR assets cached for offline use, manifest with icons |
+| **Safety Checks** | Client-side + `POST /api/trips/:id/safety-events` | Route-deviation detection (rolling bearing, 30° threshold, 200m displacement, 5-min cooldown), late-arrival check (expectedArrival + 15 min) |
 
-- **Background Tracking:** The web browser suspends Geolocation API intervals when the screen is locked or tab is hidden. The native app uses Android Foreground Services and `WorkManager`.
-- **Sensor Fusion (Activity Recognition):** The native app uses the Android Activity Recognition API (accelerometer + gyroscope) for >85% confidence in segment detection, whereas the web app relies purely on GPS speed thresholds.
-- **Push Notification Auto-Wake:** The native app wakes up for trusted-contact messages via Firebase Cloud Messaging (FCM).
-- **Precise Step Counting:** Relies on the Android hardware step counter sensor.
+## 📱 Android App Module (Architecture — Not Live in Web)
 
-## Verification
-You can verify the live features by opening the Network tab, throttling the connection to "Offline", recording an expense via the OCR scanner, and observing the IndexedDB queue populate and then flush upon reconnecting to the network!
+| Feature | Why It Needs Native |
+|---------|-------------------|
+| Background tracking (tab closed) | Requires foreground service + `FusedLocationProviderClient` |
+| Production activity recognition | `ACTIVITY_STILL` / `ACTIVITY_IN_VEHICLE` via Play Services |
+| Precise step counting | Hardware step-counter sensor |
+| Trusted-contact push (FCM) | Firebase Cloud Messaging |
+| Auto trip wake-up | Geofence + alarm triggers |
+
+Each of these is shown with an **"Android app module"** badge + tooltip in the web UI.
+
+## 🎨 Design System
+
+- **Typography:** Plus Jakarta Sans (headings, 600–800) + Inter (body, 400–500) via Google Fonts
+- **Colors:** Deep teal `#00695C`, saffron `#F59E0B` (SOS/alerts only), safety red `#D32F2F`, success green `#2E7D32`, off-white `#FAFAF7`, charcoal `#1F2937`, slate `#64748B`
+- **Layout:** Flowbite-inspired SaaS landing page structure (glass nav, hero with phone mockup, section rhythm 80–96px, card system with hover lift, pill buttons)
+- **Icons:** Lucide React
+
+## 🏗️ Stack
+
+- **Client:** React 19 + TypeScript + Vite 8 + Tailwind CSS 4 + PWA (vite-plugin-pwa)
+- **Server:** Node.js + Express + TypeScript + Mongoose
+- **Database:** MongoDB
+- **OCR:** Tesseract.js 7 (WASM, self-hosted, offline-capable)
+- **Offline:** IndexedDB via `idb`, Service Worker via Workbox
+
+## 📝 Honesty Rules
+
+- No 100% accuracy claims
+- Segment labels always carry "probable / confidence %"
+- OCR always requires user confirmation
+- City-pack content always shows its contentStatus tag
+- Dashboard numbers are either real computed values or visibly labelled "Demo Data"
+- No `localhost` in deployed UI — uses editable `SITE_URL` constant

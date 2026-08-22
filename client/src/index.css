@@ -1,24 +1,87 @@
 @import "tailwindcss";
 
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background-color: #FAFAF7;
-  color: #1F2937;
+/* ============================================
+   SANCHAR AI — Design System
+   Typography: Plus Jakarta Sans (headings) + Inter (body)
+   Colors: Deep teal, saffron, warm off-white
+   Inspired by Flowbite SaaS landing blocks
+   ============================================ */
+
+/* --- Base --- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
-/* Animations */
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background-color: #FAFAF7;
+  color: #1F2937;
+  line-height: 1.6;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+/* --- Animations --- */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(40px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0, 105, 92, 0.2); }
+  50%      { box-shadow: 0 0 0 12px rgba(0, 105, 92, 0); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%      { transform: translateY(-8px); }
+}
+
+@keyframes dash {
+  to { stroke-dashoffset: -100; }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 .animate-fade-in {
   animation: fadeIn 0.5s ease-out forwards;
+}
+
+.animate-slide-right {
+  animation: slideInRight 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
 }
 
 .route-dash {
@@ -26,8 +89,221 @@ body {
   animation: dash 20s linear infinite;
 }
 
-@keyframes dash {
-  to {
-    stroke-dashoffset: -100;
+/* --- Card System (Flowbite-inspired) --- */
+.card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.06);
+  transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04), 0 12px 32px rgba(0, 0, 0, 0.08);
+}
+
+/* --- Button System --- */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 28px;
+  background: #00695C;
+  color: white;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 600;
+  font-size: 15px;
+  border-radius: 50px;
+  border: none;
+  cursor: pointer;
+  transition: all 200ms cubic-bezier(0.22, 1, 0.36, 1);
+  box-shadow: 0 2px 8px rgba(0, 105, 92, 0.25);
+}
+
+.btn-primary:hover {
+  background: #004D40;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(0, 105, 92, 0.35);
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 28px;
+  background: transparent;
+  color: #00695C;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 600;
+  font-size: 15px;
+  border-radius: 50px;
+  border: 2px solid #00695C;
+  cursor: pointer;
+  transition: all 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.btn-secondary:hover {
+  background: #00695C;
+  color: white;
+  transform: translateY(-1px);
+}
+
+.btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 28px;
+  background: #D32F2F;
+  color: white;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 600;
+  font-size: 15px;
+  border-radius: 50px;
+  border: none;
+  cursor: pointer;
+  transition: all 200ms cubic-bezier(0.22, 1, 0.36, 1);
+  box-shadow: 0 2px 8px rgba(211, 47, 47, 0.25);
+}
+
+.btn-danger:hover {
+  background: #B71C1C;
+  transform: translateY(-1px);
+}
+
+/* --- Input System --- */
+.input-field {
+  width: 100%;
+  padding: 14px 18px;
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  color: #1F2937;
+  background: white;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 14px;
+  outline: none;
+  transition: border-color 200ms, box-shadow 200ms;
+}
+
+.input-field:focus {
+  border-color: #00695C;
+  box-shadow: 0 0 0 3px rgba(0, 105, 92, 0.12);
+}
+
+/* --- Badge System --- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 50px;
+  letter-spacing: 0.02em;
+}
+
+.badge-teal {
+  background: rgba(0, 105, 92, 0.08);
+  color: #00695C;
+}
+
+.badge-amber {
+  background: rgba(245, 158, 11, 0.1);
+  color: #92400E;
+}
+
+.badge-red {
+  background: rgba(211, 47, 47, 0.08);
+  color: #D32F2F;
+}
+
+.badge-green {
+  background: rgba(46, 125, 50, 0.08);
+  color: #2E7D32;
+}
+
+/* --- Section Rhythm (Flowbite) --- */
+.section {
+  padding: 80px 24px;
+}
+
+@media (min-width: 768px) {
+  .section {
+    padding: 96px 32px;
   }
+}
+
+.section-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* --- Android Module Badge --- */
+.android-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #92400E;
+  background: #FEF3C7;
+  border: 1px solid #FDE68A;
+  border-radius: 6px;
+  cursor: help;
+}
+
+/* --- Glass Nav --- */
+.glass-nav {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.glass-nav-scrolled {
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+/* --- Metric Card --- */
+.metric-card {
+  background: linear-gradient(135deg, #f0fdfa 0%, #ffffff 100%);
+  border: 1px solid rgba(0, 105, 92, 0.08);
+}
+
+/* --- Trust Badge Row --- */
+.trust-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: rgba(0, 105, 92, 0.04);
+  border: 1px solid rgba(0, 105, 92, 0.08);
+  border-radius: 50px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #00695C;
+}
+
+/* --- Responsive helpers --- */
+@media (max-width: 390px) {
+  .hero-heading {
+    font-size: 32px !important;
+  }
+}
+
+/* --- Scrollbar --- */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 3px;
 }
