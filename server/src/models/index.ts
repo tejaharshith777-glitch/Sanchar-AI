@@ -194,3 +194,26 @@ const pilotSignupSchema = new Schema<IPilotSignup>({
 
 export const PilotSignup = mongoose.model<IPilotSignup>('PilotSignup', pilotSignupSchema);
 
+// --- CITY SPOTS ---
+export interface ICitySpot extends Document {
+  city: string;
+  source: 'curated-sample' | 'wikipedia-live';
+  count: number;
+  spots: { name: string; category?: string; blurb?: string }[];
+  fetchedAt: Date;
+}
+
+const citySpotSchema = new Schema<ICitySpot>({
+  city: { type: String, required: true, unique: true },
+  source: { type: String, enum: ['curated-sample', 'wikipedia-live'], required: true },
+  count: { type: Number, required: true },
+  spots: [{
+    name: { type: String, required: true },
+    category: String,
+    blurb: String
+  }],
+  fetchedAt: { type: Date, default: Date.now }
+});
+
+export const CitySpot = mongoose.model<ICitySpot>('CitySpot', citySpotSchema);
+

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
-import { Trip, LocationPoint, JourneySegment, Expense, CityPack, SafetyEvent, MobilityAggregate, PilotSignup } from '../models';
+import { Trip, LocationPoint, JourneySegment, Expense, CityPack, SafetyEvent, MobilityAggregate, PilotSignup, CitySpot } from '../models';
 import { processTripPrivacySync } from '../services/privacy';
 import { isMemoryFallback, memoryStore } from '../services/db';
 
@@ -51,6 +51,342 @@ router.get('/city-packs/:city', async (req, res) => {
     res.json(pack);
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ---------------------------
+// CITY SPOTLIGHT (GET /api/city-spots/:city)
+// ---------------------------
+
+const CURATED_CITY_SPOTS: Record<string, string[]> = {
+  "Chennai": [
+    "Marina Beach", "Marina Lighthouse", "Marina Drive", "Besant Nagar Beach", "Elliot's Beach (Mylapore)",
+    "Kapaleeshwarar Temple (Mylapore)", "Parthasarathy Temple (Triplicane)", "Sri Mariamman Temple (Chetpet)",
+    "San Thome Basilica", "Fort St. George", "Chennai Central station", "Ripon Building (Government Museum)",
+    "Chennai Art Gallery", "Birla Planetarium", "Vandalur Zoo", "Guindy National Park", "Crocodile Bank (Perambur)",
+    "Mahabalipuram UNESCO temples (day trip)", "Ouzhal Waterfalls (day trip)", "T. Nagar Commercial Street",
+    "Gandhi Market (Mylapore)", "Royapettah market", "Chepauk", "Beach Road street food", "The Cantonment"
+  ],
+  "Kochi": [
+    "Chinese Fishing Nets (Fort Kochi)", "Fort Kochi Beach", "Mattancherry Beach", "Mattancherry Palace",
+    "Santa Cruz Basilica", "St. Francis Church", "Paradesi Synagogue (Jew Town)", "Jew Town bazaar",
+    "Bolgatty Island", "Vypin Island", "Vypin View Tower", "Willingdon Island", "Marine Drive",
+    "Kathakali night performance", "Kochi-Muziris heritage walk", "Napier Museum (Ernakulam)",
+    "Kuzhimali Beach", "Palarivattom lagoon", "Aluva backwaters (houseboat)", "Cherthala old port",
+    "Chavara Beach (day trip)", "Ernakulam Cathedral", "Fort Kochi seafood shacks", "Punnamada lake (Ernakulam)",
+    "Cochin Shipyard waterfront"
+  ],
+  "Hyderabad": [
+    "Charminar", "Laad Bazaar", "Gol Gumbaz", "Qutb Shahi Tombs", "Chowmahalla Palace",
+    "Salar Jung Museum", "Falaknuma Palace", "Hussain Sagar Lake", "Buddha Statue (Hussain Sagar island)",
+    "Lotus Temple", "Birla Mandir", "Durgamma Temple (Kukatpally)", "Ramoji Film City", "Lumbini Hills Park",
+    "Necklace Road", "Tank Bund", "Ibrahim Bagh", "Old City snack crawl (Chowk Bazaar)",
+    "Paradise Restaurant (heritage)", "Ameerpet market", "Abids", "Gachibowli district lakes",
+    "Dilsuknagar food hub", "Tolichowki (old-city bazaars)", "Old city heritage walk"
+  ],
+  "Bengaluru": [
+    "Cubbon Park", "Lalbagh Botanical Garden", "Bangalore Palace", "Vidhana Soudha",
+    "Tipu Sultan's Summer Palace", "ISKCON Temple", "Jakkur Lake (bird sanctuary)", "Sankey Tank",
+    "Hebbal Clock Tower", "MG Road", "Brigade Road", "Church Street heritage lanes",
+    "Bannerghatta Biological Park", "Nandi Hills (day trip)", "Mysore Palace (day trip)",
+    "Srirangapatna (day trip)", "Bangalore Zoo (Bangaloresuru)", "Kempe Gowda I Memorial Park",
+    "UB City", "Coromandel Lane", "Indiranagar 100 Feet Road", "Malleshwaram (St. Mary's Basilica)",
+    "Mantri Square", "Basavanagudi Fort", "Hesaraghatta Dam"
+  ],
+  "Mumbai": [
+    "Gateway of India", "Marine Drive", "Colaba Causeway", "Elephanta Caves (ferry)", "Juhu Beach",
+    "Chowpatty", "Bandra-Worli Sea Link", "Haji Ali Dargah", "Sanjay Gandhi National Park",
+    "Bollywood & Film City", "Bandstand (Bandra)", "Worli Sea Face", "Carter Road",
+    "Prabhadev (Marine Lines promenade)", "Dadar Station (heritage)", "Flora Fountain",
+    "Chhatrapati Shivaji Terminus (CST)", "Prince of Wales Museum", "Siddhivinayak Temple",
+    "Kala Ghoda art district", "Mahalaxmi Racecourse", "Bhuleshwar Temple", "Grant Road heritage lanes",
+    "Dahanukar Circle (street food)", "BKC Bandra Kurla Complex"
+  ],
+  "Jaipur": [
+    "Amber Fort", "City Palace", "Hawa Mahal", "Jantar Mantar", "Nahargarh Fort", "Jal Mahal",
+    "Govind Dev Ji Temple", "Albert Hall Museum", "Central Museum", "Birla Mandir",
+    "Chokhi Dhani (village experience)", "Panna Meena Ka Kund", "Ton Sahib Ni Baori stepwell",
+    "Jaipur observatory area", "Johari Bazaar", "Bapu Bazaar", "MI Road (M.I. Road)",
+    "Anokhi museum", "Galta Ji Temple (Monkey Temple)", "Jaigarh Fort", "Birla Planetarium",
+    "City viewpoint and photo stop", "Old city food walk", "City heritage walk", "Evening promenade (local lanes)"
+  ],
+  "Varanasi": [
+    "Dashashwamedh Ghat", "Kashi Vishwanath Temple", "Manikarnika Ghat", "Assi Ghat",
+    "Sarnath Buddhist Site", "Dhamek Stupa (Sarnath)", "Chaukhandi Stupa (Sarnath)",
+    "Sarnath Archaeological Museum", "Banaras Hindu University (BHU)", "New Vishwanath Temple (VT)",
+    "Bharat Kala Bhavan", "Ramnagar Fort", "Tulsi Manas Mandir", "Durga Mandir (Durga Kund)",
+    "Sankat Mochan Hanuman Temple", "Harishchandra Ghat", "Scindia Ghat", "Lalita Ghat",
+    "Kedar Ghat", "Panchganga Ghat", "Darbhanga Ghat", "Ganga Aarti riverfront",
+    "Godowlia Crossing bazaar", "Tibetan Temple (Sarnath)", "Vindhyachal (day trip)"
+  ],
+  "Guwahati": [
+    "Kamakhya Temple (Nilachal Hills)", "Umananda Temple (Peacock Island)", "Brahmaputra River Cruise",
+    "Assam State Museum", "Guwahati Zoo (Assam State Zoo)", "Srimanta Sankaradev Kalakshetra",
+    "Regional Science Centre (Guwahati)", "Nehru Park (Guwahati)", "Dighalipukhuri Lake",
+    "Navagraha Temple (Chitrachal Hill)", "Basistha Ashram Temple", "Sukreswar Temple",
+    "Purva Tirupati Sri Balaji Temple", "Guwahati Planetarium", "Pobitora Wildlife Sanctuary (day trip)",
+    "Hajo pilgrimage site (day trip)", "Madan Kamdev ruins (day trip)", "Chandubi Lake (day trip)",
+    "Dipor Bil (bird sanctuary)", "Guwahati War Memorial", "Lankeshwar Temple",
+    "Fancy Bazaar market", "Paltan Bazaar market", "Brahmaputra Heritage Centre", "Saraighat Bridge viewpoint"
+  ]
+};
+
+function getCategoryForSpot(name: string): string {
+  const n = name.toLowerCase();
+  if (n.includes('temple') || n.includes('mandir') || n.includes('church') || n.includes('mosque') || n.includes('basilica') || n.includes('synagogue') || n.includes('dargah') || n.includes('gurudwara') || n.includes('cathedral') || n.includes('stupa') || n.includes('deekshabhoomi') || n.includes('ashram')) {
+    return 'Temple';
+  }
+  if (n.includes('beach') || n.includes('island') || n.includes('lake') || n.includes('dam') || n.includes('tank') || n.includes('lagoon') || n.includes('backwaters') || n.includes('falls') || n.includes('waterfalls') || n.includes('bil')) {
+    return 'Beach';
+  }
+  if (n.includes('museum') || n.includes('gallery') || n.includes('science') || n.includes('planetarium') || n.includes('art')) {
+    return 'Museum';
+  }
+  if (n.includes('park') || n.includes('zoo') || n.includes('garden') || n.includes('sanctuary') || n.includes('forest') || n.includes('hills') || n.includes('hill')) {
+    return 'Park';
+  }
+  if (n.includes('bazaar') || n.includes('market') || n.includes('street') || n.includes('shopping') || n.includes('mall') || n.includes('square')) {
+    return 'Market';
+  }
+  if (n.includes('restaurant') || n.includes('food') || n.includes('shack') || n.includes('cuisine') || n.includes('snack') || n.includes('café') || n.includes('cafe')) {
+    return 'Food';
+  }
+  if (n.includes('view') || n.includes('viewpoint') || n.includes('drive') || n.includes('sea face') || n.includes('link') || n.includes('promenade') || n.includes('bridge') || n.includes('ganges aarti')) {
+    return 'Viewpoint';
+  }
+  if (n.includes('day trip') || n.includes('excursion') || n.includes('pilgrimage') || n.includes('hajo') || n.includes('pobitora') || n.includes('ruins') || n.includes('mahabalipuram') || n.includes('mysore') || n.includes('srirangapatna')) {
+    return 'Day trip';
+  }
+  return 'Heritage';
+}
+
+function getBlurbForSpot(name: string, category: string, city: string): string {
+  switch (category) {
+    case 'Temple':
+      return `A sacred spiritual temple and architectural wonder in ${city}.`;
+    case 'Beach':
+      return `A scenic waterfront attraction offering beautiful views and relaxation in ${city}.`;
+    case 'Museum':
+      return `A repository of history, art, and cultural heritage in ${city}.`;
+    case 'Park':
+      return `A lush green park and scenic natural retreat in ${city}.`;
+    case 'Market':
+      return `A bustling local marketplace famous for shopping and souvenirs in ${city}.`;
+    case 'Food':
+      return `A popular culinary hotspot for authentic local delicacies in ${city}.`;
+    case 'Viewpoint':
+      return `An iconic viewpoint offering panoramic cityscapes and scenery in ${city}.`;
+    case 'Day trip':
+      return `A beautiful getaway destination perfect for a day trip near ${city}.`;
+    default:
+      return `A famous historical monument and heritage landmark in ${city}.`;
+  }
+}
+
+function normalizeCityName(str: string): string {
+  if (!str) return '';
+  const trimmed = str.trim();
+  return trimmed.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+}
+
+router.get('/city-spots/:city', async (req, res) => {
+  try {
+    const city = normalizeCityName(req.params.city);
+    if (!city) {
+      return res.status(400).json({ error: 'City parameter is required.' });
+    }
+
+    // 1. Check Cache
+    if (isMemoryFallback) {
+      const cached = memoryStore.citySpots.find(c => c.city.toLowerCase() === city.toLowerCase());
+      if (cached) return res.json(cached);
+    } else {
+      const cached = await CitySpot.findOne({ city: new RegExp(`^${city}$`, 'i') });
+      if (cached) return res.json(cached);
+    }
+
+    // 2. Curated showcase check
+    const curatedList = CURATED_CITY_SPOTS[city];
+    if (curatedList) {
+      const spots = curatedList.map(name => {
+        const category = getCategoryForSpot(name);
+        return {
+          name,
+          category,
+          blurb: getBlurbForSpot(name, category, city)
+        };
+      });
+
+      const citySpotRecord = {
+        city,
+        source: 'curated-sample' as const,
+        count: spots.length,
+        spots,
+        fetchedAt: new Date()
+      };
+
+      if (isMemoryFallback) {
+        memoryStore.citySpots.push(citySpotRecord);
+      } else {
+        const doc = new CitySpot(citySpotRecord);
+        await doc.save();
+      }
+
+      return res.json(citySpotRecord);
+    }
+
+    // 3. Live Wikipedia Fetch
+    const titlesToTry = [
+      `List of tourist attractions in ${city}`,
+      `${city} tourist attractions`,
+      `Tourism in ${city}`,
+      `${city} sightseeing`,
+      `${city} landmarks`
+    ];
+
+    let wikitext = '';
+    let usedTitle = '';
+
+    for (const title of titlesToTry) {
+      try {
+        const url = `https://en.wikipedia.org/w/api.php?action=parse&page=${encodeURIComponent(title)}&prop=wikitext&format=json&redirects=1`;
+        const wikiRes = await fetch(url, { headers: { 'User-Agent': 'SancharAI/1.0' } });
+        const data = await wikiRes.json();
+        if (data.parse && data.parse.wikitext) {
+          wikitext = data.parse.wikitext['*'];
+          usedTitle = title;
+          break;
+        }
+      } catch (err) {
+        console.warn(`Wikipedia page load failed for ${title}:`, err);
+      }
+    }
+
+    const spotsList: { name: string; category: string; blurb: string }[] = [];
+
+    if (wikitext) {
+      // Parse bullet spots from list page wikitext
+      const lines = wikitext.split('\n');
+      for (const line of lines) {
+        const trimmed = line.trim();
+        const match = trimmed.match(/^\*\s*\[\[(.*?)\]\]/) || trimmed.match(/^\*\s*\{\{.*?\}\}\s*\[\[(.*?)\]\]/) || trimmed.match(/^#\s*\[\[(.*?)\]\]/);
+        if (match) {
+          const parts = match[1].split('|');
+          let name = parts[0].split('#')[0].trim();
+          if (name && !/^(file|image|category|special|media|wikipedia):/i.test(name)) {
+            if (!spotsList.some(s => s.name.toLowerCase() === name.toLowerCase())) {
+              const category = getCategoryForSpot(name);
+              spotsList.push({
+                name,
+                category,
+                blurb: getBlurbForSpot(name, category, city)
+              });
+            }
+          }
+        }
+      }
+    }
+
+    // If still no spots found, query the main city page
+    if (spotsList.length < 5) {
+      try {
+        const url = `https://en.wikipedia.org/w/api.php?action=parse&page=${encodeURIComponent(city)}&prop=wikitext&format=json&redirects=1`;
+        const wikiRes = await fetch(url, { headers: { 'User-Agent': 'SancharAI/1.0' } });
+        const data = await wikiRes.json();
+        if (data.parse && data.parse.wikitext) {
+          wikitext = data.parse.wikitext['*'];
+          usedTitle = city;
+          
+          const lines = wikitext.split('\n');
+          let inTourism = false;
+          
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (/==\s*(Tourism|Zoos, gardens and lakes|Religious places|Museums|Places of interest|Landmarks|Sightseeing|Attractions)\s*==/i.test(trimmed)) {
+              inTourism = true;
+            } else if (inTourism && /^==[^=]/m.test(trimmed) && !/==\s*(Tiger reserves|Zoos, gardens and lakes|Religious places|Museums|Festivals|Cuisine|Attractions)\s*==/i.test(trimmed)) {
+              inTourism = false;
+            }
+            
+            if (inTourism) {
+              const match = trimmed.match(/^\*\s*\[\[(.*?)\]\]/) || trimmed.match(/^\*\s*\{\{.*?\}\}\s*\[\[(.*?)\]\]/);
+              if (match) {
+                const parts = match[1].split('|');
+                let name = parts[0].split('#')[0].trim();
+                if (name && !/^(file|image|category|special|media|wikipedia):/i.test(name)) {
+                  if (!spotsList.some(s => s.name.toLowerCase() === name.toLowerCase())) {
+                    const category = getCategoryForSpot(name);
+                    spotsList.push({
+                      name,
+                      category,
+                      blurb: getBlurbForSpot(name, category, city)
+                    });
+                  }
+                }
+              }
+            }
+          }
+
+          // If still low, extract inline wiki links from within the tourism section paragraphs
+          if (spotsList.length < 10) {
+            inTourism = false;
+            for (const line of lines) {
+              const trimmed = line.trim();
+              if (/==\s*(Tourism|Zoos, gardens and lakes|Religious places|Museums|Places of interest|Landmarks|Sightseeing|Attractions)\s*==/i.test(trimmed)) {
+                inTourism = true;
+              } else if (inTourism && /^==[^=]/m.test(trimmed) && !/==\s*(Tiger reserves|Zoos, gardens and lakes|Religious places|Museums|Festivals|Cuisine|Attractions)\s*==/i.test(trimmed)) {
+                inTourism = false;
+              }
+              
+              if (inTourism) {
+                const inlineMatches = trimmed.matchAll(/\[\[(.*?)\]\]/g);
+                for (const m of inlineMatches) {
+                  const parts = m[1].split('|');
+                  let name = parts[0].split('#')[0].trim();
+                  const ignoreList = ['india', 'state', 'district', 'city', 'tourism', 'tourist', 'government', 'railway station', 'airport', 'national highway', 'stupa', 'buddhism', 'hinduism', 'jainism', 'culture', 'history', 'population', 'demographics', 'climate', 'tiger', 'forest', 'census', 'latitude', 'longitude', 'utc', 'madhya pradesh', 'uttar pradesh', 'maharashtra', 'karnataka', 'tamil nadu', 'kerala', 'andhra pradesh', 'telangana', 'assam', 'west bengal', 'odisha', 'bihar', 'gujarat', 'rajasthan', 'punjab', 'haryana', 'jammu and kashmir'];
+                  if (name && !/^(file|image|category|special|media|wikipedia):/i.test(name) && !ignoreList.includes(name.toLowerCase())) {
+                    if (!spotsList.some(s => s.name.toLowerCase() === name.toLowerCase())) {
+                      const category = getCategoryForSpot(name);
+                      spotsList.push({
+                        name,
+                        category,
+                        blurb: getBlurbForSpot(name, category, city)
+                      });
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.warn(`Wikipedia page load failed for city ${city}:`, err);
+      }
+    }
+
+    if (spotsList.length === 0) {
+      return res.json({ found: false });
+    }
+
+    const finalSpots = spotsList.slice(0, 25);
+    const citySpotRecord = {
+      city,
+      source: 'wikipedia-live' as const,
+      count: finalSpots.length,
+      spots: finalSpots,
+      fetchedAt: new Date()
+    };
+
+    if (isMemoryFallback) {
+      memoryStore.citySpots.push(citySpotRecord);
+    } else {
+      const doc = new CitySpot(citySpotRecord);
+      await doc.save();
+    }
+
+    res.json(citySpotRecord);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error while fetching city spots.' });
   }
 });
 

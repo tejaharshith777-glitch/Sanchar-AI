@@ -14,6 +14,7 @@ export const memoryStore = {
   safetyEvents: [] as any[],
   mobilityAggregates: [] as any[],
   pilotSignups: [] as any[],
+  citySpots: [] as any[],
 };
 
 export const connectDB = async () => {

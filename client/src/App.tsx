@@ -4,7 +4,7 @@ import {
   Shield, MapPin, Navigation2, Camera, Smartphone, WifiOff,
   Zap, Globe, Lock, IndianRupee, Phone,
   ChevronRight, Check, AlertTriangle, Share2,
-  BookOpen, BarChart3, Activity
+  BookOpen, BarChart3, Activity, Search, Compass, HelpCircle
 } from 'lucide-react';
 import axios from 'axios';
 import { queueOfflineMutation, getOfflineQueue, removeQueueItem } from './store/db';
@@ -313,11 +313,85 @@ const IntroLoader = ({ onComplete }: { onComplete: () => void }) => {
   );
 };
 
+// ─── CITY CARD ────────────────────────────────────────────────
+const CityCard = ({ city, img, langs, onClick }: { city: string; img: string; langs: string[]; onClick: () => void }) => {
+  const [imgError, setImgError] = useState(false);
+
+  return (
+    <div
+      onClick={onClick}
+      className="group cursor-pointer bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200"
+    >
+      <div className="relative h-36 overflow-hidden bg-gradient-to-br from-[#00695C] to-[#004D40] flex items-center justify-center">
+        {!imgError ? (
+          <img
+            src={img}
+            alt={city}
+            loading="lazy"
+            onError={() => setImgError(true)}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+        ) : (
+          <div className="text-white font-extrabold text-lg tracking-wider uppercase font-['Plus_Jakarta_Sans']">
+            {city}
+          </div>
+        )}
+        <div className="absolute top-2 right-2 bg-white/95 text-[#00695C] text-[10px] font-bold py-0.5 px-2 rounded-full">
+          City pack available
+        </div>
+      </div>
+      <div className="p-4">
+        <h3 className="font-['Plus_Jakarta_Sans'] font-bold text-base text-[#1F2937]">{city}</h3>
+        <div className="flex flex-wrap gap-1 mt-2">
+          {langs.map(l => (
+            <span key={l} className="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-medium">{l}</span>
+          ))}
+        </div>
+        <div className="mt-4 text-[#00695C] text-xs font-bold flex items-center gap-1 group-hover:text-[#004D40] transition-colors">
+          Explore 25 spots <ChevronRight size={14} />
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ─── LANDING PAGE ────────────────────────────────────────────
 const LandingPage = () => {
   const { isBackendOffline, dbMode } = useContext(HealthContext);
   const [showLoader, setShowLoader] = useState(() => !sessionStorage.getItem('sanchar_intro_loaded'));
   const [destinationPreFill, setDestinationPreFill] = useState('');
+
+  // Spotlight States
+  const [spotlightCity, setSpotlightCity] = useState<string | null>(null);
+  const [spotlightData, setSpotlightData] = useState<any | null>(null);
+  const [spotlightLoading, setSpotlightLoading] = useState(false);
+  const [spotlightError, setSpotlightError] = useState<string | null>(null);
+  const [searchCityInput, setSearchCityInput] = useState('');
+
+  const loadSpotlight = async (cityName: string) => {
+    if (!cityName.trim()) return;
+    setSpotlightCity(cityName);
+    setSpotlightLoading(true);
+    setSpotlightError(null);
+    setSpotlightData(null);
+
+    // Scroll to spotlight area smoothly
+    setTimeout(() => {
+      const spotlightEl = document.getElementById('city-spotlight-section');
+      if (spotlightEl) {
+        spotlightEl.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 100);
+
+    try {
+      const res = await axios.get(`/api/city-spots/${encodeURIComponent(cityName)}`);
+      setSpotlightData(res.data);
+    } catch {
+      setSpotlightError('Failed to fetch city spotlights. The server may be offline.');
+    } finally {
+      setSpotlightLoading(false);
+    }
+  };
 
   const handleLoaderComplete = () => {
     sessionStorage.setItem('sanchar_intro_loaded', 'true');
@@ -399,49 +473,183 @@ const LandingPage = () => {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
           {[
-            { city: 'Chennai', img: 'https://images.unsplash.com/photo-1582510003544-4d00b7f74220?w=400&q=80', langs: ['Tamil', 'English'] },
-            { city: 'Kochi', img: 'https://images.unsplash.com/photo-1590050752117-238cb061295a?w=400&q=80', langs: ['Malayalam', 'English'] },
-            { city: 'Hyderabad', img: 'https://images.unsplash.com/photo-1605007493699-af65834f8a00?w=400&q=80', langs: ['Telugu', 'English'] },
-            { city: 'Bengaluru', img: 'https://images.unsplash.com/photo-1596176530529-78163a4f7af2?w=400&q=80', langs: ['Kannada', 'English'] },
-            { city: 'Mumbai', img: 'https://images.unsplash.com/photo-1562973831-2d378b668559?w=400&q=80', langs: ['Marathi', 'Hindi'] },
-            { city: 'Jaipur', img: 'https://images.unsplash.com/photo-1477584305878-9a384fcd3002?w=400&q=80', langs: ['Hindi', 'English'] },
-            { city: 'Varanasi', img: 'https://images.unsplash.com/photo-1561361068-61691a221a4e?w=400&q=80', langs: ['Hindi'] },
-            { city: 'Guwahati', img: 'https://images.unsplash.com/photo-1572914169578-8318e8334460?w=400&q=80', langs: ['Assamese', 'English'] },
+            { city: 'Chennai', img: 'https://upload.wikimedia.org/wikipedia/commons/1/19/MylaporeKapaleeshwararTemple.jpg', langs: ['Tamil', 'English'] },
+            { city: 'Kochi', img: 'https://upload.wikimedia.org/wikipedia/commons/b/b3/Chinese_fishing_nets_Kochi_India.jpg', langs: ['Malayalam', 'English'] },
+            { city: 'Hyderabad', img: 'https://upload.wikimedia.org/wikipedia/commons/7/71/Charminar_Hyderabad_1.jpg', langs: ['Telugu', 'English'] },
+            { city: 'Bengaluru', img: 'https://upload.wikimedia.org/wikipedia/commons/1/13/Bangalore_Palace.jpg', langs: ['Kannada', 'English'] },
+            { city: 'Mumbai', img: 'https://upload.wikimedia.org/wikipedia/commons/e/e0/Gateway_of_India_-Mumbai.jpg', langs: ['Marathi', 'Hindi'] },
+            { city: 'Jaipur', img: 'https://upload.wikimedia.org/wikipedia/commons/4/41/East_facade_of_Hawa_Mahal_2016.jpg', langs: ['Hindi', 'English'] },
+            { city: 'Varanasi', img: 'https://upload.wikimedia.org/wikipedia/commons/0/04/Ghats_in_Varanasi.jpg', langs: ['Hindi'] },
+            { city: 'Guwahati', img: 'https://upload.wikimedia.org/wikipedia/commons/f/f9/Kamakhya_Temple_Guwahati.jpg', langs: ['Assamese', 'English'] },
           ].map((c) => (
-            <div
+            <CityCard
               key={c.city}
-              onClick={() => {
-                setDestinationPreFill(c.city);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-              className="group cursor-pointer bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200"
-            >
-              <div className="relative h-36 overflow-hidden bg-gradient-to-br from-[#00695C] to-[#004D40]">
-                <img
-                  src={c.img}
-                  alt={c.city}
-                  loading="lazy"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  onError={(e) => {
-                    // Fallback to teal gradient
-                    (e.target as HTMLElement).style.display = 'none';
-                  }}
-                />
-                <div className="absolute top-2 right-2 bg-white/95 text-[#00695C] text-[10px] font-bold py-0.5 px-2 rounded-full">
-                  City pack available
-                </div>
-              </div>
-              <div className="p-4">
-                <h3 className="font-['Plus_Jakarta_Sans'] font-bold text-base text-[#1F2937]">{c.city}</h3>
-                <div className="flex flex-wrap gap-1 mt-2">
-                  {c.langs.map(l => (
-                    <span key={l} className="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-medium">{l}</span>
-                  ))}
-                </div>
-              </div>
-            </div>
+              city={c.city}
+              img={c.img}
+              langs={c.langs}
+              onClick={() => loadSpotlight(c.city)}
+            />
           ))}
         </div>
+
+        {/* Enter your city Box */}
+        <div className="mt-10 max-w-md mx-auto bg-white p-3 md:p-4 rounded-full border border-gray-200 shadow-sm flex items-center gap-2">
+          <Search className="text-gray-400 shrink-0 ml-2" size={18} />
+          <input
+            type="text"
+            placeholder="Explore other cities (e.g. Pune, Nagpur…)"
+            value={searchCityInput}
+            onChange={(e) => setSearchCityInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                loadSpotlight(searchCityInput);
+              }
+            }}
+            className="flex-1 text-sm text-[#1F2937] focus:outline-none placeholder-gray-400"
+          />
+          <button
+            onClick={() => loadSpotlight(searchCityInput)}
+            className="btn-primary !py-2.5 !px-6 text-xs font-bold whitespace-nowrap cursor-pointer !rounded-full"
+          >
+            Show best spots
+          </button>
+        </div>
+
+        {/* Spotlight View Section */}
+        {(spotlightCity || spotlightLoading) && (
+          <div id="city-spotlight-section" className="mt-16 border-t border-gray-200 pt-12">
+            {spotlightLoading && (
+              <div className="text-center py-16 flex flex-col items-center gap-3">
+                <div className="w-10 h-10 border-4 border-[#00695C] border-t-transparent rounded-full animate-spin" />
+                <p className="text-sm text-[#64748B] font-medium">Fetching real spot data for {spotlightCity}…</p>
+              </div>
+            )}
+
+            {spotlightError && !spotlightLoading && (
+              <div className="card p-8 text-center max-w-lg mx-auto border border-red-100 bg-red-50/50">
+                <AlertTriangle className="text-[#D32F2F] mx-auto mb-3" size={32} />
+                <p className="text-sm font-bold text-[#1F2937]">{spotlightError}</p>
+                <button
+                  onClick={() => setSpotlightCity(null)}
+                  className="mt-4 btn-secondary !py-2 !px-5 text-xs font-bold cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
+            )}
+
+            {spotlightData && !spotlightLoading && (
+              <div className="animate-fade-in-up">
+                {spotlightData.found === false ? (
+                  <div className="card p-8 text-center max-w-lg mx-auto border border-amber-100 bg-amber-50/30">
+                    <HelpCircle className="text-[#F59E0B] mx-auto mb-3" size={36} />
+                    <h3 className="font-bold text-lg text-[#1F2937] mb-2">No verified spot list for '{spotlightCity}' yet</h3>
+                    <p className="text-xs text-[#64748B] leading-relaxed mb-6">
+                      Our general India pack works here: 112 emergency · national rail enquiry 139 · basic travel guidance.
+                    </p>
+                    <div className="flex justify-center gap-3">
+                      <button
+                        onClick={() => {
+                          setDestinationPreFill(spotlightCity || '');
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        className="btn-primary !py-2 !px-5 text-xs font-bold cursor-pointer"
+                      >
+                        Create trip to {spotlightCity}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSpotlightCity(null);
+                          setSpotlightData(null);
+                        }}
+                        className="btn-secondary !py-2 !px-5 text-xs font-bold cursor-pointer"
+                      >
+                        Back to home
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    {/* Spotlight Header */}
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-150 pb-6 mb-8">
+                      <div>
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <h2 className="text-3xl font-extrabold text-[#1F2937] font-['Plus_Jakarta_Sans']">{spotlightData.city}</h2>
+                          <span className={`text-[10px] font-bold py-0.5 px-2.5 rounded-full border ${
+                            spotlightData.source === 'curated-sample' 
+                              ? 'bg-[#E0F2F1] text-[#00695C] border-[#B2DFDB]' 
+                              : 'bg-blue-50 text-blue-700 border-blue-100'
+                          }`}>
+                            {spotlightData.source === 'curated-sample' 
+                              ? 'Curated sample — verify before visiting' 
+                              : 'Live from Wikipedia — verify before visiting'}
+                          </span>
+                        </div>
+                        <p className="text-[#64748B] text-xs mt-2 flex items-center gap-1.5 font-medium">
+                          <Compass size={14} className="text-[#00695C]" /> Spotlight features {spotlightData.count} best places to explore.
+                        </p>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-[10px] bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full font-semibold">Languages: Hindi, English</span>
+                        <span className="text-[10px] bg-[#E0F2F1] text-[#00695C] px-2.5 py-1 rounded-full font-semibold">City pack available</span>
+                      </div>
+                    </div>
+
+                    {/* Grid of Spots */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                      {spotlightData.spots.map((spot: any, index: number) => (
+                        <div key={index} className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col gap-3">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex items-start gap-2.5">
+                              <span className="w-6 h-6 rounded-full bg-[#00695C]/10 text-[#00695C] text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
+                                {index + 1}
+                              </span>
+                              <p className="font-bold text-[#1F2937] text-sm leading-tight">{spot.name}</p>
+                            </div>
+                            {spot.category && (
+                              <span className="text-[9px] font-bold uppercase tracking-wider bg-gray-150 text-gray-500 py-0.5 px-2 rounded-full font-semibold">
+                                {spot.category}
+                              </span>
+                            )}
+                          </div>
+                          {spot.blurb && (
+                            <p className="text-xs text-[#64748B] leading-relaxed line-clamp-2">
+                              {spot.blurb.length > 90 ? spot.blurb.slice(0, 87) + '...' : spot.blurb}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Footer Actions */}
+                    <div className="flex justify-center gap-4 mt-12 border-t border-gray-150 pt-8">
+                      <button
+                        onClick={() => {
+                          setDestinationPreFill(spotlightData.city);
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        className="btn-primary !py-3 !px-8 text-sm font-bold flex items-center gap-2 cursor-pointer"
+                      >
+                        <Zap size={16} /> Create trip to {spotlightData.city}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSpotlightCity(null);
+                          setSpotlightData(null);
+                        }}
+                        className="btn-secondary !py-3 !px-8 text-sm font-bold cursor-pointer"
+                      >
+                        Back to home
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </section>
 
       {/* ── S3: INFO CARDS ── */}
