@@ -20,19 +20,24 @@
 | **PWA (Service Worker)** | `vite-plugin-pwa` | App shell precached, OCR assets cached for offline use, manifest with icons |
 | **Safety Checks** | Client-side + `POST /api/trips/:id/safety-events` | Route-deviation detection (rolling bearing, 30° threshold, 200m displacement, 5-min cooldown), late-arrival check (expectedArrival + 15 min) |
 
-## 📱 Android App Module (Architecture — Not Live in Web)
+## 📱 Real Android App Implementation (Kotlin + Compose)
 
-| Feature | Why It Needs Native |
-|---------|-------------------|
-| Background tracking (tab closed) | Requires foreground service + `FusedLocationProviderClient` |
-| Production activity recognition | `ACTIVITY_STILL` / `ACTIVITY_IN_VEHICLE` via Play Services |
-| Precise step counting | Hardware step-counter sensor |
-| Trusted-contact push (FCM) | Firebase Cloud Messaging |
-| Auto trip wake-up | Geofence + alarm triggers |
+The native app code in `android/` implements the offline specifications using native Google Play Services, Room, and CameraX:
 
-Each of these is shown with an **"Android app module"** badge + tooltip in the web UI.
+| Feature | Android Implementation | Notes |
+|---------|------------------------|-------|
+| **Foreground Tracking** | `SafeTripService` | System persistent notification with live speed updates. Continues tracking when screen is locked. |
+| **Balanced-Power Location**| `FusedLocationProviderClient` | Real GPS + cellular fusion (5s intervals) to preserve battery. |
+| **On-Device OCR** | Google ML Kit Text Recognition | Runs locally on captured CameraX bitmap (fully offline). |
+| **Room Local Database** | `AppDatabase` | Stores `Trip`, `Expense`, and `LocationPoint` records locally. |
+| **Geofence Exit Wake** | `GeofenceBroadcastReceiver` | Circular geofence (200m) around home coordinates auto-starts service on exit. |
+| **Alarm departure check** | `AlarmBroadcastReceiver` | RTC exact alarm queries motion state to auto-start or prompt user. |
+| **Stillness Arrival** | Google Activity Recognition | Wakes dialog to confirm arrival if stillness sustained for 10 mins. |
+| **Trip Diary & Story** | Computed from Room records | Calculates real metrics, generates editable story card, shares via Intent. |
 
-## 🎨 Design System
+---
+
+## 🎨 Web Design System
 
 - **Typography:** Plus Jakarta Sans (headings, 600–800) + Inter (body, 400–500) via Google Fonts
 - **Colors:** Deep teal `#00695C`, saffron `#F59E0B` (SOS/alerts only), safety red `#D32F2F`, success green `#2E7D32`, off-white `#FAFAF7`, charcoal `#1F2937`, slate `#64748B`
