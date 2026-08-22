@@ -2,9 +2,9 @@ import { useState, useEffect, useRef } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate, Link, useParams } from 'react-router-dom';
 import {
   Shield, MapPin, Navigation2, Camera, Smartphone, WifiOff,
-  Wifi, Zap, Globe, Lock, Map, Clock, IndianRupee, Phone,
-  ChevronRight, Check, AlertTriangle, Pause, Play, Share2,
-  BookOpen, BarChart3, Download, Eye, EyeOff, Menu, X
+  Zap, Globe, Lock, Map, IndianRupee, Phone,
+  ChevronRight, Check, AlertTriangle, Share2,
+  BookOpen, BarChart3, Menu, X
 } from 'lucide-react';
 import axios from 'axios';
 import { queueOfflineMutation, getOfflineQueue, removeQueueItem } from './store/db';

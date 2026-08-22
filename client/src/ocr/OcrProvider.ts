@@ -1,4 +1,4 @@
-import { createWorker, Worker } from 'tesseract.js';
+import Tesseract from 'tesseract.js';
 
 /**
  * Simple OCR provider interface.
@@ -13,29 +13,27 @@ export interface OcrProvider {
 }
 
 /**
- * Tesseract based implementation.
- * The worker, core WASM, and language traineddata are self‑hosted under /ocr/.
- * They are precached by the service worker so OCR works offline after first load.
+ * Tesseract.js (v7) based implementation.
+ * On-device scan — runs fully offline in this browser (Tesseract.js/WASM).
+ *
+ * The worker, core WASM, and language traineddata can be self-hosted under /ocr/
+ * and precached by the service worker so OCR works offline after first load.
  */
 export class TesseractOcrProvider implements OcrProvider {
-  private worker: Worker | null = null;
+  private worker: Tesseract.Worker | null = null;
 
-  private async getWorker(): Promise<Worker> {
+  private async getWorker(): Promise<Tesseract.Worker> {
     if (this.worker) return this.worker;
 
-    // Paths are relative to the web root (served from Vite's public folder).
-    const workerPath = '/ocr/worker.min.js';
-    const corePath = '/ocr/tesseract-core.wasm';
-    const langPath = '/ocr/eng.traineddata';
-
-    this.worker = await createWorker({
-      logger: (m) => console.debug('[Tesseract]', m),
-      workerPath,
-      corePath,
-      langPath,
+    // createWorker(langs, oem, options) — Tesseract.js v7 API
+    // Paths are relative to the web root; can be served from Vite's public folder.
+    this.worker = await Tesseract.createWorker('eng', undefined, {
+      workerPath: '/ocr/worker.min.js',
+      corePath: '/ocr/tesseract-core.wasm',
+      langPath: '/ocr/',
+      cacheMethod: 'none',       // we self-host, no CDN cache needed
+      workerBlobURL: true,
     });
-    await this.worker.loadLanguage('eng');
-    await this.worker.initialize('eng');
     return this.worker;
   }
 
@@ -47,4 +45,4 @@ export class TesseractOcrProvider implements OcrProvider {
 }
 
 // Export a singleton that can be imported directly in UI components.
-export const ocrProvider = new TesseractOcrProvider();
+export const ocrProvider: OcrProvider = new TesseractOcrProvider();

@@ -83,7 +83,7 @@ export async function removeQueueItem(idempotencyKey: string) {
 
 export async function cacheCityPack(city: string, packData: any) {
   const db = await initDB();
-  await db.put('cityPacks', packData);
+  await db.put('cityPacks', { ...packData, city });
 }
 
 export async function getCachedCityPack(city: string) {
