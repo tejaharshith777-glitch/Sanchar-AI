@@ -1,12 +1,19 @@
 import mongoose from 'mongoose';
 
+import { curatedCities } from '../data/curatedCities';
+
 export let isMemoryFallback = false;
 
 // Basic in-memory store for fallback
 export const memoryStore = {
   trips: [] as any[],
-  cityPacks: [] as any[],
+  cityPacks: [...curatedCities] as any[],
+  locationPoints: [] as any[],
+  journeySegments: [] as any[],
+  expenses: [] as any[],
+  safetyEvents: [] as any[],
   mobilityAggregates: [] as any[],
+  pilotSignups: [] as any[],
 };
 
 export const connectDB = async () => {

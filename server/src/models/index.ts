@@ -170,3 +170,23 @@ const mobilityAggregateSchema = new Schema<IMobilityAggregate>({
 mobilityAggregateSchema.index({ city: 1, areaCell: 1, timeBucket: 1, modeCategory: 1 }, { unique: true });
 
 export const MobilityAggregate = mongoose.model<IMobilityAggregate>('MobilityAggregate', mobilityAggregateSchema);
+
+// --- PILOT SIGNUPS ---
+export interface IPilotSignup extends Document {
+  name: string;
+  email?: string;
+  city: string;
+  feedback?: string;
+  createdAt: Date;
+}
+
+const pilotSignupSchema = new Schema<IPilotSignup>({
+  name: { type: String, required: true },
+  email: String,
+  city: { type: String, required: true },
+  feedback: String,
+  createdAt: { type: Date, default: Date.now }
+});
+
+export const PilotSignup = mongoose.model<IPilotSignup>('PilotSignup', pilotSignupSchema);
+

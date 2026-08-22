@@ -2,8 +2,11 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
+import mongoose from 'mongoose';
 import apiRoutes from './routes/api';
 import { connectDB } from './services/db';
+
+mongoose.set('bufferCommands', false);
 
 dotenv.config({ path: '../.env' }); // try root .env first
 if (!process.env.MONGODB_URI) {
