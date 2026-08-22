@@ -1,0 +1,17 @@
+{
+  "name": "sanchar-ai",
+  "version": "1.0.0",
+  "description": "Sanchar AI Showcase Website",
+  "scripts": {
+    "install:all": "npm install && cd server && npm install && cd ../client && npm install",
+    "seed": "cd server && npm run seed",
+    "dev": "npm run dev:client & npm run dev:server",
+    "dev:client": "cd client && npm run dev",
+    "dev:server": "cd server && npm run dev",
+    "build": "cd client && npm run build && cd ../server && npm run build",
+    "start": "cd server && npm start",
+    "lint": "cd client && npm run lint && cd ../server && npm run lint",
+    "typecheck": "cd client && npm run typecheck && cd ../server && npm run typecheck",
+    "test": "cd client && npm run test && cd ../server && npm run test"
+  }
+}
