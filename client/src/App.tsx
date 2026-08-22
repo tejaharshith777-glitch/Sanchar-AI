@@ -157,9 +157,13 @@ function useGPSTracker(tripId: string | null) {
 
         batchRef.current.push(point);
         if (batchRef.current.length >= 5) {
-          axios.post(`/api/trips/${tripId}/points`, { points: batchRef.current })
-            .catch(() => console.log('[GPS] Queuing points locally...'));
+          const currentBatch = [...batchRef.current];
           batchRef.current = [];
+          axios.post(`/api/trips/${tripId}/points`, { points: currentBatch })
+            .catch(() => {
+              console.log('[GPS] Queuing points locally to IndexedDB...');
+              queueOfflineMutation(`/api/trips/${tripId}/points`, 'POST', { points: currentBatch });
+            });
         }
       },
       (err) => {
