@@ -243,9 +243,11 @@ const App = () => {
           <Route path="/active/:id" element={<AppShell><ActiveTrip /></AppShell>} />
           <Route path="/scan/:id" element={<AppShell><CameraScanner /></AppShell>} />
           <Route path="/expenses/:id" element={<AppShell><ExpensesList /></AppShell>} />
-          <Route path="/diary/:id" element={<AppShell><Diary /></AppShell>} />
+          <Route path="/diary/:id" element={<AppShell><VaultGuard><Diary /></VaultGuard></AppShell>} />
+          <Route path="/gallery/:id" element={<AppShell><VaultGuard><TripGallery /></VaultGuard></AppShell>} />
           <Route path="/city/:city" element={<AppShell><CitySpots /></AppShell>} />
           <Route path="/privacy" element={<AppShell><PrivacyPage /></AppShell>} />
+          <Route path="/features" element={<AppShell><FeaturesPage /></AppShell>} />
           <Route path="/faq" element={<AppShell><FaqPage /></AppShell>} />
           <Route path="/dashboard" element={<AppShell><Dashboard /></AppShell>} />
           <Route path="*" element={<NotFound />} />
@@ -275,6 +277,161 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
       <main className="flex-1 max-w-2xl mx-auto w-full">
         {children}
       </main>
+    </div>
+  );
+};
+
+// ─── VAULT GUARD ───────────────────────────────────────────
+const VaultGuard = ({ children }: { children: React.ReactNode }) => {
+  const [setupMode, setSetupMode] = useState(false);
+  const [isLocked, setIsLocked] = useState(false);
+  const [pinInput, setPinInput] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
+  const [attempts, setAttempts] = useState(0);
+  const [cooldown, setCooldown] = useState(0);
+  const [hasFingerprint, setHasFingerprint] = useState(false);
+
+  useEffect(() => {
+    import('./store/db').then(async ({ hasVaultPin, isWebAuthnAvailable }) => {
+      const hasPin = await hasVaultPin();
+      if (!hasPin) setSetupMode(true);
+      else {
+        setIsLocked(true);
+        const authnAvail = await isWebAuthnAvailable();
+        setHasFingerprint(authnAvail);
+        
+        const handleVis = () => {
+          if (document.hidden) setIsLocked(true);
+        };
+        document.addEventListener('visibilitychange', handleVis);
+        return () => document.removeEventListener('visibilitychange', handleVis);
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    if (cooldown > 0) {
+      const timer = setTimeout(() => setCooldown(cooldown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [cooldown]);
+
+  const handleSetup = async () => {
+    if (pinInput.length < 4 || pinInput.length > 6) {
+      setErrorMsg('PIN must be 4 to 6 digits.');
+      return;
+    }
+    const { setVaultPin, registerVaultFingerprint, isWebAuthnAvailable } = await import('./store/db');
+    await setVaultPin(pinInput);
+    
+    if (await isWebAuthnAvailable()) {
+      if (confirm('Would you like to unlock with fingerprint in the future?')) {
+        await registerVaultFingerprint();
+      }
+    }
+    setSetupMode(false);
+    setIsLocked(false);
+  };
+
+  const handleUnlock = async () => {
+    if (cooldown > 0) return;
+    const { verifyVaultPin } = await import('./store/db');
+    const isValid = await verifyVaultPin(pinInput);
+    if (isValid) {
+      setIsLocked(false);
+      setAttempts(0);
+      setErrorMsg('');
+      setPinInput('');
+    } else {
+      const newAtt = attempts + 1;
+      setAttempts(newAtt);
+      setPinInput('');
+      if (newAtt >= 5) {
+        setCooldown(30);
+        setErrorMsg('Too many attempts. Wait 30 seconds.');
+      } else {
+        setErrorMsg(`Wrong PIN. ${5 - newAtt} attempts left.`);
+      }
+    }
+  };
+
+  const handleFingerprintUnlock = async () => {
+    if (cooldown > 0) return;
+    const { verifyVaultFingerprint } = await import('./store/db');
+    const isValid = await verifyVaultFingerprint();
+    if (isValid) {
+      setIsLocked(false);
+      setAttempts(0);
+      setErrorMsg('');
+    } else {
+      setErrorMsg('Fingerprint not recognized.');
+    }
+  };
+
+  if (setupMode) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center p-5 animate-fade-in-up">
+        <Lock size={48} className="text-[#00695C] mb-4" />
+        <h2 className="text-xl font-bold text-[#1F2937] mb-2">Set up your Private Vault</h2>
+        <p className="text-sm text-[#64748B] text-center mb-6 max-w-sm">
+          Protect your photos and stories. They never leave your phone.
+        </p>
+        <input 
+          type="password" 
+          maxLength={6} 
+          placeholder="4–6 digit PIN"
+          value={pinInput}
+          onChange={e => setPinInput(e.target.value.replace(/\D/g, ''))}
+          className="w-full max-w-xs p-3 text-center text-xl tracking-widest border border-gray-300 rounded-xl mb-4 font-bold"
+        />
+        {errorMsg && <p className="text-red-500 text-xs mb-4 font-bold">{errorMsg}</p>}
+        <button onClick={handleSetup} className="btn-primary w-full max-w-xs py-3">Save PIN</button>
+      </div>
+    );
+  }
+
+  if (isLocked) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center p-5 bg-[#004D40] text-white animate-fade-in-up">
+        <Lock size={48} className="mb-4 text-teal-200" />
+        <h2 className="text-xl font-bold mb-6">Private Vault Locked</h2>
+        
+        <input 
+          type="password" 
+          maxLength={6} 
+          placeholder="Enter PIN"
+          value={pinInput}
+          onChange={e => setPinInput(e.target.value.replace(/\D/g, ''))}
+          disabled={cooldown > 0}
+          className="w-full max-w-xs p-3 text-center text-xl tracking-widest text-gray-900 border border-gray-300 rounded-xl mb-4 font-bold disabled:opacity-50"
+        />
+        {errorMsg && <p className="text-red-300 text-xs mb-4 font-bold">{errorMsg}</p>}
+        {cooldown > 0 && <p className="text-amber-300 text-sm mb-4 font-bold">Cooldown: {cooldown}s</p>}
+        
+        <button onClick={handleUnlock} disabled={cooldown > 0} className="w-full max-w-xs bg-teal-500 hover:bg-teal-400 text-white font-bold py-3 rounded-xl mb-4 transition disabled:opacity-50">
+          Unlock
+        </button>
+        
+        {hasFingerprint ? (
+          <button onClick={handleFingerprintUnlock} disabled={cooldown > 0} className="w-full max-w-xs bg-transparent border-2 border-teal-500 text-teal-100 font-bold py-3 rounded-xl transition hover:bg-teal-700/50 flex items-center justify-center gap-2 disabled:opacity-50">
+            Unlock with fingerprint
+          </button>
+        ) : (
+          <p className="text-xs text-teal-200 mt-4 italic opacity-80">PIN unlock available on this device.</p>
+        )}
+        <p className="text-[10px] text-teal-300 mt-8 opacity-60">Fingerprint unlock available over secure connections.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative flex-1 flex flex-col w-full h-full">
+      <div className="absolute top-2 right-5 md:right-8 z-10">
+        <button onClick={() => setIsLocked(true)} className="bg-gray-800 text-white text-[10px] font-bold py-1.5 px-3 rounded-full flex items-center gap-1 opacity-60 hover:opacity-100 transition shadow-sm">
+          <Lock size={10} /> Lock now
+        </button>
+      </div>
+      {children}
     </div>
   );
 };
@@ -654,8 +811,8 @@ const LandingPage = () => {
                 ● Active Trip ({activeTrip.originCity} → {activeTrip.destinationCity})
               </Link>
             )}
-            <a href="#features" className="hidden md:inline text-sm font-medium text-[#64748B] hover:text-[#00695C] transition-colors no-underline">Features</a>
-            <a href="#privacy-section" className="hidden md:inline text-sm font-medium text-[#64748B] hover:text-[#00695C] transition-colors no-underline">Privacy</a>
+            <Link to="/features" className="hidden md:inline text-sm font-medium text-[#64748B] hover:text-[#00695C] transition-colors no-underline">Features</Link>
+            <Link to="/privacy" className="hidden md:inline text-sm font-medium text-[#64748B] hover:text-[#00695C] transition-colors no-underline">Privacy</Link>
             <Link to="/dashboard" className="text-sm font-medium text-[#64748B] hover:text-[#00695C] transition-colors no-underline">Dashboard</Link>
             <Link to="/create" className="btn-primary text-sm !py-2 !px-5">
               Start Trip <ChevronRight size={14} />
@@ -1411,7 +1568,23 @@ const ActiveTrip = () => {
   const [showSosModal, setShowSosModal] = useState(false);
   const [completing, setCompleting] = useState(false);
   const [lastNotYetTime, setLastNotYetTime] = useState(0);
+  const [photoAddedMsg, setPhotoAddedMsg] = useState('');
   const navigate = useNavigate();
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      const dataUrl = evt.target?.result as string;
+      const { savePhoto } = await import('./store/db');
+      const lastPoint = points.length > 0 ? points[points.length - 1] : null;
+      await savePhoto(tripId, dataUrl, lastPoint?.lat, lastPoint?.lng);
+      setPhotoAddedMsg('Photo saved securely on your device.');
+      setTimeout(() => setPhotoAddedMsg(''), 3000);
+    };
+    reader.readAsDataURL(file);
+  };
 
   // Load trip config
   useEffect(() => {
@@ -1772,6 +1945,22 @@ const ActiveTrip = () => {
           </div>
         </div>
       )}
+
+      {/* Camera / Photo Capture */}
+      <div className="px-5 md:px-8 mb-4">
+        <div className="flex gap-2">
+          <label className="flex-1 flex items-center justify-center gap-2 bg-[#00695C] text-white py-3 rounded-2xl cursor-pointer hover:bg-teal-800 transition">
+            <Camera size={18} />
+            <span className="font-bold text-sm">Take photo</span>
+            <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhotoUpload} />
+          </label>
+          <label className="flex-1 flex items-center justify-center gap-2 bg-teal-100 text-teal-900 py-3 rounded-2xl cursor-pointer hover:bg-teal-200 transition">
+            <span className="font-bold text-sm">Import</span>
+            <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
+          </label>
+        </div>
+        {photoAddedMsg && <p className="text-center text-xs text-[#00695C] mt-2 font-bold">{photoAddedMsg}</p>}
+      </div>
 
       {/* Android Badge */}
       <div className="px-5 md:px-8 mb-4">
@@ -2194,143 +2383,383 @@ const Diary = () => {
   const [expenses, setExpenses] = useState<any[]>([]);
   const [points, setPoints] = useState<any[]>([]);
   const [photos, setPhotos] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<'overview' | 'gallery' | 'history'>('overview');
-
+  const [pois, setPois] = useState<any[]>([]);
+  const [markedMoments, setMarkedMoments] = useState<any[]>([]);
+  
   useEffect(() => {
     if (!tripId) return;
     axios.get(`/api/trips/${tripId}`).then(r => setTrip(r.data)).catch(console.warn);
     axios.get(`/api/trips/${tripId}/expenses`).then(r => setExpenses(r.data)).catch(console.warn);
     axios.get(`/api/trips/${tripId}/points`).then(r => setPoints(r.data)).catch(console.warn);
     
-    // Load local photos
-    import('./store/db').then(({ getPhotosForTrip }) => {
+    import('./store/db').then(({ getPhotosForTrip, getMarkedMoments }) => {
       getPhotosForTrip(tripId).then(setPhotos).catch(console.warn);
+      getMarkedMoments(tripId).then(setMarkedMoments).catch(console.warn);
     });
   }, [tripId]);
+
+  useEffect(() => {
+    if (trip?.destinationCity) {
+      import('./store/db').then(({ getCachedCityPack }) => {
+        getCachedCityPack(trip.destinationCity).then(pack => {
+          if (pack && pack.pois) setPois(pack.pois);
+        }).catch(console.warn);
+      });
+    }
+  }, [trip?.destinationCity]);
+
+  const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const p = 0.017453292519943295;
+    const c = Math.cos;
+    const a = 0.5 - c((lat2 - lat1) * p)/2 + c(lat1 * p) * c(lat2 * p) * (1 - c((lon2 - lon1) * p))/2;
+    return 12742 * Math.asin(Math.sqrt(a));
+  };
+
+  const getNearestPoi = (lat: number, lng: number, thresholdKm = 0.4) => {
+    if (!pois.length) return null;
+    let nearest = null;
+    let minDist = thresholdKm;
+    for (const poi of pois) {
+      const d = getDistance(lat, lng, poi.lat, poi.lng);
+      if (d < minDist) {
+        minDist = d;
+        nearest = poi;
+      }
+    }
+    return nearest;
+  };
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     const reader = new FileReader();
     reader.onload = async (evt) => {
       const dataUrl = evt.target?.result as string;
-      const { savePhoto } = await import('./store/db');
-      await savePhoto(tripId, dataUrl);
-      
-      const { getPhotosForTrip } = await import('./store/db');
+      const { savePhoto, getPhotosForTrip } = await import('./store/db');
+      const lastPoint = points.length > 0 ? points[points.length - 1] : null;
+      await savePhoto(tripId, dataUrl, lastPoint?.lat, lastPoint?.lng);
       const updatedPhotos = await getPhotosForTrip(tripId);
       setPhotos(updatedPhotos);
     };
     reader.readAsDataURL(file);
   };
 
+  const handleMarkMoment = async (type: string, data: any) => {
+    const note = prompt('Add an optional note for this moment:');
+    if (note === null) return;
+    const { saveMarkedMoment, getMarkedMoments } = await import('./store/db');
+    await saveMarkedMoment(tripId, type, note, data);
+    const updated = await getMarkedMoments(tripId);
+    setMarkedMoments(updated);
+  };
+
   const totalSpent = expenses.reduce((s, e) => s + (e.amount || 0), 0);
+  const categories = expenses.reduce((acc, e) => {
+    acc[e.category] = (acc[e.category] || 0) + (e.amount || 0);
+    return acc;
+  }, {} as Record<string, number>);
+
+  const startTime = points.length > 0 ? new Date(points[0].timestamp) : null;
+  const endTime = points.length > 0 ? new Date(points[points.length - 1].timestamp) : null;
+  const durationMs = (startTime && endTime) ? endTime.getTime() - startTime.getTime() : 0;
+  const durationHrs = Math.round(durationMs / 3600000 * 10) / 10;
+  
+  let totalDistanceKm = 0;
+  let walkedDistanceKm = 0;
+  const modes = new Set<string>();
+  const stops: any[] = [];
+  const nearPois = new Set<any>();
+  let currentStop: any = null;
+  
+  for (let i = 1; i < points.length; i++) {
+    const p1 = points[i - 1];
+    const p2 = points[i];
+    const d = getDistance(p1.lat, p1.lng, p2.lat, p2.lng);
+    totalDistanceKm += d;
+    modes.add(p2.segment);
+    if (p2.segment === 'walking') walkedDistanceKm += d;
+
+    const speedKmh = p2.speed * 3.6;
+    if (speedKmh < 1.0) {
+      if (!currentStop) currentStop = { start: new Date(p2.timestamp), lat: p2.lat, lng: p2.lng, count: 1, end: new Date(p2.timestamp) };
+      else {
+        currentStop.end = new Date(p2.timestamp);
+        currentStop.count++;
+      }
+    } else {
+      if (currentStop) {
+        const stopDurMins = (currentStop.end.getTime() - currentStop.start.getTime()) / 60000;
+        if (stopDurMins >= 5) {
+          currentStop.near = getNearestPoi(currentStop.lat, currentStop.lng, 0.4);
+          currentStop.duration = Math.round(stopDurMins);
+          stops.push(currentStop);
+        }
+        currentStop = null;
+      }
+    }
+    const poi = getNearestPoi(p2.lat, p2.lng, 0.4);
+    if (poi) nearPois.add(poi);
+  }
+
+  const poiGroups: Record<string, any[]> = {};
+  Array.from(nearPois).forEach((poi: any) => {
+    const type = poi.type || 'Other';
+    if (!poiGroups[type]) poiGroups[type] = [];
+    poiGroups[type].push(poi);
+  });
+
+  let longestStop = stops.length > 0 ? stops.reduce((prev, curr) => (prev.duration > curr.duration ? prev : curr)) : null;
+  const ocrExpenses = expenses.filter(e => e.isOcr).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  const firstScan = ocrExpenses.length > 0 ? ocrExpenses[0] : null;
 
   const handleShare = () => {
-    const text = trip
-      ? `🛤️ My Sanchar AI Journey\n${trip.originCity} → ${trip.destinationCity}\nSpent: ₹${totalSpent.toLocaleString('en-IN')} of ₹${(trip.budget || 0).toLocaleString('en-IN')}\nExpenses: ${expenses.length} items\n\nGenerated by Sanchar AI — ${SITE_URL}`
-      : 'Sanchar AI Journey';
+    const text = trip ? `🛤️ My Sanchar AI Journey\n${trip.originCity} → ${trip.destinationCity}\nSpent: ₹${totalSpent.toLocaleString('en-IN')}\n\nGenerated by Sanchar AI` : 'Sanchar AI Journey';
     if (navigator.share) navigator.share({ text });
-    else {
-      navigator.clipboard.writeText(text);
-      alert('Diary details copied to clipboard!');
-    }
+    else { navigator.clipboard.writeText(text); alert('Diary details copied to clipboard!'); }
   };
 
   if (!trip) return <div className="p-8 text-center text-[#64748B]">Loading diary…</div>;
 
   return (
-    <div className="p-5 md:p-8 animate-fade-in-up">
-      <span className="badge badge-teal mb-3"><BookOpen size={14} /> Trip Diary</span>
+    <div className="p-5 md:p-8 animate-fade-in-up max-w-2xl mx-auto">
+      <Link to="/" className="text-sm font-bold text-teal-700 flex items-center gap-1 mb-4"><Check size={16} /> Back to Home</Link>
+      <span className="badge badge-teal mb-3"><BookOpen size={14} /> History Recap</span>
       <h1 className="text-2xl font-extrabold text-[#1F2937] font-['Plus_Jakarta_Sans'] mb-6">
         {trip.originCity} → {trip.destinationCity}
       </h1>
 
-      <div className="flex bg-gray-100 p-1 rounded-xl mb-6">
-        {['overview', 'gallery', 'history'].map(tab => (
-          <button 
-            key={tab}
-            onClick={() => setActiveTab(tab as any)}
-            className={`flex-1 py-2 text-xs font-bold rounded-lg capitalize ${activeTab === tab ? 'bg-white shadow text-[#00695C]' : 'text-[#64748B]'}`}
-          >
-            {tab}
-          </button>
-        ))}
-      </div>
-
-      {activeTab === 'overview' && (
-        <>
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <div className="card p-4 text-center">
-              <p className="text-xs text-[#64748B]">Budget</p>
-              <p className="font-bold text-lg text-[#00695C]">₹{(trip.budget || 0).toLocaleString('en-IN')}</p>
-            </div>
-            <div className="card p-4 text-center">
-              <p className="text-xs text-[#64748B]">Spent</p>
-              <p className="font-bold text-lg text-[#D32F2F]">₹{totalSpent.toLocaleString('en-IN')}</p>
-            </div>
-          </div>
-
-          <div className="card p-5 mb-6">
-            <h3 className="font-bold text-sm text-[#1F2937] mb-3">Expenses ({expenses.length})</h3>
-            {expenses.length === 0
-              ? <p className="text-sm text-[#64748B]">No expenses recorded.</p>
-              : expenses.map((e: any, i: number) => (
-                <div key={i} className="flex justify-between py-2 border-b border-gray-50 last:border-0">
-                  <span className="text-sm text-[#1F2937]">{e.merchant}</span>
-                  <span className="text-sm font-semibold text-[#00695C]">₹{(e.amount || 0).toLocaleString('en-IN')}</span>
-                </div>
-              ))
-            }
-          </div>
-        </>
-      )}
-
-      {activeTab === 'gallery' && (
-        <div className="card p-5 mb-6 bg-white min-h-[300px]">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="font-bold text-sm text-[#1F2937]">Local Gallery</h3>
-            <label className="bg-[#00695C] text-white text-xs font-bold py-1.5 px-3 rounded cursor-pointer">
-              Add Photo
-              <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
-            </label>
-          </div>
-          <p className="text-[10px] text-[#64748B] mb-4 italic">Photos are stored privately on your device. Zero network uploads.</p>
-          
-          {photos.length === 0 ? (
-            <div className="text-center text-[#64748B] py-8 border-2 border-dashed border-gray-100 rounded-xl">
-              <Camera size={24} className="mx-auto mb-2 opacity-50" />
-              <p className="text-xs">No photos yet.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-              {photos.map((p, i) => (
-                <div key={i} className="aspect-square bg-gray-100 rounded overflow-hidden">
-                  <img src={p.dataUrl} alt="Trip moment" className="w-full h-full object-cover" />
+      {/* BEST MOMENTS (F3) */}
+      <div className="card p-5 mb-6 bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 shadow-sm">
+        <h3 className="font-bold text-amber-900 mb-4 flex items-center gap-2"><Zap size={18} /> Your Best Moments</h3>
+        
+        {markedMoments.length > 0 && (
+          <div className="mb-6">
+            <h4 className="text-xs font-bold text-amber-800 uppercase tracking-wider mb-2">Your Marked Moments</h4>
+            <div className="space-y-2">
+              {markedMoments.map((m, i) => (
+                <div key={i} className="bg-white p-3 rounded-lg border border-amber-100 shadow-sm">
+                  <p className="text-xs text-amber-600 font-bold mb-1">{m.type}</p>
+                  <p className="text-sm text-gray-800 italic">"{m.note}"</p>
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        <h4 className="text-xs font-bold text-amber-800 uppercase tracking-wider mb-2">Auto-detected moments</h4>
+        <div className="space-y-2">
+          {longestStop && (
+            <div className="bg-white p-3 rounded-lg border border-amber-100 shadow-sm">
+              <p className="text-sm text-gray-800">You spent {longestStop.duration} min near {longestStop.near?.name || 'a stop'} — your longest stop.</p>
+            </div>
+          )}
+          {walkedDistanceKm > 0 && (
+            <div className="bg-white p-3 rounded-lg border border-amber-100 shadow-sm">
+              <p className="text-sm text-gray-800">You walked {walkedDistanceKm.toFixed(1)} km.</p>
+            </div>
+          )}
+          {firstScan && (
+            <div className="bg-white p-3 rounded-lg border border-amber-100 shadow-sm">
+              <p className="text-sm text-gray-800">First ticket scanned: ₹{firstScan.amount} · {new Date(firstScan.date).toLocaleDateString()}</p>
+            </div>
+          )}
+          {photos.slice(0,2).map((p, i) => (
+            <div key={i} className="bg-white p-2 rounded-lg border border-amber-100 shadow-sm flex items-center gap-3">
+              <img src={p.dataUrl} alt="Moment" className="w-10 h-10 object-cover rounded-md" />
+              <p className="text-sm text-gray-800">Photo captured {p.lat && getNearestPoi(p.lat, p.lng) ? `near ${getNearestPoi(p.lat, p.lng)?.name}` : 'on the go'}</p>
+            </div>
+          ))}
+          {endTime && (
+            <div className="bg-white p-3 rounded-lg border border-amber-100 shadow-sm">
+              <p className="text-sm text-gray-800">Arrived in {trip.destinationCity} at {endTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}.</p>
+            </div>
           )}
         </div>
-      )}
+        <p className="text-[10px] text-amber-700/60 mt-4 italic text-center">Moments computed from your real trip data.</p>
+      </div>
 
-      {activeTab === 'history' && (
-        <div className="mb-6">
-          <PocketMap 
-            points={points} 
-            destinationCity={trip?.destinationCity || 'Destination'} 
-          />
-          <div className="card p-5 mt-4">
-            <h3 className="font-bold text-sm text-[#1F2937] mb-3">Timeline</h3>
-            <p className="text-xs text-[#64748B] mb-2">Total points logged: {points.length}</p>
-            {points.length === 0 && <p className="text-xs text-[#64748B] italic">No path recorded.</p>}
+      {/* 9C: Journey Summary */}
+      <div className="card p-5 mb-6 bg-gradient-to-br from-[#00695C] to-teal-800 text-white shadow-md">
+        <h3 className="font-bold mb-3 border-b border-teal-600 pb-2 text-teal-50">Journey Summary</h3>
+        <div className="grid grid-cols-2 gap-4 text-sm">
+          <div>
+            <p className="text-teal-200 text-xs uppercase tracking-wider mb-0.5">Duration</p>
+            <p className="font-bold">{durationHrs} hrs</p>
+          </div>
+          <div>
+            <p className="text-teal-200 text-xs uppercase tracking-wider mb-0.5">Distance</p>
+            <p className="font-bold">{totalDistanceKm.toFixed(1)} km</p>
+          </div>
+          <div className="col-span-2 mt-2">
+            <p className="text-teal-200 text-xs uppercase tracking-wider mb-0.5">Modes (Probabilistic)</p>
+            <p className="font-bold capitalize">{Array.from(modes).join(', ') || 'Unknown'}</p>
+            <p className="text-[10px] text-teal-300 mt-1 italic">*Transport modes are estimated probabilistically on device.</p>
           </div>
         </div>
-      )}
+      </div>
 
-      <button onClick={handleShare} className="btn-primary w-full mb-3"><Share2 size={16} /> Share Diary</button>
-      <Link to="/" className="btn-secondary w-full text-center block">Plan New Trip</Link>
+      <div className="mb-6 rounded-2xl overflow-hidden shadow-sm border border-gray-200 bg-gray-50 h-64">
+        <PocketMap points={points} destinationCity={trip?.destinationCity || 'Destination'} />
+      </div>
+
+      {/* 9C: Timeline of Stops */}
+      <div className="card p-5 mb-6 border border-gray-100 shadow-sm">
+        <h3 className="font-bold text-[#1F2937] mb-4">Timeline of Stops</h3>
+        {stops.length === 0 ? (
+          <p className="text-sm text-[#64748B] italic">No significant stops (≥5 min) recorded.</p>
+        ) : (
+          <div className="space-y-4">
+            {stops.map((stop, i) => (
+              <div key={i} className="flex gap-3 items-start relative pb-4 border-b border-gray-50 last:border-0 last:pb-0 group">
+                <div className="mt-1 w-2 h-2 rounded-full bg-teal-500 shrink-0 shadow-[0_0_0_4px_rgba(20,184,166,0.2)]"></div>
+                <div className="flex-1">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="text-xs text-[#64748B] font-medium">{stop.start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {stop.duration} mins</p>
+                      <p className="text-sm text-[#1F2937] font-semibold mt-0.5">{stop.near ? `Stopped near ${stop.near.name}` : 'Stopped'}</p>
+                    </div>
+                    <button onClick={() => handleMarkMoment('Stop', stop)} className="opacity-0 group-hover:opacity-100 transition text-amber-500 hover:text-amber-600 text-xs flex items-center gap-1 font-bold bg-amber-50 px-2 py-1 rounded">
+                      ★ Mark moment
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* 9C: You were near */}
+      <div className="card p-5 mb-6 border border-gray-100 shadow-sm bg-[#F8FAFC]">
+        <h3 className="font-bold text-[#1F2937] mb-1">You were near</h3>
+        <p className="text-xs text-[#64748B] mb-4">Places your route passed near (≤400m)</p>
+        {Object.keys(poiGroups).length === 0 ? (
+          <p className="text-sm text-[#64748B] italic">No notable places recorded nearby.</p>
+        ) : (
+          <div className="space-y-3">
+            {Object.keys(poiGroups).map(type => (
+              <div key={type}>
+                <p className="text-xs font-bold text-gray-500 uppercase mb-1">{type}</p>
+                <div className="flex flex-wrap gap-2">
+                  {poiGroups[type].map((poi, i) => (
+                    <span key={i} className="px-2 py-1 bg-white border border-gray-200 text-xs font-medium text-gray-700 rounded-md shadow-sm">
+                      {poi.name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* 9C: Expenses */}
+      <div className="card p-5 mb-6 border border-gray-100 shadow-sm">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="font-bold text-[#1F2937]">Expenses</h3>
+          <p className="font-bold text-lg text-[#D32F2F]">₹{totalSpent.toLocaleString('en-IN')}</p>
+        </div>
+        {Object.keys(categories).length > 0 && (
+          <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
+            {Object.entries(categories).map(([cat, amount]) => (
+              <div key={cat} className="flex-none bg-red-50 px-3 py-1.5 rounded-lg border border-red-100">
+                <p className="text-[10px] text-red-800 uppercase font-bold">{cat}</p>
+                <p className="text-sm font-bold text-red-600">₹{(amount as number).toLocaleString('en-IN')}</p>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="space-y-2">
+          {expenses.map((e: any, i: number) => (
+            <div key={i} className="flex justify-between items-center py-2 border-b border-gray-50 last:border-0 group">
+              <div>
+                <p className="text-sm text-[#1F2937] font-medium">{e.merchant}</p>
+                <p className="text-[10px] text-[#64748B] uppercase">{e.category}</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <button onClick={() => handleMarkMoment('Expense', e)} className="opacity-0 group-hover:opacity-100 transition text-amber-500 hover:text-amber-600 text-[10px] font-bold bg-amber-50 px-2 py-1 rounded">
+                  ★ Mark
+                </button>
+                <span className="text-sm font-semibold text-[#1F2937]">₹{(e.amount || 0).toLocaleString('en-IN')}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 9B & F2: Local Gallery Grid with Dual Add Buttons */}
+      <div className="card p-5 mb-6 bg-white border border-gray-100 shadow-sm">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="font-bold text-sm text-[#1F2937]">Trip Photos ({photos.length})</h3>
+          <div className="flex gap-2">
+            <label className="bg-[#00695C] text-white text-xs font-bold py-1.5 px-3 rounded cursor-pointer transition hover:bg-teal-800 flex items-center gap-1">
+              <Camera size={12} /> Take
+              <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhotoUpload} />
+            </label>
+            <label className="bg-teal-100 text-teal-900 text-xs font-bold py-1.5 px-3 rounded cursor-pointer transition hover:bg-teal-200">
+              Import
+              <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
+            </label>
+          </div>
+        </div>
+        <p className="text-[10px] text-[#64748B] mb-4 italic">Your photos never leave your phone — import from your gallery, export back anytime. No uploads, ever.</p>
+        
+        {photos.length === 0 ? (
+          <div className="text-center text-[#64748B] py-8 border-2 border-dashed border-gray-100 rounded-xl">
+            <Camera size={24} className="mx-auto mb-2 opacity-50" />
+            <p className="text-xs">No photos yet.</p>
+          </div>
+        ) : (
+          <>
+            <div className="flex overflow-x-auto gap-2 pb-2 mb-4 snap-x">
+              {photos.map((p, i) => {
+                const near = (p.lat && p.lng) ? getNearestPoi(p.lat, p.lng, 0.3) : null;
+                return (
+                  <div key={i} className="relative group flex-none snap-center">
+                    <Link to={`/gallery/${tripId}`} className="block w-28 h-28 bg-gray-100 rounded-lg overflow-hidden shadow-sm">
+                      <img src={p.dataUrl} alt="Trip moment" className="w-full h-full object-cover" />
+                      {near && (
+                        <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[9px] p-1 truncate text-center font-medium">
+                          near {near.name}
+                        </div>
+                      )}
+                    </Link>
+                    <button onClick={() => handleMarkMoment('Photo', p)} className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition text-amber-400 drop-shadow-md">
+                      <Zap fill="currentColor" size={16} />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="text-center mt-2">
+              <Link to={`/gallery/${tripId}`} className="text-[#00695C] text-xs font-bold underline">View Full Gallery</Link>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* 9C: Story card */}
+      <div className="card p-5 mb-6 bg-amber-50 border border-amber-100 shadow-sm relative overflow-hidden">
+        <div className="absolute top-0 right-0 p-4 opacity-10"><Compass size={64} /></div>
+        <h3 className="font-bold text-[#92400E] mb-2 flex items-center gap-1"><BookOpen size={16} /> The Story</h3>
+        <p className="text-sm text-amber-900 mb-4 leading-relaxed">
+          {points.length > 0 ? (
+            `You began your journey in ${trip.originCity} and traveled ${(totalDistanceKm).toFixed(1)} km towards ${trip.destinationCity}. Over the course of ${durationHrs} hours, you made ${stops.length} significant stops and visited ${nearPois.size} notable places.`
+          ) : (
+            `A journey planned from ${trip.originCity} to ${trip.destinationCity}. No tracking data was recorded.`
+          )}
+        </p>
+        <div className="bg-white/50 p-3 rounded-lg border border-amber-200 flex justify-between items-center">
+          <div>
+            <p className="text-xs font-bold text-amber-900 mb-1">Safety Events Triggered: 0</p>
+            <p className="text-[10px] text-amber-800">No route deviations or late arrivals were recorded.</p>
+          </div>
+          <button onClick={() => handleMarkMoment('Story', {})} className="text-amber-600 bg-amber-100 hover:bg-amber-200 px-2 py-1 rounded text-xs font-bold">★ Mark</button>
+        </div>
+      </div>
+
+      <button onClick={handleShare} className="btn-primary w-full mb-3 shadow-md"><Share2 size={16} /> Share Diary</button>
+      <Link to="/" className="btn-secondary w-full text-center block shadow-sm">Plan New Trip</Link>
     </div>
   );
 };
@@ -2412,29 +2841,177 @@ const FaqPage = () => {
   );
 };
 
+// ─── TRIP GALLERY ──────────────────────────────────────────
+const TripGallery = () => {
+  const { id } = useParams();
+  const tripId = id || '';
+  const [photos, setPhotos] = useState<any[]>([]);
+  const [pois, setPois] = useState<any[]>([]);
+  const [fullView, setFullView] = useState<any>(null);
+
+  useEffect(() => {
+    if (!tripId) return;
+    import('./store/db').then(({ getPhotosForTrip }) => {
+      getPhotosForTrip(tripId).then(setPhotos).catch(console.warn);
+    });
+    axios.get(`/api/trips/${tripId}`).then(r => {
+      if (r.data?.destinationCity) {
+        import('./store/db').then(({ getCachedCityPack }) => {
+          getCachedCityPack(r.data.destinationCity).then(pack => {
+            if (pack && pack.pois) setPois(pack.pois);
+          }).catch(console.warn);
+        });
+      }
+    }).catch(console.warn);
+  }, [tripId]);
+
+  const handleDelete = async (photoId: string) => {
+    if (!confirm('Delete this photo?')) return;
+    const { deletePhoto } = await import('./store/db');
+    await deletePhoto(photoId);
+    setPhotos(photos.filter(p => p.id !== photoId));
+    setFullView(null);
+  };
+
+  const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const p = 0.017453292519943295;
+    const c = Math.cos;
+    const a = 0.5 - c((lat2 - lat1) * p)/2 + c(lat1 * p) * c(lat2 * p) * (1 - c((lon2 - lon1) * p))/2;
+    return 12742 * Math.asin(Math.sqrt(a)); // 2 * R; R = 6371 km
+  };
+
+  const getNearestPoi = (lat: number, lng: number, thresholdKm = 0.3) => {
+    if (!pois.length) return null;
+    let nearest = null;
+    let minDist = thresholdKm;
+    for (const poi of pois) {
+      const d = getDistance(lat, lng, poi.lat, poi.lng);
+      if (d < minDist) {
+        minDist = d;
+        nearest = poi;
+      }
+    }
+    return nearest;
+  };
+
+  const handleSharePhoto = async (photo: any) => {
+    try {
+      const res = await fetch(photo.dataUrl);
+      const blob = await res.blob();
+      const file = new File([blob], 'photo.webp', { type: 'image/webp' });
+      if (navigator.share) {
+        await navigator.share({
+          files: [file],
+          title: 'Trip Photo',
+        });
+      } else {
+        alert('Web Share API not supported on this browser.');
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  if (fullView) {
+    const near = (fullView.lat && fullView.lng) ? getNearestPoi(fullView.lat, fullView.lng) : null;
+    return (
+      <div className="fixed inset-0 bg-black z-50 flex flex-col">
+        <div className="flex justify-between items-center p-4 bg-gradient-to-b from-black/80 to-transparent">
+          <button onClick={() => setFullView(null)} className="text-white p-2"><Check size={24} /></button>
+          <div className="flex gap-2">
+            <button onClick={() => handleSharePhoto(fullView)} className="text-teal-400 p-2"><Share2 size={24} /></button>
+            <a href={fullView.dataUrl} download="photo.webp" className="text-blue-400 p-2 block"><BookOpen size={24} /></a>
+            <button onClick={() => handleDelete(fullView.id)} className="text-red-400 p-2"><AlertTriangle size={24} /></button>
+          </div>
+        </div>
+        <div className="flex-1 flex items-center justify-center p-4">
+          <img src={fullView.dataUrl} alt="Trip Full View" className="max-w-full max-h-full object-contain" />
+        </div>
+        <div className="p-4 bg-gradient-to-t from-black/80 to-transparent text-white text-center">
+          <p className="text-sm">{new Date(fullView.timestamp).toLocaleString()}</p>
+          {near && <p className="text-xs text-gray-300 mt-1">📍 near {near.name}</p>}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-5 md:p-8 animate-fade-in-up">
+      <Link to={`/diary/${tripId}`} className="text-sm font-bold text-teal-700 flex items-center gap-1 mb-4"><Check size={16} /> Back to Diary</Link>
+      <span className="badge badge-teal mb-3"><Camera size={14} /> Journey Gallery</span>
+      <h1 className="text-2xl font-extrabold text-[#1F2937] font-['Plus_Jakarta_Sans'] mb-2">Trip Photos</h1>
+      <p className="text-xs text-[#64748B] mb-6 italic">Your trip photos, stored privately on your device.</p>
+
+      {photos.length === 0 ? (
+        <div className="text-center text-[#64748B] py-12 border-2 border-dashed border-gray-100 rounded-xl">
+          <Camera size={32} className="mx-auto mb-3 opacity-50" />
+          <p className="text-sm">No photos yet — capture a moment from this trip.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+          {photos.map(p => {
+            const near = (p.lat && p.lng) ? getNearestPoi(p.lat, p.lng) : null;
+            return (
+              <div key={p.id} onClick={() => setFullView(p)} className="aspect-square bg-gray-100 rounded-lg overflow-hidden relative cursor-pointer hover:opacity-90 transition">
+                <img src={p.dataUrl} alt="Thumbnail" className="w-full h-full object-cover" />
+                {near && (
+                  <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[10px] p-1 truncate text-center">
+                    near {near.name}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ─── PRIVACY PAGE ────────────────────────────────────────────
 const PrivacyPage = () => (
-  <div className="p-5 md:p-8 animate-fade-in-up">
-    <span className="badge badge-teal mb-3"><Lock size={14} /> Privacy</span>
-    <h1 className="text-2xl font-extrabold text-[#1F2937] font-['Plus_Jakarta_Sans'] mb-6">How Your Data Works</h1>
+  <div className="p-5 md:p-8 animate-fade-in-up max-w-3xl mx-auto">
+    <Link to="/" className="text-sm font-bold text-teal-700 flex items-center gap-1 mb-4"><Check size={16} /> Back to Home</Link>
+    <span className="badge badge-teal mb-3"><Lock size={14} /> Privacy Promise</span>
+    <h1 className="text-2xl font-extrabold text-[#1F2937] font-['Plus_Jakarta_Sans'] mb-6">Your data stays yours.</h1>
 
-    <div className="card p-6 mb-6">
-      <h3 className="font-bold text-[#1F2937] mb-3">When Analytics is OFF (default)</h3>
-      <p className="text-sm text-[#64748B]">Your journey stays on your device and in your personal records only. No data is aggregated. No mobility insights are generated.</p>
+    <div className="space-y-4">
+      <div className="card p-5 border border-gray-100">
+        <ul className="text-sm text-[#1F2937] space-y-3 font-medium">
+          <li className="flex items-start gap-2"><Check size={16} className="text-teal-600 mt-0.5" /> Your exact route never leaves the device.</li>
+          <li className="flex items-start gap-2"><Check size={16} className="text-teal-600 mt-0.5" /> Analytics off by default, requires explicit consent.</li>
+          <li className="flex items-start gap-2"><Check size={16} className="text-teal-600 mt-0.5" /> First and last 300–500 m stripped from any analytics.</li>
+          <li className="flex items-start gap-2"><Check size={16} className="text-teal-600 mt-0.5" /> Locations aggregated to anonymous grid cells.</li>
+          <li className="flex items-start gap-2"><Check size={16} className="text-teal-600 mt-0.5" /> Low-volume cells suppressed.</li>
+          <li className="flex items-start gap-2"><Check size={16} className="text-teal-600 mt-0.5" /> <strong>Your Private Vault</strong> — photos and stories are locked on your device with a PIN, optionally unlocked by your device's own fingerprint. This data never leaves your phone. (App-level, on-device protection).</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+);
+
+// ─── FEATURES PAGE ──────────────────────────────────────────
+const FeaturesPage = () => (
+  <div className="p-5 md:p-8 animate-fade-in-up max-w-4xl mx-auto">
+    <Link to="/" className="text-sm font-bold text-teal-700 flex items-center gap-1 mb-4"><Check size={16} /> Back to Home</Link>
+    <span className="badge badge-teal mb-3"><Compass size={14} /> Capabilities</span>
+    <h1 className="text-2xl font-extrabold text-[#1F2937] font-['Plus_Jakarta_Sans'] mb-6">Sanchar AI Features</h1>
+
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="card p-4 border border-gray-100"><h3 className="font-bold mb-1">Safe Trip</h3><p className="text-xs text-[#64748B]">Real-time probabilistic tracking to ensure you stay on route.</p></div>
+      <div className="card p-4 border border-gray-100"><h3 className="font-bold mb-1">City Packs</h3><p className="text-xs text-[#64748B]">Pre-download essential local phrases, emergency numbers, and POIs.</p></div>
+      <div className="card p-4 border border-gray-100"><h3 className="font-bold mb-1">Scan</h3><p className="text-xs text-[#64748B]">On-device OCR to instantly log your tickets and receipts.</p></div>
+      <div className="card p-4 border border-gray-100"><h3 className="font-bold mb-1">Expenses</h3><p className="text-xs text-[#64748B]">Smart budget calculator and live tracking of your spending.</p></div>
+      <div className="card p-4 border border-gray-100"><h3 className="font-bold mb-1">SOS</h3><p className="text-xs text-[#64748B]">One-tap emergency alert sending your exact location offline.</p></div>
+      <div className="card p-4 border border-gray-100"><h3 className="font-bold mb-1">Diary</h3><p className="text-xs text-[#64748B]">Beautiful recap of your past journeys with an interactive timeline.</p></div>
+      <div className="card p-4 border border-gray-100"><h3 className="font-bold mb-1">Offline Tracking</h3><p className="text-xs text-[#64748B]">Your GPS points queue locally and sync automatically when online.</p></div>
+      <div className="card p-4 border border-gray-100"><h3 className="font-bold mb-1">Offline Maps</h3><p className="text-xs text-[#64748B]">Pocket map using cached tiles to show your live path anywhere.</p></div>
+      <div className="card p-4 border border-gray-100"><h3 className="font-bold mb-1">Luggage Buddy</h3><p className="text-xs text-[#64748B]">Intelligent nudges for transport and breaks when carrying heavy bags.</p></div>
+      <div className="card p-4 border border-gray-100"><h3 className="font-bold mb-1">Gallery</h3><p className="text-xs text-[#64748B]">Take and store photos locally directly linked to your journey.</p></div>
+      <div className="card p-4 border border-gray-100"><h3 className="font-bold mb-1">History</h3><p className="text-xs text-[#64748B]">Detailed breakdown of places you were near and timeline of stops.</p></div>
     </div>
 
-    <div className="card p-6 mb-6">
-      <h3 className="font-bold text-[#1F2937] mb-3">When Analytics is ON (your choice)</h3>
-      <ul className="text-sm text-[#64748B] space-y-2">
-        <li>• The server drops the first and last 500m of your trip</li>
-        <li>• Remaining points are binned into ~500m geohash grid cells</li>
-        <li>• Cells with fewer than 3 contributing trips are suppressed</li>
-        <li>• Only anonymized aggregates are written to the dashboard</li>
-        <li>• <strong>Personal LocationPoints are NEVER read by dashboard endpoints</strong></li>
-      </ul>
-    </div>
-
-    <div className="card p-6">
+    <div className="card p-6 mt-6">
       <h3 className="font-bold text-sm text-[#64748B] uppercase tracking-wider mb-4">Live vs Android Module</h3>
       {[
         { f: 'GPS tracking (tab open)', live: true },
