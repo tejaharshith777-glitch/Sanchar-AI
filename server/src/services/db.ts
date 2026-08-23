@@ -15,6 +15,7 @@ export const memoryStore = {
   mobilityAggregates: [] as any[],
   pilotSignups: [] as any[],
   citySpots: [] as any[],
+  idempotencyKeys: [] as any[],
 };
 
 export const connectDB = async () => {

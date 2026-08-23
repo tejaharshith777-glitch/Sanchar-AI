@@ -10,6 +10,7 @@ export interface ITrip extends Document {
   expectedArrival?: Date;
   lastLateArrivalTriggerAt?: Date;
   lastRouteDeviationTriggerAt?: Date;
+  notYetCount?: number;
   status: 'created' | 'active' | 'paused' | 'completed' | 'arrived-confirmed';
   budget: number;
   amountSpent: number;
@@ -26,6 +27,7 @@ const tripSchema = new Schema<ITrip>({
   expectedArrival: { type: Date, default: null },
   lastLateArrivalTriggerAt: { type: Date, default: null },
   lastRouteDeviationTriggerAt: { type: Date, default: null },
+  notYetCount: { type: Number, default: 0 },
   status: { type: String, enum: ['created', 'active', 'paused', 'completed', 'arrived-confirmed'], default: 'created' },
   budget: { type: Number, default: 0 },
   amountSpent: { type: Number, default: 0 },
@@ -216,4 +218,19 @@ const citySpotSchema = new Schema<ICitySpot>({
 });
 
 export const CitySpot = mongoose.model<ICitySpot>('CitySpot', citySpotSchema);
+
+// --- IDEMPOTENCY KEYS ---
+export interface IIdempotencyKey extends Document {
+  key: string;
+  response: any;
+  createdAt: Date;
+}
+
+const idempotencyKeySchema = new Schema<IIdempotencyKey>({
+  key: { type: String, required: true, unique: true },
+  response: { type: Schema.Types.Mixed, required: true },
+  createdAt: { type: Date, default: Date.now, expires: 86400 }
+});
+
+export const IdempotencyKey = mongoose.model<IIdempotencyKey>('IdempotencyKey', idempotencyKeySchema);
 

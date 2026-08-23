@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
-import { Trip, LocationPoint, JourneySegment, Expense, CityPack, SafetyEvent, MobilityAggregate, PilotSignup, CitySpot } from '../models';
+import { Trip, LocationPoint, JourneySegment, Expense, CityPack, SafetyEvent, MobilityAggregate, PilotSignup, CitySpot, IdempotencyKey } from '../models';
 import { processTripPrivacySync } from '../services/privacy';
 import { isMemoryFallback, memoryStore } from '../services/db';
 
@@ -15,6 +15,48 @@ router.use(apiLimiter);
 
 // Helper to generate IDs for memory store objects
 const generateId = () => 'mem_' + Math.random().toString(36).substring(2, 11);
+
+async function checkIdempotency(key: string): Promise<any | null> {
+  if (!key) return null;
+  if (isMemoryFallback) {
+    const existing = memoryStore.idempotencyKeys.find(ik => ik.key === key);
+    return existing ? existing.response : null;
+  } else {
+    const existing = await IdempotencyKey.findOne({ key });
+    return existing ? existing.response : null;
+  }
+}
+
+async function saveIdempotency(key: string, responseData: any): Promise<void> {
+  if (!key) return;
+  if (isMemoryFallback) {
+    memoryStore.idempotencyKeys.push({ key, response: responseData, createdAt: new Date() });
+  } else {
+    try {
+      const doc = new IdempotencyKey({ key, response: responseData });
+      await doc.save();
+    } catch {
+      // Key may already exist
+    }
+  }
+}
+
+async function recalculateTripBudget(tripId: string): Promise<number> {
+  let totalSpent = 0;
+  if (isMemoryFallback) {
+    const tripExpenses = memoryStore.expenses.filter(e => String(e.tripId) === String(tripId));
+    totalSpent = tripExpenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+    const trip = memoryStore.trips.find(t => String(t._id) === String(tripId));
+    if (trip) {
+      trip.amountSpent = totalSpent;
+    }
+  } else {
+    const tripExpenses = await Expense.find({ tripId });
+    totalSpent = tripExpenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+    await Trip.findByIdAndUpdate(tripId, { amountSpent: totalSpent });
+  }
+  return totalSpent;
+}
 
 // ---------------------------
 // HEALTH & UTILS
@@ -546,17 +588,40 @@ router.post('/trips/:id/start', async (req, res) => {
 
 router.post('/trips/:id/complete', async (req, res) => {
   try {
+    const key = (req.headers['idempotency-key'] || req.headers['x-idempotency-key']) as string;
+    const cached = await checkIdempotency(key);
+    if (cached) return res.json(cached);
+
     const id = req.params.id;
+    let completedTrip: any = null;
+
     if (isMemoryFallback) {
-      const tripIdx = memoryStore.trips.findIndex(t => t._id === id);
+      const tripIdx = memoryStore.trips.findIndex(t => String(t._id) === String(id));
       if (tripIdx === -1) return res.status(404).json({ error: 'Trip not found' });
       memoryStore.trips[tripIdx].status = 'completed';
       memoryStore.trips[tripIdx].endTime = new Date();
-      return res.json(memoryStore.trips[tripIdx]);
+      completedTrip = memoryStore.trips[tripIdx];
+    } else {
+      completedTrip = await Trip.findByIdAndUpdate(id, { status: 'completed', endTime: new Date() }, { new: true });
     }
 
-    const trip = await Trip.findByIdAndUpdate(id, { status: 'completed', endTime: new Date() }, { new: true });
-    res.json(trip);
+    if (completedTrip && completedTrip.analyticsConsent) {
+      if (isMemoryFallback) {
+        memoryStore.mobilityAggregates.push({
+          city: completedTrip.destinationCity,
+          areaCell: 'mem_geohash_' + Math.random().toString(36).substring(2, 5),
+          timeBucket: new Date(),
+          modeCategory: 'road',
+          anonymousTripCount: 1,
+          issueCounts: new Map()
+        });
+      } else {
+        await processTripPrivacySync(completedTrip.id, completedTrip.destinationCity);
+      }
+    }
+
+    await saveIdempotency(key, completedTrip);
+    res.json(completedTrip);
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
   }
@@ -564,22 +629,38 @@ router.post('/trips/:id/complete', async (req, res) => {
 
 router.post('/trips/:id/points', async (req, res) => {
   try {
+    const key = (req.headers['idempotency-key'] || req.headers['x-idempotency-key']) as string;
+    const cached = await checkIdempotency(key);
+    if (cached) return res.status(201).json(cached);
+
     const id = req.params.id;
     const { points } = req.body;
-    const pointsWithTrip = points.map((p: any) => ({
-      _id: generateId(),
+    const pointsWithTrip = (points || []).map((p: any) => ({
+      _id: p.id || generateId(),
       ...p,
       tripId: id,
       timestamp: p.timestamp ? new Date(p.timestamp) : new Date()
     }));
 
     if (isMemoryFallback) {
-      memoryStore.locationPoints.push(...pointsWithTrip);
-      return res.status(201).json({ success: true, count: points.length });
+      for (const p of pointsWithTrip) {
+        if (!memoryStore.locationPoints.some(existing => existing._id === p._id)) {
+          memoryStore.locationPoints.push(p);
+        }
+      }
+    } else {
+      for (const p of pointsWithTrip) {
+        try {
+          await LocationPoint.updateOne({ _id: p._id }, { $setOnInsert: p }, { upsert: true });
+        } catch {
+          // Ignore duplicate insertion
+        }
+      }
     }
 
-    await LocationPoint.insertMany(pointsWithTrip);
-    res.status(201).json({ success: true, count: points.length });
+    const response = { success: true, count: pointsWithTrip.length };
+    await saveIdempotency(key, response);
+    res.status(201).json(response);
   } catch (error) {
     res.status(400).json({ error: 'Invalid points' });
   }
@@ -632,29 +713,31 @@ router.patch('/segments/:id', async (req, res) => {
 // ---------------------------
 router.post('/trips/:id/expenses', async (req, res) => {
   try {
+    const key = (req.headers['idempotency-key'] || req.headers['x-idempotency-key']) as string;
+    const cached = await checkIdempotency(key);
+    if (cached) return res.status(201).json(cached);
+
     const id = req.params.id;
     const amount = Number(req.body.amount || 0);
 
+    let expense: any = null;
+
     if (isMemoryFallback) {
-      const expense = {
-        _id: generateId(),
+      expense = {
+        _id: req.body._id || generateId(),
         ...req.body,
         amount,
         tripId: id,
-        date: new Date()
+        createdAt: new Date()
       };
       memoryStore.expenses.push(expense);
-
-      const tripIdx = memoryStore.trips.findIndex(t => t._id === id);
-      if (tripIdx !== -1) {
-        memoryStore.trips[tripIdx].amountSpent = (memoryStore.trips[tripIdx].amountSpent || 0) + amount;
-      }
-      return res.status(201).json(expense);
+    } else {
+      expense = new Expense({ ...req.body, amount, tripId: id });
+      await expense.save();
     }
 
-    const expense = new Expense({ ...req.body, tripId: id });
-    await expense.save();
-    await Trip.findByIdAndUpdate(id, { $inc: { amountSpent: expense.amount } });
+    await recalculateTripBudget(id);
+    await saveIdempotency(key, expense);
     res.status(201).json(expense);
   } catch (error) {
     res.status(400).json({ error: 'Invalid expense' });
@@ -665,7 +748,7 @@ router.get('/trips/:id/expenses', async (req, res) => {
   try {
     const id = req.params.id;
     if (isMemoryFallback) {
-      const expenses = memoryStore.expenses.filter(e => e.tripId === id);
+      const expenses = memoryStore.expenses.filter(e => String(e.tripId) === String(id));
       return res.json(expenses);
     }
 
@@ -678,24 +761,29 @@ router.get('/trips/:id/expenses', async (req, res) => {
 
 router.patch('/expenses/:id', async (req, res) => {
   try {
+    const key = (req.headers['idempotency-key'] || req.headers['x-idempotency-key']) as string;
+    const cached = await checkIdempotency(key);
+    if (cached) return res.json(cached);
+
     const id = req.params.id;
+    let updatedExpense: any = null;
+    let tripId = '';
+
     if (isMemoryFallback) {
-      const expIdx = memoryStore.expenses.findIndex(e => e._id === id);
+      const expIdx = memoryStore.expenses.findIndex(e => String(e._id) === String(id));
       if (expIdx === -1) return res.status(404).json({ error: 'Expense not found' });
-      
-      const oldAmount = memoryStore.expenses[expIdx].amount;
       memoryStore.expenses[expIdx] = { ...memoryStore.expenses[expIdx], ...req.body };
-      const newAmount = Number(memoryStore.expenses[expIdx].amount || 0);
-      
-      const tripIdx = memoryStore.trips.findIndex(t => t._id === memoryStore.expenses[expIdx].tripId);
-      if (tripIdx !== -1) {
-        memoryStore.trips[tripIdx].amountSpent = (memoryStore.trips[tripIdx].amountSpent || 0) - oldAmount + newAmount;
-      }
-      return res.json(memoryStore.expenses[expIdx]);
+      updatedExpense = memoryStore.expenses[expIdx];
+      tripId = updatedExpense.tripId;
+    } else {
+      updatedExpense = await Expense.findByIdAndUpdate(id, req.body, { new: true });
+      if (!updatedExpense) return res.status(404).json({ error: 'Expense not found' });
+      tripId = updatedExpense.tripId;
     }
 
-    const expense = await Expense.findByIdAndUpdate(id, req.body, { new: true });
-    res.json(expense);
+    await recalculateTripBudget(tripId);
+    await saveIdempotency(key, updatedExpense);
+    res.json(updatedExpense);
   } catch (error) {
     res.status(400).json({ error: 'Invalid update' });
   }
@@ -703,26 +791,30 @@ router.patch('/expenses/:id', async (req, res) => {
 
 router.delete('/expenses/:id', async (req, res) => {
   try {
+    const key = (req.headers['idempotency-key'] || req.headers['x-idempotency-key']) as string;
+    const cached = await checkIdempotency(key);
+    if (cached) return res.json(cached);
+
     const id = req.params.id;
+    let tripId = '';
+
     if (isMemoryFallback) {
-      const expIdx = memoryStore.expenses.findIndex(e => e._id === id);
+      const expIdx = memoryStore.expenses.findIndex(e => String(e._id) === String(id));
       if (expIdx === -1) return res.status(404).json({ error: 'Expense not found' });
-      
-      const expense = memoryStore.expenses[expIdx];
+      tripId = memoryStore.expenses[expIdx].tripId;
       memoryStore.expenses.splice(expIdx, 1);
-      
-      const tripIdx = memoryStore.trips.findIndex(t => t._id === expense.tripId);
-      if (tripIdx !== -1) {
-        memoryStore.trips[tripIdx].amountSpent = (memoryStore.trips[tripIdx].amountSpent || 0) - expense.amount;
-      }
-      return res.json({ success: true });
+    } else {
+      const expense = await Expense.findByIdAndDelete(id);
+      if (expense) tripId = String(expense.tripId);
     }
 
-    const expense = await Expense.findByIdAndDelete(id);
-    if (expense) {
-      await Trip.findByIdAndUpdate(expense.tripId, { $inc: { amountSpent: -expense.amount } });
+    if (tripId) {
+      await recalculateTripBudget(tripId);
     }
-    res.json({ success: true });
+
+    const response = { success: true };
+    await saveIdempotency(key, response);
+    res.json(response);
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
   }
@@ -733,20 +825,41 @@ router.delete('/expenses/:id', async (req, res) => {
 // ---------------------------
 router.post('/trips/:id/safety-events', async (req, res) => {
   try {
+    const key = (req.headers['idempotency-key'] || req.headers['x-idempotency-key']) as string;
+    const cached = await checkIdempotency(key);
+    if (cached) return res.status(201).json(cached);
+
     const id = req.params.id;
+    const now = new Date();
+    let event: any = null;
+
     if (isMemoryFallback) {
-      const event = {
+      event = {
         _id: generateId(),
         ...req.body,
         tripId: id,
-        triggeredAt: new Date()
+        triggeredAt: now
       };
       memoryStore.safetyEvents.push(event);
-      return res.status(201).json(event);
+
+      const trip = memoryStore.trips.find(t => String(t._id) === String(id));
+      if (trip) {
+        if (req.body.type === 'late-arrival') trip.lastLateArrivalTriggerAt = now;
+        if (req.body.type === 'route-deviation') trip.lastRouteDeviationTriggerAt = now;
+      }
+    } else {
+      event = new SafetyEvent({ ...req.body, tripId: id, triggeredAt: now });
+      await event.save();
+
+      const updateFields: any = {};
+      if (req.body.type === 'late-arrival') updateFields.lastLateArrivalTriggerAt = now;
+      if (req.body.type === 'route-deviation') updateFields.lastRouteDeviationTriggerAt = now;
+      if (Object.keys(updateFields).length > 0) {
+        await Trip.findByIdAndUpdate(id, updateFields);
+      }
     }
 
-    const event = new SafetyEvent({ ...req.body, tripId: id });
-    await event.save();
+    await saveIdempotency(key, event);
     res.status(201).json(event);
   } catch (error) {
     res.status(400).json({ error: 'Invalid safety event' });

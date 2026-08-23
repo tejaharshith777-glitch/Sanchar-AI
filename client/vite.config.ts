@@ -9,7 +9,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       workbox: {
-        maximumFileSizeToCacheInBytes: 15 * 1024 * 1024 // 15MB to cache Tesseract models
+        maximumFileSizeToCacheInBytes: 15 * 1024 * 1024, // 15MB to cache Tesseract models
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,wasm,gz,traineddata}']
       },
       manifest: {
         name: 'Sanchar AI',

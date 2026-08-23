@@ -24,13 +24,19 @@ interface HealthContextType {
   dbMode: 'atlas' | 'memory' | null;
   syncState: 'synced' | 'syncing' | 'offline';
   isOnline: boolean;
+  activeTrip: any | null;
+  lastCompletedTrip: any | null;
+  refreshTrips: () => Promise<void>;
 }
 
 const HealthContext = createContext<HealthContextType>({
   isBackendOffline: false,
   dbMode: null,
   syncState: 'synced',
-  isOnline: true
+  isOnline: true,
+  activeTrip: null,
+  lastCompletedTrip: null,
+  refreshTrips: async () => {}
 });
 
 // Helper for location speed calculations
@@ -48,6 +54,24 @@ function useNetworkAndHealth() {
   const [syncState, setSyncState] = useState<'synced' | 'syncing' | 'offline'>('synced');
   const [isBackendOffline, setIsBackendOffline] = useState(false);
   const [dbMode, setDbMode] = useState<'atlas' | 'memory' | null>(null);
+  const [activeTrip, setActiveTrip] = useState<any | null>(null);
+  const [lastCompletedTrip, setLastCompletedTrip] = useState<any | null>(null);
+
+  const refreshTrips = async () => {
+    try {
+      const res = await axios.get('/api/trips');
+      const trips = res.data || [];
+      const active = trips.find((t: any) => t.status === 'active' || t.status === 'created');
+      const completed = trips
+        .filter((t: any) => t.status === 'completed' || t.status === 'arrived-confirmed')
+        .sort((a: any, b: any) => new Date(b.endTime || b.createdAt).getTime() - new Date(a.endTime || a.createdAt).getTime())[0];
+
+      setActiveTrip(active || null);
+      setLastCompletedTrip(completed || null);
+    } catch {
+      // Ignore offline error
+    }
+  };
 
   // Poll server health check to keep status updated without console spam
   useEffect(() => {
@@ -65,10 +89,11 @@ function useNetworkAndHealth() {
           setDbMode(null);
         }
       }
+      refreshTrips();
     };
 
     checkHealth();
-    const interval = setInterval(checkHealth, 10000);
+    const interval = setInterval(checkHealth, 3000);
     return () => {
       active = false;
       clearInterval(interval);
@@ -111,7 +136,7 @@ function useNetworkAndHealth() {
     };
   }, []);
 
-  return { isOnline, syncState, isBackendOffline, dbMode };
+  return { isOnline, syncState, isBackendOffline, dbMode, activeTrip, lastCompletedTrip, refreshTrips };
 }
 
 function useGPSTracker(tripId: string | null) {
@@ -228,9 +253,9 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
 };
 
 const InnerNav = () => {
-  const { isOnline, syncState } = useContext(HealthContext);
+  const { isOnline, syncState, activeTrip } = useContext(HealthContext);
   return (
-    <nav className="sticky top-0 z-50 glass-nav">
+    <nav className="sticky top-0 z-50 glass-nav border-b border-gray-150">
       <div className="max-w-2xl mx-auto px-5 flex justify-between h-16 items-center">
         <Link to="/" className="flex items-center gap-2.5 no-underline">
           <div className="w-8 h-8 bg-[#00695C] rounded-lg flex items-center justify-center">
@@ -239,9 +264,18 @@ const InnerNav = () => {
           <span className="font-['Plus_Jakarta_Sans'] font-bold text-[#1F2937] text-lg tracking-tight">Sanchar AI</span>
         </Link>
         <div className="flex items-center gap-2">
+          {activeTrip && (
+            <Link
+              to={`/active/${activeTrip._id}`}
+              className="badge bg-[#E0F2F1] text-[#00695C] border border-[#B2DFDB] text-xs font-bold py-1 px-3 rounded-full flex items-center gap-1.5 no-underline hover:bg-[#B2DFDB] transition-colors"
+            >
+              <span className="w-2 h-2 rounded-full bg-[#00695C] animate-pulse" />
+              ● Active Trip ({activeTrip.originCity} → {activeTrip.destinationCity})
+            </Link>
+          )}
           {syncState === 'syncing' && <span className="badge badge-teal animate-pulse text-xs">Syncing…</span>}
           {syncState === 'offline' && <span className="badge badge-amber text-xs"><WifiOff size={12} /> Offline — queued</span>}
-          {syncState === 'synced' && isOnline && <span className="badge badge-green text-xs"><Check size={12} /> Synced</span>}
+          {syncState === 'synced' && isOnline && !activeTrip && <span className="badge badge-green text-xs"><Check size={12} /> Synced</span>}
         </div>
       </div>
     </nav>
@@ -530,7 +564,7 @@ const CitySpotlightPage = () => {
 
 // ─── LANDING PAGE ────────────────────────────────────────────
 const LandingPage = () => {
-  const { isBackendOffline, dbMode } = useContext(HealthContext);
+  const { isBackendOffline, dbMode, activeTrip, lastCompletedTrip } = useContext(HealthContext);
   const [showLoader, setShowLoader] = useState(() => !sessionStorage.getItem('sanchar_intro_loaded'));
   const [destinationPreFill] = useState('');
   const [searchCityInput, setSearchCityInput] = useState('');
@@ -571,7 +605,16 @@ const LandingPage = () => {
             </div>
             <span className="font-['Plus_Jakarta_Sans'] font-extrabold text-[#1F2937] text-xl tracking-tight">Sanchar AI</span>
           </Link>
-          <div className="flex items-center gap-8">
+          <div className="flex items-center gap-4 md:gap-8">
+            {activeTrip && (
+              <Link
+                to={`/active/${activeTrip._id}`}
+                className="badge bg-[#E0F2F1] text-[#00695C] border border-[#B2DFDB] text-xs font-bold py-1.5 px-3.5 rounded-full flex items-center gap-1.5 no-underline hover:bg-[#B2DFDB] transition-colors"
+              >
+                <span className="w-2 h-2 rounded-full bg-[#00695C] animate-pulse" />
+                ● Active Trip ({activeTrip.originCity} → {activeTrip.destinationCity})
+              </Link>
+            )}
             <a href="#features" className="hidden md:inline text-sm font-medium text-[#64748B] hover:text-[#00695C] transition-colors no-underline">Features</a>
             <a href="#privacy-section" className="hidden md:inline text-sm font-medium text-[#64748B] hover:text-[#00695C] transition-colors no-underline">Privacy</a>
             <Link to="/dashboard" className="text-sm font-medium text-[#64748B] hover:text-[#00695C] transition-colors no-underline">Dashboard</Link>
@@ -581,6 +624,42 @@ const LandingPage = () => {
           </div>
         </div>
       </nav>
+
+      {/* Active Trip Banner */}
+      {activeTrip && (
+        <div className="pt-20 pb-4 bg-[#E0F2F1] border-b border-[#B2DFDB]">
+          <div className="max-w-[1180px] mx-auto px-5 md:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <span className="w-3 h-3 rounded-full bg-[#00695C] animate-ping shrink-0" />
+              <div>
+                <h4 className="font-extrabold text-[#004D40] text-base">Trip in progress: {activeTrip.originCity} → {activeTrip.destinationCity}</h4>
+                <p className="text-xs text-[#00695C]">Tracking active · Tap to open command center</p>
+              </div>
+            </div>
+            <Link to={`/active/${activeTrip._id}`} className="btn-primary !py-2 !px-6 text-sm font-bold bg-[#00695C] text-white no-underline">
+              Open Trip Command Center →
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {/* Your Last Trip Banner */}
+      {!activeTrip && lastCompletedTrip && (
+        <div className="pt-20 pb-4 bg-[#F0FDF4] border-b border-green-200">
+          <div className="max-w-[1180px] mx-auto px-5 md:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <Check className="text-[#2E7D32] shrink-0" size={20} />
+              <div>
+                <h4 className="font-extrabold text-[#1B5E20] text-base">Your last trip: {lastCompletedTrip.originCity} → {lastCompletedTrip.destinationCity}</h4>
+                <p className="text-xs text-[#2E7D32]">Completed · Total Spent: ₹{(lastCompletedTrip.amountSpent || 0).toLocaleString('en-IN')}</p>
+              </div>
+            </div>
+            <Link to={`/diary/${lastCompletedTrip._id}`} className="btn-secondary !py-2 !px-6 text-sm font-bold no-underline">
+              View Trip Diary →
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* ── S1: HERO ── */}
       <section className="relative min-h-[640px] flex items-center justify-center pt-24 pb-16 bg-cover bg-center" style={{ backgroundImage: "url('/images/travelers-hero.png')" }}>
@@ -1182,22 +1261,15 @@ const CreateTrip = () => {
   );
 };
 
-// Helper to parse expected arrival time with data repair
 const getExpectedArrivalTime = (trip: any) => {
   if (!trip || !trip.expectedArrival) return null;
   const t = new Date(trip.expectedArrival).getTime();
   if (isNaN(t) || t <= 0) return null;
 
-  // Data repair: if expectedArrival <= trip start time + 5s, it was defaulted at creation
-  const tripStart = trip.startTime ? new Date(trip.startTime).getTime() : 0;
-  if (t <= tripStart + 5000) return null;
+  // Data repair: if expectedArrival <= trip creation time + 5s, it was defaulted at creation erroneously
+  const createdAt = trip.createdAt ? new Date(trip.createdAt).getTime() : (trip.startTime ? new Date(trip.startTime).getTime() : 0);
+  if (t <= createdAt + 5000) return null;
 
-  // Legacy trip cutoff time: 2026-08-22T14:30:42+05:30 (approx 1787401842000 ms)
-  const FIX_CUTOFF_TIME = 1787401842000;
-  const createdAt = trip.createdAt ? new Date(trip.createdAt).getTime() : 0;
-  if (createdAt < FIX_CUTOFF_TIME && t < Date.now()) {
-    return null;
-  }
   return t;
 };
 
@@ -1225,6 +1297,8 @@ const ActiveTrip = () => {
   const [safetyAlert, setSafetyAlert] = useState<{ type: 'late-arrival' | 'route-deviation'; msg: string } | null>(null);
   const [stillnessAlert, setStillnessAlert] = useState(false);
   const [showSosModal, setShowSosModal] = useState(false);
+  const [completing, setCompleting] = useState(false);
+  const [lastNotYetTime, setLastNotYetTime] = useState(0);
   const navigate = useNavigate();
 
   // Load trip config
@@ -1250,12 +1324,13 @@ const ActiveTrip = () => {
       const expected = getExpectedArrivalTime(trip);
       if (expected && !isLateArrivalCooldownActive(trip)) {
         if (Date.now() > expected + 15 * 60 * 1000) {
-          setTimeout(() => {
-            setSafetyAlert({
+          setSafetyAlert(prev => {
+            if (prev?.type === 'late-arrival') return prev;
+            return {
               type: 'late-arrival',
               msg: "Late-Arrival Warning: Expectation exceeded by 15 mins. Please confirm status."
-            });
-          }, 0);
+            };
+          });
         }
       }
     }, 10000);
@@ -1289,18 +1364,40 @@ const ActiveTrip = () => {
   // Stillness detector (speed < 1 km/h for 10 minutes)
   useEffect(() => {
     if (points.length < 2) return;
+    
+    // reset lastNotYetTime on real movement
+    const lastPoint = points[points.length - 1];
+    if (lastPoint.speedKmh >= 1 && lastNotYetTime > 0) {
+      setLastNotYetTime(0);
+    }
+    
+    if (Date.now() - lastNotYetTime < 10 * 60 * 1000) return; // cooldown active
+
     const now = Date.now();
     const tenMinsAgo = now - 10 * 60 * 1000;
     const lastPoints = points.filter(p => new Date(p.timestamp).getTime() > tenMinsAgo);
     if (lastPoints.length >= 3) {
       const allStill = lastPoints.every(p => p.speedKmh < 1);
       if (allStill) {
-        setTimeout(() => {
-          setStillnessAlert(true);
-        }, 0);
+        setStillnessAlert(true);
       }
     }
-  }, [points]);
+  }, [points, lastNotYetTime]);
+
+  const handleNotYet = async () => {
+    setStillnessAlert(false);
+    setLastNotYetTime(Date.now());
+    if (trip) {
+      try {
+        const patchRes = await axios.patch(`/api/trips/${tripId}`, {
+          notYetCount: (trip.notYetCount || 0) + 1
+        });
+        setTrip(patchRes.data);
+      } catch (e) {
+        console.warn('Failed to record not yet response', e);
+      }
+    }
+  };
 
   // Safety Response handler (I'm Safe / Open SOS)
   const handleSafetyResponse = async (type: 'late-arrival' | 'route-deviation', response: 'im-safe' | 'open-sos') => {
@@ -1350,6 +1447,8 @@ const ActiveTrip = () => {
   };
 
   const completeTrip = async () => {
+    if (completing) return;
+    setCompleting(true);
     try {
       await axios.post(`/api/trips/${tripId}/complete`);
       // Run privacy pipeline sync
@@ -1412,24 +1511,25 @@ const ActiveTrip = () => {
           <div className="flex items-start gap-3">
             <Check className="text-[#2E7D32] shrink-0 mt-0.5" size={20} />
             <div>
-              <p className="font-bold text-sm text-[#2E7D32] uppercase tracking-wide">Stillness Detected</p>
+              <p className="font-bold text-sm text-[#2E7D32] uppercase tracking-wide">Arrival Detected</p>
               <p className="text-xs text-[#1F2937] mt-1 font-medium">
-                It looks like you've been stationary for over 10 minutes. Did you arrive at your destination?
+                Looks like you've arrived in {trip?.destinationCity || 'your destination'}. Confirm arrival?
               </p>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2 mt-2">
             <button
               onClick={completeTrip}
+              disabled={completing}
               className="py-2 px-4 bg-[#2E7D32] text-white text-xs font-bold rounded-full cursor-pointer"
             >
-              Yes, Complete Trip ✅
+              Yes, I've arrived ✅
             </button>
             <button
-              onClick={() => setStillnessAlert(false)}
+              onClick={handleNotYet}
               className="py-2 px-4 bg-gray-300 text-gray-700 text-xs font-bold rounded-full cursor-pointer"
             >
-              Not Yet
+              Not yet — continue journey
             </button>
           </div>
         </div>
@@ -1437,21 +1537,6 @@ const ActiveTrip = () => {
 
       {/* Metrics Grid */}
       <div className="p-5 md:p-8 grid grid-cols-2 gap-4">
-        <div className="card metric-card p-5 text-center col-span-2 flex flex-col items-center">
-          <p className="text-xs font-semibold text-[#64748B] uppercase tracking-wider mb-1">Trip Budget Progress</p>
-          <p className="text-2xl font-extrabold text-[#1F2937] font-['Plus_Jakarta_Sans']">
-            ₹{(trip?.amountSpent || 0).toLocaleString('en-IN')} / ₹{(trip?.budget || 0).toLocaleString('en-IN')}
-          </p>
-          <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden mt-3 max-w-sm">
-            <div
-              className={`h-full transition-all duration-300 ${((trip?.amountSpent || 0) > (trip?.budget || 0)) ? 'bg-[#D32F2F]' : 'bg-[#2E7D32]'}`}
-              style={{ width: `${Math.min(100, ((trip?.amountSpent || 0) / (trip?.budget || 1)) * 100)}%` }}
-            />
-          </div>
-          <p className="text-xs text-[#64748B] mt-2">
-            Remaining: <span className="font-bold text-[#00695C]">₹{Math.max(0, (trip?.budget || 0) - (trip?.amountSpent || 0)).toLocaleString('en-IN')}</span>
-          </p>
-        </div>
 
         <div className="card metric-card p-5 text-center">
           <p className="text-xs font-semibold text-[#64748B] uppercase tracking-wider mb-1">Speed</p>
@@ -1497,21 +1582,22 @@ const ActiveTrip = () => {
         </div>
       </div>
 
-      {/* Action Buttons */}
-      <div className="mt-auto p-5 md:p-8 bg-white border-t border-gray-100 flex flex-col gap-3">
+      {/* Action Buttons (Sticky Bottom on Mobile) */}
+      <div className="mt-auto p-4 md:p-8 bg-white border-t border-gray-100 flex flex-col gap-3 sticky bottom-0 z-40 pb-safe shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] md:static md:shadow-none">
         <div className="grid grid-cols-2 gap-3">
-          <button onClick={() => navigate(`/scan/${tripId}`)} className="btn-secondary !py-3 text-sm">
-            <Camera size={16} /> Scan Bill
+          <button onClick={() => navigate(`/scan/${tripId}`)} className="btn-secondary !py-3.5 text-sm font-bold bg-[#F8FAFC] text-[#1F2937]">
+            <Camera size={16} className="text-[#00695C]" /> Scan Bill
           </button>
-          <button onClick={() => navigate(`/expenses/${tripId}`)} className="btn-secondary !py-3 text-sm">
-            <IndianRupee size={16} /> Expenses
+          <button onClick={() => navigate(`/expenses/${tripId}`)} className="btn-secondary !py-3.5 text-sm font-bold bg-[#F8FAFC] text-[#1F2937]">
+            <IndianRupee size={16} className="text-[#00695C]" /> Expenses
           </button>
         </div>
         <button
           onClick={completeTrip}
-          className="btn-primary w-full !py-3.5 bg-[#00695C] hover:bg-[#004D40] text-white font-bold"
+          disabled={completing}
+          className="btn-primary w-full !py-3.5 bg-[#00695C] hover:bg-[#004D40] text-white font-bold disabled:opacity-70 disabled:cursor-not-allowed"
         >
-          Confirm Arrival & Complete Journey
+          {completing ? 'Completing...' : 'Confirm Arrival & Complete Journey'}
         </button>
 
         {/* SOS Button: 3s Hold */}
@@ -1520,7 +1606,7 @@ const ActiveTrip = () => {
           onMouseUp={handleSosEnd}
           onTouchStart={handleSosStart}
           onTouchEnd={handleSosEnd}
-          className="btn-danger w-full !py-3.5 mt-2 bg-[#D32F2F] text-white font-bold animate-pulse-glow"
+          className="btn-danger w-full !py-3.5 bg-[#D32F2F] text-white font-bold active:bg-red-800 transition-colors"
         >
           Hold to Trigger SOS (3s)
         </button>
@@ -1593,15 +1679,101 @@ const CameraScanner = () => {
   const [merchant, setMerchant] = useState('');
   const [rawText, setRawText] = useState('');
   const [processing, setProcessing] = useState(false);
+  
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [useLiveCamera, setUseLiveCamera] = useState(false);
   const navigate = useNavigate();
+
+  // Cleanup camera on unmount
+  useEffect(() => {
+    return () => stopCamera();
+  }, []);
+
+  const stopCamera = () => {
+    if (videoRef.current && videoRef.current.srcObject) {
+      const stream = videoRef.current.srcObject as MediaStream;
+      stream.getTracks().forEach(t => t.stop());
+    }
+    setUseLiveCamera(false);
+  };
+
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      setUseLiveCamera(true);
+      // Wait for state to render video tag
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          videoRef.current.play();
+        }
+      }, 50);
+    } catch (e) {
+      alert("Camera access denied or unavailable.");
+    }
+  };
+
+  const captureLive = () => {
+    if (!videoRef.current) return;
+    const canvas = document.createElement('canvas');
+    canvas.width = videoRef.current.videoWidth;
+    canvas.height = videoRef.current.videoHeight;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.drawImage(videoRef.current, 0, 0);
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const file = new File([blob], "camera.jpg", { type: "image/jpeg" });
+          handleImageReady(file);
+        }
+      }, "image/jpeg", 0.9);
+    }
+    stopCamera();
+  };
+
+  const processImageFile = async (file: File | Blob): Promise<Blob> => {
+    if (file.size > 8 * 1024 * 1024) throw new Error("File too large (max 8MB)");
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let { width, height } = img;
+        if (width > 1600 || height > 1600) {
+          if (width > height) {
+            height = Math.round(height * (1600 / width));
+            width = 1600;
+          } else {
+            width = Math.round(width * (1600 / height));
+            height = 1600;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return reject("Canvas error");
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob((blob) => {
+          if (blob) resolve(blob);
+          else reject("Blob error");
+        }, file.type || 'image/jpeg', 0.9);
+      };
+      img.onerror = reject;
+      img.src = URL.createObjectURL(file);
+    });
+  };
 
   const handleCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    handleImageReady(file);
+  };
+
+  const handleImageReady = async (file: File | Blob) => {
     setProcessing(true);
-    setStatus('Processing image with OCR…');
+    setStatus('Reading text on your device…');
     try {
-      const text = await ocrProvider.recognize(file);
+      const downscaled = await processImageFile(file);
+      const text = await ocrProvider.recognize(downscaled);
       setRawText(text);
       
       const match = text.match(/(?:Rs\.?|₹|INR)\s*(\d+(?:,\d+)*(?:\.\d{1,2})?)/i)
@@ -1616,20 +1788,35 @@ const CameraScanner = () => {
         setStatus('Could not autodetect an amount. Enter manually below.');
         setAmount(null);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.warn(err);
-      setStatus('OCR failed. Please try again.');
+      setStatus(err.message || 'OCR failed. Please try again.');
     }
     setProcessing(false);
   };
 
   const confirmExpense = async () => {
     if (amount === null || amount <= 0) return;
-    const payload = { merchant: merchant || 'Scanned Item', amount, category, source: 'ocr' as const, confirmed: true };
+    const idempotencyKey = crypto.randomUUID();
+    const payload = { 
+      merchant: merchant || 'Scanned Item', 
+      amount, 
+      category, 
+      source: 'ocr' as const, 
+      confirmed: true,
+      ocrSnippet: rawText.substring(0, 200)
+    };
     try {
-      await axios.post(`/api/trips/${tripId}/expenses`, payload);
+      await axios.post(`/api/trips/${tripId}/expenses`, payload, {
+        headers: { 'Idempotency-Key': idempotencyKey }
+      });
     } catch {
-      await queueOfflineMutation({ method: 'post', url: `/api/trips/${tripId}/expenses`, body: payload });
+      await queueOfflineMutation(
+        `/api/trips/${tripId}/expenses`,
+        'post',
+        payload,
+        idempotencyKey
+      );
     }
     navigate(`/active/${tripId}`);
   };
@@ -1639,26 +1826,45 @@ const CameraScanner = () => {
       <div className="mb-6">
         <span className="badge badge-teal mb-3"><Camera size={14} /> Smart Scan</span>
         <h1 className="text-2xl font-extrabold text-[#1F2937] font-['Plus_Jakarta_Sans']">Scan Expense</h1>
-        <p className="text-xs text-[#64748B] mt-1">On-device scan — runs fully offline in this browser (Tesseract.js/WASM).</p>
+        <p className="text-xs text-[#64748B] mt-1">On-device scan — runs fully offline in this browser.</p>
       </div>
 
       {/* Capture Area */}
-      <label className="card flex flex-col items-center justify-center h-48 cursor-pointer border-2 border-dashed border-gray-200 hover:border-[#00695C] transition-colors">
-        <Camera size={40} className="text-[#64748B] mb-3" />
-        <span className="font-semibold text-[#1F2937] text-sm">Tap to capture or upload</span>
-        <span className="text-xs text-[#64748B] mt-1">Camera or file input</span>
-        <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handleCapture} />
-      </label>
+      {useLiveCamera ? (
+        <div className="card overflow-hidden flex flex-col items-center bg-black h-64 relative mb-4">
+          <video ref={videoRef} className="w-full h-full object-cover" playsInline autoPlay muted />
+          <div className="absolute bottom-4 flex gap-4 w-full px-4">
+            <button onClick={captureLive} className="btn-primary flex-1 py-3 bg-white text-black hover:bg-gray-100 shadow-lg">
+              Capture
+            </button>
+            <button onClick={stopCamera} className="btn-danger flex-1 py-3 bg-red-600 shadow-lg">
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <button onClick={startCamera} className="card flex flex-col items-center justify-center h-32 cursor-pointer border-2 border-dashed border-gray-200 hover:border-[#00695C] transition-colors">
+            <Camera size={32} className="text-[#64748B] mb-2" />
+            <span className="font-semibold text-[#1F2937] text-sm">Use Camera</span>
+          </button>
+          <label className="card flex flex-col items-center justify-center h-32 cursor-pointer border-2 border-dashed border-gray-200 hover:border-[#00695C] transition-colors">
+            <Smartphone size={32} className="text-[#64748B] mb-2" />
+            <span className="font-semibold text-[#1F2937] text-sm">Upload Photo</span>
+            <input type="file" accept="image/*" className="hidden" onChange={handleCapture} />
+          </label>
+        </div>
+      )}
 
-      <div className="mt-4 text-center">
-        <p className="text-sm text-[#64748B]">{processing ? <span className="animate-pulse">{status}</span> : status}</p>
+      <div className="mt-2 text-center">
+        <p className="text-sm text-[#64748B]">{processing ? <span className="animate-pulse font-bold text-[#00695C]">{status}</span> : status}</p>
       </div>
 
       {/* Raw OCR Text Preview */}
       {rawText && (
-        <div className="mt-4 card p-4">
+        <div className="mt-4 card p-4 border border-gray-100 bg-gray-50/50">
           <p className="text-xs font-semibold text-[#64748B] uppercase mb-2">Extracted Text</p>
-          <p className="text-xs text-[#1F2937] font-mono bg-gray-50 p-3 rounded-lg max-h-24 overflow-y-auto whitespace-pre-wrap">{rawText}</p>
+          <p className="text-xs text-[#1F2937] font-mono bg-white p-3 rounded-lg max-h-24 overflow-y-auto whitespace-pre-wrap border border-gray-200">{rawText}</p>
         </div>
       )}
 
@@ -1683,12 +1889,12 @@ const CameraScanner = () => {
           <label className="text-xs font-semibold text-[#64748B] mb-1 block">Merchant (optional)</label>
           <input type="text" value={merchant} onChange={e => setMerchant(e.target.value)} className="input-field" placeholder="e.g. Ola, Restaurant name" />
         </div>
-        <button onClick={confirmExpense} disabled={amount === null || amount <= 0} className="btn-primary w-full disabled:opacity-40 disabled:cursor-not-allowed">
+        <button onClick={confirmExpense} disabled={amount === null || amount <= 0} className="btn-primary w-full disabled:opacity-40 disabled:cursor-not-allowed py-3.5">
           <Check size={16} /> Confirm Expense
         </button>
       </div>
 
-      <button onClick={() => navigate(`/active/${tripId}`)} className="mt-6 text-sm font-medium text-[#64748B] hover:text-[#00695C] transition-colors">
+      <button onClick={() => navigate(`/active/${tripId}`)} className="mt-6 text-sm font-medium text-[#64748B] hover:text-[#00695C] transition-colors pb-safe text-center w-full">
         ← Back to trip
       </button>
     </div>
@@ -1699,42 +1905,81 @@ const CameraScanner = () => {
 const ExpensesList = () => {
   const { id } = useParams();
   const [expenses, setExpenses] = useState<any[]>([]);
+  const [trip, setTrip] = useState<any>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (id) axios.get(`/api/trips/${id}/expenses`).then(r => setExpenses(r.data)).catch(console.warn);
+    if (id) {
+      axios.get(`/api/trips/${id}`).then(r => setTrip(r.data)).catch(console.warn);
+      axios.get(`/api/trips/${id}/expenses`).then(r => setExpenses(r.data)).catch(console.warn);
+    }
   }, [id]);
 
-  const total = expenses.reduce((s, e) => s + (e.amount || 0), 0);
+  const budget = trip?.budget || 0;
+  const total = trip?.amountSpent || expenses.reduce((s, e) => s + (e.amount || 0), 0);
+  const remaining = Math.max(0, budget - total);
 
   return (
-    <div className="p-5 md:p-8 animate-fade-in-up">
-      <span className="badge badge-teal mb-3"><IndianRupee size={14} /> Expenses</span>
-      <h1 className="text-2xl font-extrabold text-[#1F2937] font-['Plus_Jakarta_Sans'] mb-1">Trip Expenses</h1>
-      <p className="text-sm text-[#64748B] mb-6">Total: <strong className="text-[#1F2937]">₹{total.toLocaleString('en-IN')}</strong></p>
-
-      {expenses.length === 0 ? (
-        <div className="card p-8 text-center">
-          <IndianRupee size={32} className="text-[#64748B] mx-auto mb-3" />
-          <p className="text-sm text-[#64748B]">No expenses recorded yet. Scan a ticket or add one manually.</p>
+    <div className="flex flex-col min-h-screen bg-[#FAFAF7] animate-fade-in-up">
+      {/* Sticky Header */}
+      <div className="sticky top-0 z-40 bg-white border-b border-gray-150 p-5 shadow-sm">
+        <div className="flex items-center justify-between mb-3">
+          <button onClick={() => navigate(`/active/${id}`)} className="text-[#00695C] flex items-center gap-1 font-bold text-sm">
+            ← Back
+          </button>
+          <span className="badge badge-teal"><IndianRupee size={14} /> Expenses</span>
         </div>
-      ) : (
-        <div className="space-y-3">
-          {expenses.map((exp: any, i: number) => (
-            <div key={i} className="card p-4 flex items-center justify-between">
-              <div>
-                <p className="font-semibold text-sm text-[#1F2937]">{exp.merchant || 'Unknown'}</p>
-                <p className="text-xs text-[#64748B]">{exp.category} · {exp.source}</p>
+        <div className="flex justify-between items-end">
+          <div>
+            <p className="text-xs text-[#64748B] uppercase tracking-wider font-semibold">Budget</p>
+            <p className="text-lg font-bold text-[#1F2937]">₹{budget.toLocaleString('en-IN')}</p>
+          </div>
+          <div className="text-center">
+            <p className="text-xs text-[#64748B] uppercase tracking-wider font-semibold">Spent</p>
+            <p className="text-lg font-bold text-[#D32F2F]">₹{total.toLocaleString('en-IN')}</p>
+          </div>
+          <div className="text-right">
+            <p className="text-xs text-[#64748B] uppercase tracking-wider font-semibold">Remaining</p>
+            <p className="text-lg font-bold text-[#00695C]">₹{remaining.toLocaleString('en-IN')}</p>
+          </div>
+        </div>
+        {/* Progress Bar */}
+        <div className="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden mt-3">
+          <div
+            className={`h-full transition-all duration-300 ${total > budget ? 'bg-[#D32F2F]' : 'bg-[#2E7D32]'}`}
+            style={{ width: `${Math.min(100, (total / (budget || 1)) * 100)}%` }}
+          />
+        </div>
+      </div>
+
+      <div className="p-5 flex-1 pb-24">
+        {expenses.length === 0 ? (
+          <div className="card p-8 text-center mt-8">
+            <IndianRupee size={32} className="text-[#64748B] mx-auto mb-3" />
+            <p className="text-sm text-[#64748B]">No expenses recorded yet. Scan a ticket or add one manually.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {[...expenses].sort((a, b) => new Date(b.createdAt || b.date).getTime() - new Date(a.createdAt || a.date).getTime()).map((exp: any, i: number) => (
+              <div key={i} className="card p-4 flex items-center justify-between">
+                <div>
+                  <p className="font-semibold text-sm text-[#1F2937]">{exp.merchant || 'Unknown'}</p>
+                  <p className="text-xs text-[#64748B] capitalize flex items-center gap-1 mt-0.5">
+                    <span className="bg-gray-100 px-1.5 py-0.5 rounded text-[10px]">{exp.category}</span>
+                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${exp.source === 'ocr' ? 'bg-[#E0F2F1] text-[#00695C]' : 'bg-blue-50 text-blue-700'}`}>
+                      {exp.source === 'ocr' ? 'Scanned' : 'Manual'}
+                    </span>
+                  </p>
+                </div>
+                <p className="font-bold text-[#1F2937]">₹{(exp.amount || 0).toLocaleString('en-IN')}</p>
               </div>
-              <p className="font-bold text-[#00695C]">₹{(exp.amount || 0).toLocaleString('en-IN')}</p>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </div>
 
-      <div className="flex gap-3 mt-6">
-        <button onClick={() => navigate(`/scan/${id}`)} className="btn-primary flex-1"><Camera size={16} /> Scan New</button>
-        <button onClick={() => navigate(`/active/${id}`)} className="btn-secondary flex-1">← Back</button>
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-40 max-w-2xl mx-auto">
+        <button onClick={() => navigate(`/scan/${id}`)} className="btn-primary w-full !py-3.5"><Camera size={16} /> Scan New Expense</button>
       </div>
     </div>
   );
