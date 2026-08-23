@@ -16,6 +16,16 @@ interface SancharDB extends DBSchema {
       timestamp: number;
     };
   };
+  photos: {
+    key: string;
+    value: {
+      tripId: string;
+      id: string;
+      dataUrl: string;
+      timestamp: number;
+    };
+    indexes: { 'by-trip': string };
+  };
 }
 
 const DB_NAME = 'sanchar-ai-db';
@@ -29,6 +39,10 @@ export async function initDB() {
       }
       if (!db.objectStoreNames.contains('offlineQueue')) {
         db.createObjectStore('offlineQueue', { keyPath: 'idempotencyKey' });
+      }
+      if (!db.objectStoreNames.contains('photos')) {
+        const photoStore = db.createObjectStore('photos', { keyPath: 'id' });
+        photoStore.createIndex('by-trip', 'tripId');
       }
     },
   });
@@ -89,4 +103,22 @@ export async function cacheCityPack(city: string, packData: any) {
 export async function getCachedCityPack(city: string) {
   const db = await initDB();
   return db.get('cityPacks', city);
+}
+
+// ─── PHOTOS (Gallery) ───
+export async function savePhoto(tripId: string, dataUrl: string) {
+  const db = await initDB();
+  const id = crypto.randomUUID();
+  await db.put('photos', {
+    id,
+    tripId,
+    dataUrl,
+    timestamp: Date.now()
+  });
+  return id;
+}
+
+export async function getPhotosForTrip(tripId: string) {
+  const db = await initDB();
+  return db.getAllFromIndex('photos', 'by-trip', tripId);
 }

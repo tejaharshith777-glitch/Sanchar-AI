@@ -15,6 +15,7 @@ export interface ITrip extends Document {
   budget: number;
   amountSpent: number;
   analyticsConsent: boolean;
+  heavyLuggage: boolean;
   createdAt: Date;
 }
 
@@ -32,6 +33,7 @@ const tripSchema = new Schema<ITrip>({
   budget: { type: Number, default: 0 },
   amountSpent: { type: Number, default: 0 },
   analyticsConsent: { type: Boolean, default: false },
+  heavyLuggage: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now }
 });
 

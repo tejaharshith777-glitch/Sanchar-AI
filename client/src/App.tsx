@@ -9,6 +9,7 @@ import {
 import axios from 'axios';
 import { queueOfflineMutation, getOfflineQueue, removeQueueItem } from './store/db';
 import { ocrProvider } from './ocr/OcrProvider';
+import PocketMap from './components/PocketMap';
 
 // ─── Constants ───────────────────────────────────────────────
 const SITE_URL = window.location.origin; // Dynamically gets the active deploy URL
@@ -207,10 +208,11 @@ function useGPSTracker(tripId: string | null) {
         if (batchRef.current.length >= 5) {
           const currentBatch = [...batchRef.current];
           batchRef.current = [];
-          axios.post(`/api/trips/${tripId}/points`, { points: currentBatch })
+          const key = crypto.randomUUID();
+          axios.post(`/api/trips/${tripId}/points`, { points: currentBatch }, { headers: { 'Idempotency-Key': key } })
             .catch(() => {
               console.log('[GPS] Queuing points locally to IndexedDB...');
-              queueOfflineMutation(`/api/trips/${tripId}/points`, 'POST', { points: currentBatch });
+              queueOfflineMutation(`/api/trips/${tripId}/points`, 'POST', { points: currentBatch }, key);
             });
         }
       },
@@ -242,7 +244,9 @@ const App = () => {
           <Route path="/scan/:id" element={<AppShell><CameraScanner /></AppShell>} />
           <Route path="/expenses/:id" element={<AppShell><ExpensesList /></AppShell>} />
           <Route path="/diary/:id" element={<AppShell><Diary /></AppShell>} />
+          <Route path="/city/:city" element={<AppShell><CitySpots /></AppShell>} />
           <Route path="/privacy" element={<AppShell><PrivacyPage /></AppShell>} />
+          <Route path="/faq" element={<AppShell><FaqPage /></AppShell>} />
           <Route path="/dashboard" element={<AppShell><Dashboard /></AppShell>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
@@ -948,13 +952,21 @@ const LandingPage = () => {
 
 // ─── HERO SEARCH FORM ────────────────────────────────────────
 const HeroSearchForm = ({ preFillDest }: { preFillDest: string }) => {
-  const [home, setHome] = useState('');
+  const { lastCompletedTrip } = useContext(HealthContext);
+  const [home, setHome] = useState(lastCompletedTrip?.destinationCity || '');
   const [dest, setDest] = useState(preFillDest || '');
   const [customHome, setCustomHome] = useState('');
   const [customDest, setCustomDest] = useState('');
   const [when, setWhen] = useState('');
-  const [lang, setLang] = useState('English');
   const [error, setError] = useState('');
+
+  // Budget Calculator Fields
+  const [days, setDays] = useState(3);
+  const [style, setStyle] = useState<'Budget' | 'Comfort'>('Budget');
+  const [heavyLuggage, setHeavyLuggage] = useState(false);
+  const [ticketPrice, setTicketPrice] = useState(0);
+  const [userBudget, setUserBudget] = useState<number>(0);
+
   const navigate = useNavigate();
 
   const [prevPreFillDest, setPrevPreFillDest] = useState(preFillDest);
@@ -962,6 +974,31 @@ const HeroSearchForm = ({ preFillDest }: { preFillDest: string }) => {
     setPrevPreFillDest(preFillDest);
     setDest(preFillDest);
   }
+
+  // Pre-fill next trip origin from last completed trip
+  useEffect(() => {
+    if (lastCompletedTrip?.destinationCity && !home && !preFillDest) {
+      if (CITIES.includes(lastCompletedTrip.destinationCity)) {
+        setHome(lastCompletedTrip.destinationCity);
+      } else {
+        setHome('Other');
+        setCustomHome(lastCompletedTrip.destinationCity);
+      }
+    }
+  }, [lastCompletedTrip]);
+
+  // Recalculate suggested budget
+  useEffect(() => {
+    // Food: Budget 300-500 (avg 400), Comfort 600-1200 (avg 900)
+    const foodPerDay = style === 'Budget' ? 400 : 900;
+    // Local transport: Budget 200-400 (avg 300), Comfort 400-800 (avg 600)
+    const transportPerDay = style === 'Budget' ? 300 : 600;
+    // Luggage add-on: 100-300 (avg 200)
+    const luggageCost = heavyLuggage ? 200 : 0;
+    
+    const suggested = (foodPerDay + transportPerDay) * days + luggageCost + ticketPrice;
+    setUserBudget(suggested);
+  }, [days, style, heavyLuggage, ticketPrice]);
 
   const origin = home === 'Other' ? customHome : home;
   const destination = dest === 'Other' ? customDest : dest;
@@ -984,7 +1021,8 @@ const HeroSearchForm = ({ preFillDest }: { preFillDest: string }) => {
         originCity: origin,
         destinationCity: destination,
         status: 'created',
-        budget: 10000,
+        budget: userBudget,
+        heavyLuggage: heavyLuggage,
         expectedArrival: when ? new Date(when) : null,
         analyticsConsent: false
       });
@@ -1017,22 +1055,51 @@ const HeroSearchForm = ({ preFillDest }: { preFillDest: string }) => {
         </select>
         {dest === 'Other' && <input type="text" placeholder="Enter city name" value={customDest} onChange={e => setCustomDest(e.target.value)} className="input-field py-2.5 mt-2" required />}
       </div>
+      
+      <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+        <h4 className="text-sm font-bold text-[#1F2937] mb-3 flex items-center gap-1"><IndianRupee size={16} /> Budget Calculator</h4>
+        
+        <div className="grid grid-cols-2 gap-3 mb-3">
+          <div>
+            <label className="text-xs font-semibold text-[#1F2937] mb-1 block">Days</label>
+            <input type="number" min="1" value={days} onChange={e => setDays(parseInt(e.target.value) || 1)} className="input-field py-2" />
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-[#1F2937] mb-1 block">Travel Style</label>
+            <select value={style} onChange={e => setStyle(e.target.value as any)} className="input-field py-2">
+              <option value="Budget">Budget</option>
+              <option value="Comfort">Comfort</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="mb-3">
+          <label className="text-xs font-semibold text-[#1F2937] mb-1 block">Inter-city Ticket Price (₹)</label>
+          <input type="number" min="0" value={ticketPrice} onChange={e => setTicketPrice(parseInt(e.target.value) || 0)} className="input-field py-2" />
+        </div>
+
+        <label className="flex items-center gap-2 mb-4 cursor-pointer">
+          <input type="checkbox" checked={heavyLuggage} onChange={e => setHeavyLuggage(e.target.checked)} className="w-4 h-4 text-teal-600 rounded" />
+          <span className="text-sm text-[#1F2937] font-medium">Carrying heavy luggage?</span>
+        </label>
+
+        <div className="bg-white p-3 rounded border border-gray-100 text-xs">
+          <p className="font-semibold mb-2">Typical ranges — actuals vary:</p>
+          <ul className="text-gray-500 space-y-1 mb-2">
+            <li>Food: {style === 'Budget' ? '₹300–500/day' : '₹600–1,200/day'}</li>
+            <li>Transport: {style === 'Budget' ? '₹200–400/day' : '₹400–800/day'}</li>
+            {heavyLuggage && <li>Luggage add-on: ₹100–300 (porter/cart)</li>}
+          </ul>
+          <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100">
+            <span className="font-bold">Suggested:</span>
+            <input type="number" value={userBudget} onChange={e => setUserBudget(parseInt(e.target.value) || 0)} className="input-field !py-1 flex-1 font-bold text-teal-700" />
+          </div>
+        </div>
+      </div>
 
       <div>
         <label className="text-xs font-semibold text-[#1F2937] mb-1 block">Expected Arrival (optional)</label>
         <input type="datetime-local" value={when} onChange={e => setWhen(e.target.value)} className="input-field py-2.5" />
-      </div>
-
-      <div>
-        <label className="text-xs font-semibold text-[#1F2937] mb-1 block">I understand best in</label>
-        <select value={lang} onChange={e => setLang(e.target.value)} className="input-field py-2.5">
-          <option value="English">English</option>
-          <option value="Tamil">Tamil (தமிழ்)</option>
-          <option value="Telugu">Telugu (తెలుగు)</option>
-          <option value="Hindi">Hindi (हिन्दी)</option>
-          <option value="Malayalam">Malayalam (മലയാളം)</option>
-          <option value="Kannada">Kannada (ಕನ್ನಡ)</option>
-        </select>
       </div>
 
       {error && <div className="text-xs font-medium text-red-600 bg-red-50 p-2.5 rounded-xl border border-red-200">{error}</div>}
@@ -1047,12 +1114,12 @@ const HeroSearchForm = ({ preFillDest }: { preFillDest: string }) => {
 // ─── S4: CITY PACK REAL STATS ────────────────────────────────
 const CityPacksRealStats = () => {
   const [packData, setPackData] = useState<Record<string, any>>({});
+  const showcaseCities = ['Chennai', 'Kochi', 'Bengaluru', 'Mumbai', 'Delhi', 'Kolkata', 'Hyderabad', 'Jaipur'];
 
   useEffect(() => {
     const fetchStats = async () => {
-      const citiesToFetch = ['Chennai', 'Kochi', 'Bengaluru'];
       const results: Record<string, any> = {};
-      for (const city of citiesToFetch) {
+      for (const city of showcaseCities) {
         try {
           const res = await axios.get(`/api/city-packs/${city}`);
           results[city] = res.data;
@@ -1066,26 +1133,23 @@ const CityPacksRealStats = () => {
   }, []);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      {['Chennai', 'Kochi', 'Bengaluru'].map(city => {
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {showcaseCities.map(city => {
         const data = packData[city];
         return (
-          <div key={city} className="card p-6 border border-gray-100 flex flex-col justify-between h-48 bg-white">
+          <Link to={`/city/${city}`} key={city} className="card p-4 border border-gray-100 flex flex-col justify-between h-40 bg-white hover:shadow-lg transition-shadow no-underline">
             <div>
               <div className="flex justify-between items-start">
-                <h3 className="font-['Plus_Jakarta_Sans'] font-bold text-lg text-[#1F2937]">{city}</h3>
-                <span className="text-[10px] font-bold text-[#F59E0B] bg-[#F59E0B]/10 px-2 py-0.5 rounded-full">
-                  Free with Sanchar AI
-                </span>
+                <h3 className="font-['Plus_Jakarta_Sans'] font-bold text-base text-[#1F2937]">{city}</h3>
               </div>
-              <p className="text-xs text-[#64748B] mt-2">
-                {data ? `${data.phrases?.length || 0} phrases · ${data.emergencyNumbers?.length || 0} emergency links · works offline` : 'Loading statistics...'}
+              <p className="text-[11px] text-[#64748B] mt-2">
+                {data ? `${data.pois?.length || data.attractions?.length || 0} spots · ${data.emergencyNumbers?.length || 0} links` : 'Loading...'}
               </p>
             </div>
-            <div className="text-[11px] text-[#64748B] flex items-center gap-1 italic border-t border-gray-100 pt-3">
-              <Check size={12} className="text-[#2E7D32]" /> Offline database payload pre-seeded
+            <div className="text-[10px] font-bold text-teal-700 bg-teal-50 px-2 py-1 rounded mt-2 inline-block self-start">
+              Explore City Spots
             </div>
-          </div>
+          </Link>
         );
       })}
     </div>
@@ -1311,9 +1375,12 @@ const getExpectedArrivalTime = (trip: any) => {
   const t = new Date(trip.expectedArrival).getTime();
   if (isNaN(t) || t <= 0) return null;
 
-  // Data repair: if expectedArrival <= trip creation time + 5s, it was defaulted at creation erroneously
+  // Data repair: if expectedArrival <= trip creation time (or start time) it was defaulted erroneously
   const createdAt = trip.createdAt ? new Date(trip.createdAt).getTime() : (trip.startTime ? new Date(trip.startTime).getTime() : 0);
   if (t <= createdAt + 5000) return null;
+
+  // Data repair: if expectedArrival is in the past relative to when the trip was created/started
+  if (t < createdAt) return null;
 
   return t;
 };
@@ -1520,6 +1587,24 @@ const ActiveTrip = () => {
         </div>
       )}
 
+      {/* Offline Live Tracking Pill */}
+      <div className="px-5 md:px-8 mt-4">
+        <button 
+          className="w-full bg-[#1F2937] text-white p-4 rounded-2xl flex items-center justify-between shadow-lg"
+          onClick={() => {
+            alert('Tracking on device — will sync when network returns');
+          }}
+        >
+          <div className="text-left">
+            <h4 className="font-bold text-sm">Start Offline Live Tracking</h4>
+            <p className="text-[11px] text-gray-400 mt-0.5">Tracks on this device — no network needed</p>
+          </div>
+          <div className="bg-white/20 p-2 rounded-full">
+            <WifiOff size={16} />
+          </div>
+        </button>
+      </div>
+
       {/* Safety Alert Card */}
       {safetyAlert && (
         <div className="mx-5 md:mx-8 mt-4 p-5 rounded-2xl border border-red-200 bg-red-50 flex flex-col gap-3">
@@ -1616,6 +1701,77 @@ const ActiveTrip = () => {
           </div>
         </div>
       </div>
+
+      {/* Offline Pocket Map */}
+      <div className="px-5 md:px-8 mb-4">
+        <PocketMap 
+          points={points} 
+          currentLocation={points.length > 0 ? points[points.length - 1] : undefined}
+          destinationCity={trip?.destinationCity || 'Destination'}
+        />
+      </div>
+
+      {/* Budget Health Card */}
+      {trip && (
+        <div className="px-5 md:px-8 mb-4">
+          <div className="card p-5">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-bold text-[#1F2937] flex items-center gap-1"><IndianRupee size={16} /> Budget Health</h3>
+              {trip.heavyLuggage && <span className="badge badge-teal !bg-teal-100 !text-teal-800 text-[10px]">Luggage Mode ON</span>}
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div>
+                <p className="text-[10px] uppercase font-bold text-[#64748B] mb-1">Total Budget</p>
+                <p className="font-extrabold text-xl text-[#00695C]">₹{trip.budget?.toLocaleString('en-IN')}</p>
+              </div>
+              <div>
+                <p className="text-[10px] uppercase font-bold text-[#64748B] mb-1">Total Spent</p>
+                <p className="font-extrabold text-xl text-[#D32F2F]">₹{trip.amountSpent?.toLocaleString('en-IN')}</p>
+              </div>
+            </div>
+
+            <div className="w-full bg-gray-100 h-2 rounded-full mb-2 overflow-hidden">
+              <div 
+                className={`h-full ${trip.amountSpent > trip.budget ? 'bg-red-500' : 'bg-teal-500'}`} 
+                style={{ width: `${Math.min(100, ((trip.amountSpent || 0) / (trip.budget || 1)) * 100)}%` }}
+              ></div>
+            </div>
+
+            <p className="text-xs font-bold text-[#1F2937]">Remaining: ₹{Math.max(0, (trip.budget || 0) - (trip.amountSpent || 0)).toLocaleString('en-IN')}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Luggage Buddy Prompt (Mocked for Demo based on distance) */}
+      {trip?.heavyLuggage && distance > 1.5 && segment === 'walking' && (
+        <div className="px-5 md:px-8 mb-4">
+          <div className="p-4 bg-amber-50 rounded-2xl border border-amber-200 shadow-sm relative">
+            <button className="absolute top-2 right-2 text-amber-600 font-bold p-1"><Check size={16} /></button>
+            <h4 className="font-bold text-amber-900 mb-1 flex items-center gap-1"><AlertTriangle size={14} /> Heavy load? Take a break.</h4>
+            <p className="text-xs text-amber-800 mb-3">You've been walking for a while with heavy luggage. There are water stations and rest areas nearby (approximate).</p>
+            <div className="flex gap-2">
+              <button className="bg-amber-600 text-white text-xs font-bold py-1.5 px-3 rounded-lg">Find Rest Area</button>
+              <button className="bg-amber-200 text-amber-900 text-xs font-bold py-1.5 px-3 rounded-lg">Got it</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Luggage Buddy Auto Nudge (Mocked for Demo based on distance) */}
+      {trip?.heavyLuggage && distance > 2.0 && segment === 'walking' && (
+        <div className="px-5 md:px-8 mb-4">
+          <div className="p-4 bg-blue-50 rounded-2xl border border-blue-200 shadow-sm relative">
+            <button className="absolute top-2 right-2 text-blue-600 font-bold p-1"><Check size={16} /></button>
+            <h4 className="font-bold text-blue-900 mb-1 flex items-center gap-1"><Smartphone size={14} /> Smart Transport Nudge</h4>
+            <p className="text-xs text-blue-800 mb-3">With heavy bags, an auto is worth it — typical fare for ~2 km: ₹40–60 (typical range).</p>
+            <div className="flex gap-2">
+              <button className="bg-blue-600 text-white text-xs font-bold py-1.5 px-3 rounded-lg">Log as expense</button>
+              <button className="bg-blue-200 text-blue-900 text-xs font-bold py-1.5 px-3 rounded-lg">I'll walk</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Android Badge */}
       <div className="px-5 md:px-8 mb-4">
@@ -2033,14 +2189,41 @@ const ExpensesList = () => {
 // ─── M7: DIARY ───────────────────────────────────────────────
 const Diary = () => {
   const { id } = useParams();
+  const tripId = id || '';
   const [trip, setTrip] = useState<any>(null);
   const [expenses, setExpenses] = useState<any[]>([]);
+  const [points, setPoints] = useState<any[]>([]);
+  const [photos, setPhotos] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState<'overview' | 'gallery' | 'history'>('overview');
 
   useEffect(() => {
-    if (!id) return;
-    axios.get(`/api/trips/${id}`).then(r => setTrip(r.data)).catch(console.warn);
-    axios.get(`/api/trips/${id}/expenses`).then(r => setExpenses(r.data)).catch(console.warn);
-  }, [id]);
+    if (!tripId) return;
+    axios.get(`/api/trips/${tripId}`).then(r => setTrip(r.data)).catch(console.warn);
+    axios.get(`/api/trips/${tripId}/expenses`).then(r => setExpenses(r.data)).catch(console.warn);
+    axios.get(`/api/trips/${tripId}/points`).then(r => setPoints(r.data)).catch(console.warn);
+    
+    // Load local photos
+    import('./store/db').then(({ getPhotosForTrip }) => {
+      getPhotosForTrip(tripId).then(setPhotos).catch(console.warn);
+    });
+  }, [tripId]);
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      const dataUrl = evt.target?.result as string;
+      const { savePhoto } = await import('./store/db');
+      await savePhoto(tripId, dataUrl);
+      
+      const { getPhotosForTrip } = await import('./store/db');
+      const updatedPhotos = await getPhotosForTrip(tripId);
+      setPhotos(updatedPhotos);
+    };
+    reader.readAsDataURL(file);
+  };
 
   const totalSpent = expenses.reduce((s, e) => s + (e.amount || 0), 0);
 
@@ -2064,32 +2247,167 @@ const Diary = () => {
         {trip.originCity} → {trip.destinationCity}
       </h1>
 
-      <div className="grid grid-cols-2 gap-4 mb-6">
-        <div className="card p-4 text-center">
-          <p className="text-xs text-[#64748B]">Budget</p>
-          <p className="font-bold text-lg text-[#00695C]">₹{(trip.budget || 0).toLocaleString('en-IN')}</p>
-        </div>
-        <div className="card p-4 text-center">
-          <p className="text-xs text-[#64748B]">Spent</p>
-          <p className="font-bold text-lg text-[#D32F2F]">₹{totalSpent.toLocaleString('en-IN')}</p>
-        </div>
+      <div className="flex bg-gray-100 p-1 rounded-xl mb-6">
+        {['overview', 'gallery', 'history'].map(tab => (
+          <button 
+            key={tab}
+            onClick={() => setActiveTab(tab as any)}
+            className={`flex-1 py-2 text-xs font-bold rounded-lg capitalize ${activeTab === tab ? 'bg-white shadow text-[#00695C]' : 'text-[#64748B]'}`}
+          >
+            {tab}
+          </button>
+        ))}
       </div>
 
-      <div className="card p-5 mb-6">
-        <h3 className="font-bold text-sm text-[#1F2937] mb-3">Expenses ({expenses.length})</h3>
-        {expenses.length === 0
-          ? <p className="text-sm text-[#64748B]">No expenses recorded.</p>
-          : expenses.map((e: any, i: number) => (
-            <div key={i} className="flex justify-between py-2 border-b border-gray-50 last:border-0">
-              <span className="text-sm text-[#1F2937]">{e.merchant}</span>
-              <span className="text-sm font-semibold text-[#00695C]">₹{(e.amount || 0).toLocaleString('en-IN')}</span>
+      {activeTab === 'overview' && (
+        <>
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="card p-4 text-center">
+              <p className="text-xs text-[#64748B]">Budget</p>
+              <p className="font-bold text-lg text-[#00695C]">₹{(trip.budget || 0).toLocaleString('en-IN')}</p>
             </div>
-          ))
-        }
-      </div>
+            <div className="card p-4 text-center">
+              <p className="text-xs text-[#64748B]">Spent</p>
+              <p className="font-bold text-lg text-[#D32F2F]">₹{totalSpent.toLocaleString('en-IN')}</p>
+            </div>
+          </div>
+
+          <div className="card p-5 mb-6">
+            <h3 className="font-bold text-sm text-[#1F2937] mb-3">Expenses ({expenses.length})</h3>
+            {expenses.length === 0
+              ? <p className="text-sm text-[#64748B]">No expenses recorded.</p>
+              : expenses.map((e: any, i: number) => (
+                <div key={i} className="flex justify-between py-2 border-b border-gray-50 last:border-0">
+                  <span className="text-sm text-[#1F2937]">{e.merchant}</span>
+                  <span className="text-sm font-semibold text-[#00695C]">₹{(e.amount || 0).toLocaleString('en-IN')}</span>
+                </div>
+              ))
+            }
+          </div>
+        </>
+      )}
+
+      {activeTab === 'gallery' && (
+        <div className="card p-5 mb-6 bg-white min-h-[300px]">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="font-bold text-sm text-[#1F2937]">Local Gallery</h3>
+            <label className="bg-[#00695C] text-white text-xs font-bold py-1.5 px-3 rounded cursor-pointer">
+              Add Photo
+              <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
+            </label>
+          </div>
+          <p className="text-[10px] text-[#64748B] mb-4 italic">Photos are stored privately on your device. Zero network uploads.</p>
+          
+          {photos.length === 0 ? (
+            <div className="text-center text-[#64748B] py-8 border-2 border-dashed border-gray-100 rounded-xl">
+              <Camera size={24} className="mx-auto mb-2 opacity-50" />
+              <p className="text-xs">No photos yet.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+              {photos.map((p, i) => (
+                <div key={i} className="aspect-square bg-gray-100 rounded overflow-hidden">
+                  <img src={p.dataUrl} alt="Trip moment" className="w-full h-full object-cover" />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === 'history' && (
+        <div className="mb-6">
+          <PocketMap 
+            points={points} 
+            destinationCity={trip?.destinationCity || 'Destination'} 
+          />
+          <div className="card p-5 mt-4">
+            <h3 className="font-bold text-sm text-[#1F2937] mb-3">Timeline</h3>
+            <p className="text-xs text-[#64748B] mb-2">Total points logged: {points.length}</p>
+            {points.length === 0 && <p className="text-xs text-[#64748B] italic">No path recorded.</p>}
+          </div>
+        </div>
+      )}
 
       <button onClick={handleShare} className="btn-primary w-full mb-3"><Share2 size={16} /> Share Diary</button>
       <Link to="/" className="btn-secondary w-full text-center block">Plan New Trip</Link>
+    </div>
+  );
+};
+
+// ─── CITY SPOTS PAGE (Section 7) ───────────────────────────
+const CitySpots = () => {
+  const { city } = useParams();
+  const [spots, setSpots] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    axios.get(`/api/city/${city}`)
+      .then(r => setSpots(r.data))
+      .catch(() => setSpots([]))
+      .finally(() => setLoading(false));
+  }, [city]);
+
+  return (
+    <div className="p-5 md:p-8 animate-fade-in-up">
+      <Link to="/" className="text-sm font-bold text-teal-700 flex items-center gap-1 mb-4"><Check size={16} /> Back to Home</Link>
+      <span className="badge badge-teal mb-3"><MapPin size={14} /> City Guide</span>
+      <h1 className="text-2xl font-extrabold text-[#1F2937] font-['Plus_Jakarta_Sans'] mb-2">{city} Spots</h1>
+      <p className="text-sm text-[#64748B] mb-6">Showing top spots in {city}. Data sourced live via Wikipedia.</p>
+
+      {loading ? (
+        <div className="text-center text-[#64748B] py-8">Loading spots...</div>
+      ) : spots.length === 0 ? (
+        <div className="text-center text-[#64748B] py-8">No spots found.</div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {spots.map((spot, i) => (
+            <div key={i} className="card p-5 border border-gray-100">
+              <h3 className="font-bold text-[#1F2937] mb-2">{spot.name}</h3>
+              <p className="text-sm text-[#64748B]">{spot.blurb}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ─── FAQ PAGE (Section 9E) ──────────────────────────────────
+const FaqPage = () => {
+  const [openIdx, setOpenIdx] = useState<number | null>(null);
+  
+  const faqs = [
+    { q: "Does tracking work without network?", a: "Yes! Sanchar AI uses your device's built-in GPS to track points. They are stored locally in IndexedDB and sync automatically when you regain connectivity." },
+    { q: "Where are my gallery photos stored?", a: "To respect your privacy and save your data plan, photos are stored securely on your local device (IndexedDB) and NEVER uploaded to our servers. They have zero network footprint." },
+    { q: "How does the Budget Calculator work?", a: "It suggests a budget based on your travel style (Budget/Comfort) and days. If you carry heavy luggage, it automatically provisions a luggage add-on for porters/carts." },
+    { q: "Can I navigate offline?", a: "Yes. Once you select a POI on the Pocket Map, you get an offline 'as-the-crow-flies' bearing and ETA based on walking speed. We intentionally do not download 100MB+ routing graphs to keep the app lightweight." }
+  ];
+
+  return (
+    <div className="p-5 md:p-8 animate-fade-in-up">
+      <Link to="/" className="text-sm font-bold text-teal-700 flex items-center gap-1 mb-4"><Check size={16} /> Back to Home</Link>
+      <span className="badge badge-teal mb-3"><MapPin size={14} /> Help</span>
+      <h1 className="text-2xl font-extrabold text-[#1F2937] font-['Plus_Jakarta_Sans'] mb-6">Frequently Asked Questions</h1>
+
+      <div className="space-y-3">
+        {faqs.map((faq, i) => (
+          <div key={i} className="card border border-gray-100 overflow-hidden">
+            <button 
+              className="w-full text-left p-4 font-bold text-[#1F2937] flex justify-between items-center"
+              onClick={() => setOpenIdx(openIdx === i ? null : i)}
+            >
+              {faq.q}
+              <span className="text-teal-600">{openIdx === i ? '−' : '+'}</span>
+            </button>
+            {openIdx === i && (
+              <div className="p-4 pt-0 text-sm text-[#64748B] bg-gray-50">
+                {faq.a}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
@@ -2132,6 +2450,9 @@ const PrivacyPage = () => (
           {r.live ? <span className="badge badge-green text-xs"><Check size={12} /> Live</span> : <span className="android-badge"><Smartphone size={12} /> Android</span>}
         </div>
       ))}
+    </div>
+    <div className="mt-8 text-center">
+      <Link to="/faq" className="text-sm font-bold text-[#00695C] underline">View Frequently Asked Questions (FAQ)</Link>
     </div>
   </div>
 );

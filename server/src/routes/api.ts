@@ -178,7 +178,10 @@ function getCategoryForSpot(name: string): string {
   if (n.includes('temple') || n.includes('mandir') || n.includes('church') || n.includes('mosque') || n.includes('basilica') || n.includes('synagogue') || n.includes('dargah') || n.includes('gurudwara') || n.includes('cathedral') || n.includes('stupa') || n.includes('deekshabhoomi') || n.includes('ashram')) {
     return 'Temple';
   }
-  if (n.includes('beach') || n.includes('island') || n.includes('lake') || n.includes('dam') || n.includes('tank') || n.includes('lagoon') || n.includes('backwaters') || n.includes('falls') || n.includes('waterfalls') || n.includes('bil')) {
+  if (n.includes('fort') || n.includes('palace') || n.includes('castle') || n.includes('monument') || n.includes('tomb') || n.includes('mahal') || n.includes('ruins')) {
+    return 'Fort';
+  }
+  if (n.includes('beach') || n.includes('island') || n.includes('lake') || n.includes('dam') || n.includes('tank') || n.includes('lagoon') || n.includes('backwaters') || n.includes('falls') || n.includes('waterfalls') || n.includes('bil') || n.includes('river')) {
     return 'Beach';
   }
   if (n.includes('museum') || n.includes('gallery') || n.includes('science') || n.includes('planetarium') || n.includes('art')) {
@@ -187,42 +190,56 @@ function getCategoryForSpot(name: string): string {
   if (n.includes('park') || n.includes('zoo') || n.includes('garden') || n.includes('sanctuary') || n.includes('forest') || n.includes('hills') || n.includes('hill')) {
     return 'Park';
   }
-  if (n.includes('bazaar') || n.includes('market') || n.includes('street') || n.includes('shopping') || n.includes('mall') || n.includes('square')) {
+  if (n.includes('bazaar') || n.includes('market') || n.includes('street') || n.includes('shopping') || n.includes('mall') || n.includes('square') || n.includes('chowk')) {
     return 'Market';
   }
   if (n.includes('restaurant') || n.includes('food') || n.includes('shack') || n.includes('cuisine') || n.includes('snack') || n.includes('café') || n.includes('cafe')) {
     return 'Food';
   }
-  if (n.includes('view') || n.includes('viewpoint') || n.includes('drive') || n.includes('sea face') || n.includes('link') || n.includes('promenade') || n.includes('bridge') || n.includes('ganges aarti')) {
+  if (n.includes('view') || n.includes('viewpoint') || n.includes('drive') || n.includes('sea face') || n.includes('link') || n.includes('promenade') || n.includes('bridge') || n.includes('ganges aarti') || n.includes('ghat')) {
     return 'Viewpoint';
   }
-  if (n.includes('day trip') || n.includes('excursion') || n.includes('pilgrimage') || n.includes('hajo') || n.includes('pobitora') || n.includes('ruins') || n.includes('mahabalipuram') || n.includes('mysore') || n.includes('srirangapatna')) {
+  if (n.includes('day trip') || n.includes('excursion') || n.includes('pilgrimage') || n.includes('hajo') || n.includes('pobitora') || n.includes('mahabalipuram') || n.includes('mysore') || n.includes('srirangapatna')) {
     return 'Day trip';
   }
-  return 'Heritage';
+  return '';
 }
 
-function getBlurbForSpot(name: string, category: string, city: string): string {
+function getCuratedBlurbForSpot(name: string, category: string, city: string): string {
   switch (category) {
-    case 'Temple':
-      return `A sacred spiritual temple and architectural wonder in ${city}.`;
-    case 'Beach':
-      return `A scenic waterfront attraction offering beautiful views and relaxation in ${city}.`;
-    case 'Museum':
-      return `A repository of history, art, and cultural heritage in ${city}.`;
-    case 'Park':
-      return `A lush green park and scenic natural retreat in ${city}.`;
-    case 'Market':
-      return `A bustling local marketplace famous for shopping and souvenirs in ${city}.`;
-    case 'Food':
-      return `A popular culinary hotspot for authentic local delicacies in ${city}.`;
-    case 'Viewpoint':
-      return `An iconic viewpoint offering panoramic cityscapes and scenery in ${city}.`;
-    case 'Day trip':
-      return `A beautiful getaway destination perfect for a day trip near ${city}.`;
-    default:
-      return `A famous historical monument and heritage landmark in ${city}.`;
+    case 'Temple': return `A sacred spiritual temple and architectural wonder in ${city}.`;
+    case 'Beach': return `A scenic waterfront attraction offering beautiful views and relaxation in ${city}.`;
+    case 'Museum': return `A repository of history, art, and cultural heritage in ${city}.`;
+    case 'Park': return `A lush green park and scenic natural retreat in ${city}.`;
+    case 'Market': return `A bustling local marketplace famous for shopping and souvenirs in ${city}.`;
+    case 'Food': return `A popular culinary hotspot for authentic local delicacies in ${city}.`;
+    case 'Viewpoint': return `An iconic viewpoint offering panoramic cityscapes and scenery in ${city}.`;
+    case 'Day trip': return `A beautiful getaway destination perfect for a day trip near ${city}.`;
+    default: return `A famous historical monument and heritage landmark in ${city}.`;
   }
+}
+
+function isInvalidSpot(name: string): boolean {
+  const n = name.toLowerCase();
+  
+  // 1. Is a person
+  if (/\((actor|singer|chess player|politician|writer|director|producer|musician|cricketer|athlete|scientist)\)/i.test(n) || n.includes('born in')) return true;
+  
+  // 2. Is an administrative entity
+  if (n.includes('municipal corporation') || n.includes('city corporation') || n.includes('region') || n.includes('district') || n.includes('urban agglomeration') || n.includes('mandal') || n.includes('panchayat')) return true;
+  
+  // 3. Media / infrastructure
+  if (/\b(fm|radio|am station|television|tv channel|newspaper|magazine|bus depot|airport terminal|airport|railway station)\b/i.test(n)) return true;
+  
+  // 4. Spot-like nature
+  const validKeywords = ['park', 'temple', 'fort', 'beach', 'lake', 'museum', 'monument', 'market', 'ghat', 'garden', 'square', 'road', 'bridge', 'zoo', 'stadium', 'palace', 'church', 'mosque', 'stepwell', 'island', 'hill', 'dam', 'bazaar', 'viewpoint', 'food street', 'walk', 'sanctuary', 'falls', 'waterfalls', 'cave', 'caves', 'stupa', 'ashram', 'tomb', 'mahal', 'memorial', 'shrine', 'basilica', 'synagogue', 'cathedral', 'river'];
+  
+  const hasNature = validKeywords.some(kw => n.includes(kw));
+  if (!hasNature) {
+    return true;
+  }
+  
+  return false;
 }
 
 function normalizeCityName(str: string): string {
@@ -255,7 +272,7 @@ router.get('/city-spots/:city', async (req, res) => {
         return {
           name,
           category,
-          blurb: getBlurbForSpot(name, category, city)
+          blurb: getCuratedBlurbForSpot(name, category, city)
         };
       });
 
@@ -278,106 +295,112 @@ router.get('/city-spots/:city', async (req, res) => {
     }
 
     // 3. Live Wikipedia Fetch
-    const titlesToTry = [
+    const listTitlesToTry = [
       `List of tourist attractions in ${city}`,
       `${city} tourist attractions`,
       `Tourism in ${city}`,
-      `${city} sightseeing`,
-      `${city} landmarks`,
-      city
+      `${city} sightseeing`
     ];
 
     let wikitext = '';
-    let usedTitle = '';
+    
+    // Helper to clean wikitext descriptions
+    const cleanDesc = (desc: string) => {
+      let d = desc.trim();
+      d = d.replace(/^''':?\s*/, '');
+      if (d.startsWith('-') || d.startsWith('–') || d.startsWith(':') || d.startsWith(',')) {
+        d = d.substring(1).trim();
+      }
+      d = d.replace(/\[\[(?:[^|\]]*\|)?([^\]]+)\]\]/g, '$1');
+      d = d.replace(/\{\{.*?\}\}/g, '');
+      d = d.replace(/<ref.*?>.*?<\/ref>/g, '');
+      d = d.replace(/<.*?>/g, '');
+      return d;
+    };
 
-    for (const title of titlesToTry) {
+    const spotsList: { name: string; category: string; blurb: string }[] = [];
+    const addSpot = (name: string, desc: string) => {
+      console.log('addSpot called with:', name);
+      if (name && !/^(file|image|category|special|media|wikipedia):/i.test(name) && !isInvalidSpot(name)) {
+        if (!spotsList.some(s => s.name.toLowerCase() === name.toLowerCase())) {
+          const category = getCategoryForSpot(name);
+          spotsList.push({
+            name,
+            category,
+            blurb: cleanDesc(desc) || ''
+          });
+          console.log('Added spot:', name);
+        }
+      } else {
+        console.log('Rejected spot:', name, 'isInvalid:', isInvalidSpot(name));
+      }
+    };
+
+    for (const title of listTitlesToTry) {
       try {
+        console.log('Fetching list page:', title);
         const url = `https://en.wikipedia.org/w/api.php?action=parse&page=${encodeURIComponent(title)}&prop=wikitext&format=json&redirects=1`;
         const wikiRes = await fetch(url, { headers: { 'User-Agent': 'SancharAI/1.0' } });
         const data = await wikiRes.json();
         if (data.parse && data.parse.wikitext) {
+          console.log('Found list page wikitext for:', title);
           wikitext = data.parse.wikitext['*'];
-          usedTitle = title;
-          break;
-        }
-      } catch (err) {
-        console.warn(`Wikipedia page load failed for ${title}:`, err);
-      }
-    }
-
-    const spotsList: { name: string; category: string; blurb: string }[] = [];
-
-    if (wikitext) {
-      // Parse bullet spots from list page wikitext
-      const lines = wikitext.split('\n');
-      for (const line of lines) {
-        const trimmed = line.trim();
-        const match = trimmed.match(/^\*\s*\[\[(.*?)\]\]/) || trimmed.match(/^\*\s*\{\{.*?\}\}\s*\[\[(.*?)\]\]/) || trimmed.match(/^#\s*\[\[(.*?)\]\]/);
-        if (match) {
-          const parts = match[1].split('|');
-          let name = parts[0].split('#')[0].trim();
-          if (name && !/^(file|image|category|special|media|wikipedia):/i.test(name)) {
-            if (!spotsList.some(s => s.name.toLowerCase() === name.toLowerCase())) {
-              const category = getCategoryForSpot(name);
-              spotsList.push({
-                name,
-                category,
-                blurb: getBlurbForSpot(name, category, city)
-              });
+          const lines = wikitext.split('\n');
+          for (const line of lines) {
+            const trimmed = line.trim();
+            const match = trimmed.match(/^\*\s*(?:'''''|'''|'')?\[\[(.*?)\]\](.*)/) || trimmed.match(/^\*\s*\{\{.*?\}\}\s*(?:'''''|'''|'')?\[\[(.*?)\]\](.*)/) || trimmed.match(/^#\s*(?:'''''|'''|'')?\[\[(.*?)\]\](.*)/);
+            if (match) {
+              const parts = match[1].split('|');
+              const name = parts[0].split('#')[0].trim();
+              addSpot(name, match[2]);
             }
           }
+          if (spotsList.length > 5) break; // found enough in this list page
         }
+      } catch (err) {
+        console.warn(`Wikipedia list page load failed for ${title}:`, err);
       }
     }
 
     // If still no spots found, query the main city page
     if (spotsList.length < 5) {
       try {
+        console.log('Fetching main page:', city);
         const url = `https://en.wikipedia.org/w/api.php?action=parse&page=${encodeURIComponent(city)}&prop=wikitext&format=json&redirects=1`;
         const wikiRes = await fetch(url, { headers: { 'User-Agent': 'SancharAI/1.0' } });
         const data = await wikiRes.json();
         if (data.parse && data.parse.wikitext) {
+          console.log('Found main page wikitext for:', city);
           wikitext = data.parse.wikitext['*'];
-          usedTitle = city;
           
           const lines = wikitext.split('\n');
           let inTourism = false;
           
           for (const line of lines) {
             const trimmed = line.trim();
-            if (/==\s*(Tourism|Zoos, gardens and lakes|Religious places|Museums|Places of interest|Landmarks|Sightseeing|Attractions)\s*==/i.test(trimmed)) {
+            if (/==\s*(Tourist attractions|Places of interest|Sights|Tourism)\s*==/i.test(trimmed)) {
               inTourism = true;
-            } else if (inTourism && /^==[^=]/m.test(trimmed) && !/==\s*(Tiger reserves|Zoos, gardens and lakes|Religious places|Museums|Festivals|Cuisine|Attractions)\s*==/i.test(trimmed)) {
+            } else if (inTourism && /^==[^=]/m.test(trimmed)) {
               inTourism = false;
             }
             
             if (inTourism) {
-              const match = trimmed.match(/^\*\s*\[\[(.*?)\]\]/) || trimmed.match(/^\*\s*\{\{.*?\}\}\s*\[\[(.*?)\]\]/);
+              const match = trimmed.match(/^\*\s*(?:'''''|'''|'')?\[\[(.*?)\]\](.*)/) || trimmed.match(/^\*\s*\{\{.*?\}\}\s*(?:'''''|'''|'')?\[\[(.*?)\]\](.*)/);
               if (match) {
                 const parts = match[1].split('|');
-                let name = parts[0].split('#')[0].trim();
-                if (name && !/^(file|image|category|special|media|wikipedia):/i.test(name)) {
-                  if (!spotsList.some(s => s.name.toLowerCase() === name.toLowerCase())) {
-                    const category = getCategoryForSpot(name);
-                    spotsList.push({
-                      name,
-                      category,
-                      blurb: getBlurbForSpot(name, category, city)
-                    });
-                  }
-                }
+                const name = parts[0].split('#')[0].trim();
+                addSpot(name, match[2]);
               }
             }
           }
-
-          // If still low, extract inline wiki links from within the tourism section paragraphs
+          
           if (spotsList.length < 10) {
             inTourism = false;
             for (const line of lines) {
               const trimmed = line.trim();
-              if (/==\s*(Tourism|Zoos, gardens and lakes|Religious places|Museums|Places of interest|Landmarks|Sightseeing|Attractions)\s*==/i.test(trimmed)) {
+              if (/==\s*(Tourist attractions|Places of interest|Sights|Tourism)\s*==/i.test(trimmed)) {
                 inTourism = true;
-              } else if (inTourism && /^==[^=]/m.test(trimmed) && !/==\s*(Tiger reserves|Zoos, gardens and lakes|Religious places|Museums|Festivals|Cuisine|Attractions)\s*==/i.test(trimmed)) {
+              } else if (inTourism && /^==[^=]/m.test(trimmed)) {
                 inTourism = false;
               }
               
@@ -385,17 +408,10 @@ router.get('/city-spots/:city', async (req, res) => {
                 const inlineMatches = trimmed.matchAll(/\[\[(.*?)\]\]/g);
                 for (const m of inlineMatches) {
                   const parts = m[1].split('|');
-                  let name = parts[0].split('#')[0].trim();
-                  const ignoreList = ['india', 'state', 'district', 'city', 'tourism', 'tourist', 'government', 'railway station', 'airport', 'national highway', 'stupa', 'buddhism', 'hinduism', 'jainism', 'culture', 'history', 'population', 'demographics', 'climate', 'tiger', 'forest', 'census', 'latitude', 'longitude', 'utc', 'madhya pradesh', 'uttar pradesh', 'maharashtra', 'karnataka', 'tamil nadu', 'kerala', 'andhra pradesh', 'telangana', 'assam', 'west bengal', 'odisha', 'bihar', 'gujarat', 'rajasthan', 'punjab', 'haryana', 'jammu and kashmir'];
-                  if (name && !/^(file|image|category|special|media|wikipedia):/i.test(name) && !ignoreList.includes(name.toLowerCase())) {
-                    if (!spotsList.some(s => s.name.toLowerCase() === name.toLowerCase())) {
-                      const category = getCategoryForSpot(name);
-                      spotsList.push({
-                        name,
-                        category,
-                        blurb: getBlurbForSpot(name, category, city)
-                      });
-                    }
+                  const name = parts[0].split('#')[0].trim();
+                  const ignoreList = ['india', 'state', 'district', 'city', 'tourism', 'tourist', 'government', 'railway station', 'airport', 'national highway', 'stupa', 'buddhism', 'hinduism', 'jainism', 'culture', 'history', 'population', 'demographics', 'climate', 'tiger', 'forest', 'census', 'latitude', 'longitude', 'utc', 'madhya pradesh', 'uttar pradesh', 'maharashtra', 'karnataka', 'tamil nadu', 'kerala', 'andhra pradesh', 'telangana', 'assam', 'west bengal', 'odisha', 'bihar', 'gujarat', 'rajasthan', 'punjab', 'haryana', 'jammu and kashmir', 'maharashtra', 'india'];
+                  if (!ignoreList.includes(name.toLowerCase())) {
+                    addSpot(name, '');
                   }
                 }
               }
@@ -403,7 +419,7 @@ router.get('/city-spots/:city', async (req, res) => {
           }
         }
       } catch (err) {
-        console.warn(`Wikipedia page load failed for city ${city}:`, err);
+        console.warn(`Wikipedia main page load failed for city ${city}:`, err);
       }
     }
 
@@ -653,6 +669,15 @@ router.post('/trips/:id/complete', async (req, res) => {
     res.json(completedTrip);
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.get('/trips/:id/points', async (req, res) => {
+  try {
+    const points = await LocationPoint.find({ tripId: req.params.id }).sort({ timestamp: 1 });
+    res.json(points);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
   }
 });
 
