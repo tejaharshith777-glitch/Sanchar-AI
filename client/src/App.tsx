@@ -73,6 +73,19 @@ function useNetworkAndHealth() {
     }
   };
 
+  const fetchActiveTripOnly = async () => {
+    try {
+      const res = await axios.get('/api/trips/active');
+      if (res.data && !res.data.message) {
+        setActiveTrip(res.data);
+      } else {
+        setActiveTrip(null);
+      }
+    } catch {
+      setActiveTrip(null);
+    }
+  };
+
   // Poll server health check to keep status updated without console spam
   useEffect(() => {
     let active = true;
@@ -89,7 +102,6 @@ function useNetworkAndHealth() {
           setDbMode(null);
         }
       }
-      refreshTrips();
     };
 
     checkHealth();
@@ -98,6 +110,17 @@ function useNetworkAndHealth() {
       active = false;
       clearInterval(interval);
     };
+  }, []);
+
+  // Poll active trip every 30s
+  useEffect(() => {
+    setTimeout(() => {
+      fetchActiveTripOnly();
+      refreshTrips(); // Initial full fetch
+    }, 0);
+    
+    const interval = setInterval(fetchActiveTripOnly, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   // Offline sync queue triggers when connection is restored
@@ -397,6 +420,7 @@ const CitySpotlightPage = () => {
   const [data, setData] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   const formattedCity = cityName ? cityName.trim().split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ') : '';
 
@@ -407,14 +431,14 @@ const CitySpotlightPage = () => {
       .then(res => {
         if (isMounted) setData(res.data);
       })
-      .catch(() => {
-        if (isMounted) setError('Failed to fetch city spotlights. The server may be offline.');
+      .catch((err) => {
+        if (isMounted) setError(err.response?.data?.error || err.message || 'Unknown error occurred.');
       })
       .finally(() => {
         if (isMounted) setLoading(false);
       });
     return () => { isMounted = false; };
-  }, [formattedCity]);
+  }, [formattedCity, retryCount]);
 
   return (
     <div className="min-h-screen bg-[#FAFAF7]">
@@ -445,9 +469,14 @@ const CitySpotlightPage = () => {
           <div className="card p-8 text-center max-w-lg mx-auto border border-red-100 bg-red-50/50 my-12">
             <AlertTriangle className="text-[#D32F2F] mx-auto mb-3" size={36} />
             <p className="text-base font-bold text-[#1F2937] mb-4">{error}</p>
-            <button onClick={() => navigate('/')} className="btn-secondary !py-2.5 !px-6 text-xs font-bold cursor-pointer">
-              Back to home
-            </button>
+            <div className="flex justify-center gap-3">
+              <button onClick={() => { setError(null); setLoading(true); setRetryCount(c => c + 1); }} className="btn-primary !py-2.5 !px-6 text-xs font-bold cursor-pointer">
+                Retry
+              </button>
+              <button onClick={() => navigate('/')} className="btn-secondary !py-2.5 !px-6 text-xs font-bold cursor-pointer">
+                Back to home
+              </button>
+            </div>
           </div>
         )}
 
@@ -568,11 +597,17 @@ const LandingPage = () => {
   const [showLoader, setShowLoader] = useState(() => !sessionStorage.getItem('sanchar_intro_loaded'));
   const [destinationPreFill] = useState('');
   const [searchCityInput, setSearchCityInput] = useState('');
+  const [searchError, setSearchError] = useState('');
   const navigate = useNavigate();
 
   const handleOpenCity = (cityName: string) => {
-    if (!cityName || !cityName.trim()) return;
-    navigate(`/city/${encodeURIComponent(cityName.trim().toLowerCase())}`);
+    setSearchError('');
+    const trimmed = cityName ? cityName.trim() : '';
+    if (trimmed.length < 3 || !/^[A-Za-z\s]+$/.test(trimmed)) {
+      setSearchError('Please enter a valid city name');
+      return;
+    }
+    navigate(`/city/${encodeURIComponent(trimmed.toLowerCase())}`);
   };
 
   const handleLoaderComplete = () => {
@@ -700,14 +735,14 @@ const LandingPage = () => {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
           {[
-            { city: 'Chennai', img: 'https://upload.wikimedia.org/wikipedia/commons/1/19/MylaporeKapaleeshwararTemple.jpg', langs: ['Tamil', 'English'] },
-            { city: 'Kochi', img: 'https://upload.wikimedia.org/wikipedia/commons/b/b3/Chinese_fishing_nets_Kochi_India.jpg', langs: ['Malayalam', 'English'] },
-            { city: 'Hyderabad', img: 'https://upload.wikimedia.org/wikipedia/commons/7/71/Charminar_Hyderabad_1.jpg', langs: ['Telugu', 'English'] },
-            { city: 'Bengaluru', img: 'https://upload.wikimedia.org/wikipedia/commons/1/13/Bangalore_Palace.jpg', langs: ['Kannada', 'English'] },
-            { city: 'Mumbai', img: 'https://upload.wikimedia.org/wikipedia/commons/e/e0/Gateway_of_India_-Mumbai.jpg', langs: ['Marathi', 'Hindi'] },
-            { city: 'Jaipur', img: 'https://upload.wikimedia.org/wikipedia/commons/4/41/East_facade_of_Hawa_Mahal_2016.jpg', langs: ['Hindi', 'English'] },
-            { city: 'Varanasi', img: 'https://upload.wikimedia.org/wikipedia/commons/0/04/Ghats_in_Varanasi.jpg', langs: ['Hindi'] },
-            { city: 'Guwahati', img: 'https://upload.wikimedia.org/wikipedia/commons/f/f9/Kamakhya_Temple_Guwahati.jpg', langs: ['Assamese', 'English'] },
+            { city: 'Chennai', img: 'https://upload.wikimedia.org/wikipedia/commons/e/eb/Kapaleeshwarar_Temple.jpg', langs: ['Tamil', 'English'] },
+            { city: 'Kochi', img: 'https://upload.wikimedia.org/wikipedia/commons/2/27/Chinese_fishing_nets%2C_Kochi%2C_Kerala%2C_India.jpg', langs: ['Malayalam', 'English'] },
+            { city: 'Hyderabad', img: 'https://upload.wikimedia.org/wikipedia/commons/f/f6/Charminar_Summer.jpg', langs: ['Telugu', 'English'] },
+            { city: 'Bengaluru', img: 'https://upload.wikimedia.org/wikipedia/commons/3/36/Bangalore_Palace.jpg', langs: ['Kannada', 'English'] },
+            { city: 'Mumbai', img: 'https://upload.wikimedia.org/wikipedia/commons/7/75/Gateway_of_India.jpg', langs: ['Marathi', 'Hindi'] },
+            { city: 'Jaipur', img: 'https://upload.wikimedia.org/wikipedia/commons/3/34/Hawa_Mahal_2011.jpg', langs: ['Hindi', 'English'] },
+            { city: 'Varanasi', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/Ahilya_Ghat_by_the_Ganges%2C_Varanasi.jpg/800px-Ahilya_Ghat_by_the_Ganges%2C_Varanasi.jpg', langs: ['Hindi'] },
+            { city: 'Guwahati', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/Umananda_Temple.jpg/800px-Umananda_Temple.jpg', langs: ['Assamese', 'English'] },
           ].map((c) => (
             <CityCard
               key={c.city}
@@ -720,27 +755,37 @@ const LandingPage = () => {
         </div>
 
         {/* Enter your city Box */}
-        <div className="mt-10 max-w-md mx-auto bg-white p-3 md:p-4 rounded-full border border-gray-200 shadow-sm flex items-center gap-2">
-          <Search className="text-gray-400 shrink-0 ml-2" size={18} />
-          <input
-            type="text"
-            placeholder="Explore other cities (e.g. Pune, Nagpur…)"
-            value={searchCityInput}
-            onChange={(e) => setSearchCityInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                handleOpenCity(searchCityInput);
-              }
-            }}
-            className="flex-1 text-sm text-[#1F2937] focus:outline-none placeholder-gray-400"
-          />
-          <button
-            onClick={() => handleOpenCity(searchCityInput)}
-            className="btn-primary !py-2.5 !px-6 text-xs font-bold whitespace-nowrap cursor-pointer !rounded-full"
-          >
-            Show best spots
-          </button>
+        <div className="mt-10 max-w-md mx-auto relative">
+          <div className="bg-white p-3 md:p-4 rounded-full border border-gray-200 shadow-sm flex items-center gap-2">
+            <Search className="text-gray-400 shrink-0 ml-2" size={18} />
+            <input
+              type="text"
+              placeholder="Explore other cities (e.g. Pune, Nagpur…)"
+              value={searchCityInput}
+              onChange={(e) => {
+                setSearchCityInput(e.target.value);
+                setSearchError('');
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleOpenCity(searchCityInput);
+                }
+              }}
+              className="flex-1 text-sm text-[#1F2937] focus:outline-none placeholder-gray-400"
+            />
+            <button
+              onClick={() => handleOpenCity(searchCityInput)}
+              className="btn-primary !py-2.5 !px-6 text-xs font-bold whitespace-nowrap cursor-pointer !rounded-full"
+            >
+              Show best spots
+            </button>
+          </div>
+          {searchError && (
+            <div className="absolute -bottom-6 left-0 right-0 text-center text-red-500 text-xs font-bold animate-fade-in-up">
+              {searchError}
+            </div>
+          )}
         </div>
       </section>
 
@@ -1368,7 +1413,7 @@ const ActiveTrip = () => {
     // reset lastNotYetTime on real movement
     const lastPoint = points[points.length - 1];
     if (lastPoint.speedKmh >= 1 && lastNotYetTime > 0) {
-      setLastNotYetTime(0);
+      setTimeout(() => setLastNotYetTime(0), 0);
     }
     
     if (Date.now() - lastNotYetTime < 10 * 60 * 1000) return; // cooldown active
@@ -1379,7 +1424,7 @@ const ActiveTrip = () => {
     if (lastPoints.length >= 3) {
       const allStill = lastPoints.every(p => p.speedKmh < 1);
       if (allStill) {
-        setStillnessAlert(true);
+        setTimeout(() => setStillnessAlert(true), 0);
       }
     }
   }, [points, lastNotYetTime]);
@@ -1488,7 +1533,7 @@ const ActiveTrip = () => {
           <div className="grid grid-cols-2 gap-2 mt-2">
             <button
               onClick={() => handleSafetyResponse(safetyAlert.type, 'im-safe')}
-              className="py-2 px-4 bg-[#2E7D32] text-white text-xs font-bold rounded-full cursor-pointer"
+              className="min-h-[44px] py-2 px-4 bg-[#2E7D32] text-white text-xs font-bold rounded-full cursor-pointer active:bg-green-800 transition-colors"
             >
               I'm Safe ✅
             </button>
@@ -1497,7 +1542,7 @@ const ActiveTrip = () => {
                 handleSafetyResponse(safetyAlert.type, 'open-sos');
                 setShowSosModal(true);
               }}
-              className="py-2 px-4 bg-[#D32F2F] text-white text-xs font-bold rounded-full cursor-pointer"
+              className="min-h-[44px] py-2 px-4 bg-[#D32F2F] text-white text-xs font-bold rounded-full cursor-pointer active:bg-red-800 transition-colors"
             >
               Open SOS
             </button>
@@ -1521,13 +1566,13 @@ const ActiveTrip = () => {
             <button
               onClick={completeTrip}
               disabled={completing}
-              className="py-2 px-4 bg-[#2E7D32] text-white text-xs font-bold rounded-full cursor-pointer"
+              className="min-h-[44px] py-2 px-4 bg-[#2E7D32] text-white text-xs font-bold rounded-full cursor-pointer active:bg-green-800 transition-colors"
             >
               Yes, I've arrived ✅
             </button>
             <button
               onClick={handleNotYet}
-              className="py-2 px-4 bg-gray-300 text-gray-700 text-xs font-bold rounded-full cursor-pointer"
+              className="min-h-[44px] py-2 px-4 bg-gray-300 text-gray-700 text-xs font-bold rounded-full cursor-pointer active:bg-gray-400 transition-colors"
             >
               Not yet — continue journey
             </button>
@@ -1684,18 +1729,18 @@ const CameraScanner = () => {
   const [useLiveCamera, setUseLiveCamera] = useState(false);
   const navigate = useNavigate();
 
-  // Cleanup camera on unmount
-  useEffect(() => {
-    return () => stopCamera();
-  }, []);
-
-  const stopCamera = () => {
+  function stopCamera() {
     if (videoRef.current && videoRef.current.srcObject) {
       const stream = videoRef.current.srcObject as MediaStream;
       stream.getTracks().forEach(t => t.stop());
     }
     setUseLiveCamera(false);
-  };
+  }
+
+  // Cleanup camera on unmount
+  useEffect(() => {
+    return () => stopCamera();
+  }, []);
 
   const startCamera = async () => {
     try {
@@ -1708,7 +1753,7 @@ const CameraScanner = () => {
           videoRef.current.play();
         }
       }, 50);
-    } catch (e) {
+    } catch {
       alert("Camera access denied or unavailable.");
     }
   };
@@ -1978,7 +2023,7 @@ const ExpensesList = () => {
         )}
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-40 max-w-2xl mx-auto">
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-40 max-w-2xl mx-auto pb-safe">
         <button onClick={() => navigate(`/scan/${id}`)} className="btn-primary w-full !py-3.5"><Camera size={16} /> Scan New Expense</button>
       </div>
     </div>

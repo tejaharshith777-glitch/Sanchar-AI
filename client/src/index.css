@@ -116,6 +116,7 @@ h1, h2, h3, h4, h5, h6 {
   justify-content: center;
   gap: 8px;
   padding: 12px 28px;
+  min-height: 44px;
   background: #00695C;
   color: white;
   font-family: 'Plus Jakarta Sans', sans-serif;
@@ -128,7 +129,7 @@ h1, h2, h3, h4, h5, h6 {
   box-shadow: 0 2px 8px rgba(0, 105, 92, 0.25);
 }
 
-.btn-primary:hover {
+.btn-primary:hover, .btn-primary:active {
   background: #004D40;
   transform: translateY(-1px);
   box-shadow: 0 4px 16px rgba(0, 105, 92, 0.35);
@@ -140,6 +141,7 @@ h1, h2, h3, h4, h5, h6 {
   justify-content: center;
   gap: 8px;
   padding: 12px 28px;
+  min-height: 44px;
   background: transparent;
   color: #00695C;
   font-family: 'Plus Jakarta Sans', sans-serif;
@@ -151,7 +153,7 @@ h1, h2, h3, h4, h5, h6 {
   transition: all 200ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.btn-secondary:hover {
+.btn-secondary:hover, .btn-secondary:active {
   background: #00695C;
   color: white;
   transform: translateY(-1px);
@@ -163,6 +165,7 @@ h1, h2, h3, h4, h5, h6 {
   justify-content: center;
   gap: 8px;
   padding: 12px 28px;
+  min-height: 44px;
   background: #D32F2F;
   color: white;
   font-family: 'Plus Jakarta Sans', sans-serif;
@@ -312,4 +315,9 @@ h1, h2, h3, h4, h5, h6 {
 ::-webkit-scrollbar-thumb {
   background: #CBD5E1;
   border-radius: 3px;
+}
+
+/* --- Mobile Safe Area --- */
+.pb-safe {
+  padding-bottom: max(env(safe-area-inset-bottom), 16px);
 }

@@ -283,7 +283,8 @@ router.get('/city-spots/:city', async (req, res) => {
       `${city} tourist attractions`,
       `Tourism in ${city}`,
       `${city} sightseeing`,
-      `${city} landmarks`
+      `${city} landmarks`,
+      city
     ];
 
     let wikitext = '';
@@ -531,6 +532,34 @@ router.post('/trips', async (req, res) => {
     res.status(201).json(trip);
   } catch (error) {
     res.status(400).json({ error: 'Invalid trip data' });
+  }
+});
+
+router.get('/trips', async (req, res) => {
+  try {
+    if (isMemoryFallback) {
+      return res.json(memoryStore.trips);
+    }
+    const trips = await Trip.find().sort({ createdAt: -1 });
+    res.json(trips);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.get('/trips/active', async (req, res) => {
+  try {
+    if (isMemoryFallback) {
+      const activeTrip = memoryStore.trips.find(t => t.status === 'active');
+      return res.json(activeTrip || { message: 'No active trip' });
+    }
+    const activeTrip = await Trip.findOne({ status: 'active' });
+    if (!activeTrip) {
+      return res.json({ message: 'No active trip' });
+    }
+    res.json(activeTrip);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
