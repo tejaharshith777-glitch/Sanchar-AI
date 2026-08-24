@@ -203,7 +203,23 @@ export interface ICitySpot extends Document {
   city: string;
   source: 'curated-sample' | 'wikipedia-live';
   count: number;
-  spots: { name: string; category?: string; blurb?: string }[];
+  spots: {
+    name: string;
+    slug?: string;
+    category?: string;
+    blurb?: string;
+    bestThing?: string;
+    bestTime?: string;
+    timeToSpend?: string;
+    entryCost?: string;
+    nearTransport?: string;
+    tips?: string[];
+    lat?: number;
+    lng?: number;
+    image?: string;
+    coords?: { lat: number; lng: number } | null;
+    source?: string;
+  }[];
   fetchedAt: Date;
 }
 
@@ -213,13 +229,69 @@ const citySpotSchema = new Schema<ICitySpot>({
   count: { type: Number, required: true },
   spots: [{
     name: { type: String, required: true },
+    slug: String,
     category: String,
-    blurb: String
+    blurb: String,
+    bestThing: String,
+    bestTime: String,
+    timeToSpend: String,
+    entryCost: String,
+    nearTransport: String,
+    tips: [String],
+    lat: Number,
+    lng: Number,
+    image: String,
+    coords: { lat: Number, lng: Number },
+    source: String
   }],
   fetchedAt: { type: Date, default: Date.now }
 });
 
 export const CitySpot = mongoose.model<ICitySpot>('CitySpot', citySpotSchema);
+
+// --- LUGGAGE SPOTS ---
+export interface ILuggageSpot extends Document {
+  city: string;
+  name: string;
+  type: 'railway_cloakroom' | 'airport_counter' | 'metro_locker' | 'partner';
+  lat: number;
+  lng: number;
+  hours: string;
+  pricingPerBagHour: string;
+  requiredDocs: string;
+  rules: string;
+  verified: boolean;
+}
+
+const luggageSpotSchema = new Schema<ILuggageSpot>({
+  city: { type: String, required: true },
+  name: { type: String, required: true },
+  type: { type: String, enum: ['railway_cloakroom', 'airport_counter', 'metro_locker', 'partner'], required: true },
+  lat: { type: Number, required: true },
+  lng: { type: Number, required: true },
+  hours: { type: String, default: '24 Hours' },
+  pricingPerBagHour: { type: String, default: '₹15/bag/hour' },
+  requiredDocs: { type: String, default: 'Valid ID Card & Train Ticket' },
+  rules: { type: String, default: 'Lockable bags only' },
+  verified: { type: Boolean, default: false }
+});
+
+export const LuggageSpot = mongoose.model<ILuggageSpot>('LuggageSpot', luggageSpotSchema);
+
+// --- LUGGAGE CHECKINS ---
+export interface ILuggageCheckIn extends Document {
+  spotId: mongoose.Types.ObjectId;
+  status: 'full' | 'limited' | 'available';
+  createdAt: Date;
+}
+
+const luggageCheckInSchema = new Schema<ILuggageCheckIn>({
+  spotId: { type: Schema.Types.ObjectId, ref: 'LuggageSpot', required: true },
+  status: { type: String, enum: ['full', 'limited', 'available'], required: true },
+  createdAt: { type: Date, default: Date.now }
+});
+
+export const LuggageCheckIn = mongoose.model<ILuggageCheckIn>('LuggageCheckIn', luggageCheckInSchema);
 
 // --- IDEMPOTENCY KEYS ---
 export interface IIdempotencyKey extends Document {

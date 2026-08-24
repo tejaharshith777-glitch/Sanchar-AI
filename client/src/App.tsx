@@ -13,6 +13,7 @@ import { ocrProvider } from './ocr/OcrProvider';
 import PocketMap from './components/PocketMap';
 import SancharChatbot from './components/SancharChatbot';
 import MapsPage from './pages/MapsPage';
+import { PlaceDetailPage, LuggageRadarPage } from './pages/PlacesAndLuggage';
 
 // ─── Constants ───────────────────────────────────────────────
 const CITIES = [
@@ -282,6 +283,8 @@ const App = () => {
           <Route path="/faq" element={<AppShell><FaqPage /></AppShell>} />
           <Route path="/dashboard" element={<AppShell><Dashboard /></AppShell>} />
           <Route path="/maps" element={<AppShell><MapsPage /></AppShell>} />
+          <Route path="/spot/:cityName/:slug" element={<AppShell><PlaceDetailPage /></AppShell>} />
+          <Route path="/luggage" element={<AppShell><LuggageRadarPage /></AppShell>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
@@ -1042,6 +1045,8 @@ const LandingPage = () => {
   const [searchError, setSearchError] = useState('');
   const [scrollY, setScrollY] = useState(0);
   const [stats, setStats] = useState<any>(null);
+  const [isInputFocused, setIsInputFocused] = useState(false);
+
   const navigate = useNavigate();
 
   useScrollReveal();
@@ -1056,6 +1061,23 @@ const LandingPage = () => {
     axios.get('/api/site-stats')
       .then(res => setStats(res.data))
       .catch(() => setStats(null));
+  }, []);
+
+  // Hide sticky mobile bottom bar when virtual keyboard is active (focused on inputs)
+  useEffect(() => {
+    const handleFocus = () => setIsInputFocused(true);
+    const handleBlur = () => setIsInputFocused(false);
+    const inputs = document.querySelectorAll('input, textarea');
+    inputs.forEach(el => {
+      el.addEventListener('focus', handleFocus);
+      el.addEventListener('blur', handleBlur);
+    });
+    return () => {
+      inputs.forEach(el => {
+        el.removeEventListener('focus', handleFocus);
+        el.removeEventListener('blur', handleBlur);
+      });
+    };
   }, []);
 
   const handleOpenCity = (cityName: string) => {
@@ -1083,11 +1105,40 @@ const LandingPage = () => {
     el?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const totalHeight = typeof document !== 'undefined' ? document.documentElement.scrollHeight - window.innerHeight : 1;
+  const scrollProgress = totalHeight > 0 ? scrollY / totalHeight : 0;
+
   return (
-    <div className="min-h-screen bg-cream text-ink">
+    <div className="min-h-screen bg-cream text-ink relative overflow-x-hidden selection:bg-[#F59E0B] selection:text-white">
       {showLoader && <IntroLoader onComplete={handleLoaderComplete} />}
 
-      {/* Global Health Notification indicator */}
+      {/* SVG self-drawing route line */}
+      <div className="hidden lg:block fixed left-12 top-0 bottom-0 w-0.5 bg-gray-250/20 z-30">
+        <div 
+          className="w-full bg-[#F59E0B] transition-all duration-75 shadow-xs"
+          style={{ height: `${scrollProgress * 100}%` }}
+        />
+      </div>
+
+      {/* Scroll Progress Bar at very top */}
+      <div 
+        className="fixed top-0 left-0 h-[3px] bg-[#F59E0B] z-50 transition-all duration-75"
+        style={{ width: `${scrollProgress * 100}%` }}
+      />
+
+      {/* Sticky Mobile Bottom Bar */}
+      {scrollY > 400 && !isInputFocused && !activeTrip && (
+        <div className="sm:hidden fixed bottom-4 left-4 right-4 z-40 animate-fade-in-up">
+          <button 
+            onClick={handleStartSafeTripScroll}
+            className="w-full py-3.5 bg-[#00695C] text-white font-bold text-sm rounded-full shadow-2xl border border-teal-500/20 cursor-pointer"
+          >
+            🚀 Start Safe Trip
+          </button>
+        </div>
+      )}
+
+      {/* Global Health Notification Indicator */}
       {isConnecting ? (
         <div className="fixed top-16 left-0 right-0 z-40 bg-[#00695C]/95 backdrop-blur-md text-white text-[11px] py-1.5 px-4 text-center font-semibold flex items-center justify-center gap-1.5 border-b border-teal-700/30">
           <span className="w-2 h-2 rounded-full bg-white animate-ping shrink-0" /> Connecting to Sanchar AI...
@@ -1103,7 +1154,7 @@ const LandingPage = () => {
       ) : null}
 
       {/* ── Sticky Nav ── */}
-      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrollY > 50 ? 'bg-cream/95 backdrop-blur-md border-b border-gray-100 shadow-xs' : 'bg-transparent'}`}>
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrollY > 50 ? 'bg-cream/90 backdrop-blur-md border-b border-gray-150 shadow-xs' : 'bg-transparent'}`}>
         <div className="max-w-[1200px] mx-auto flex justify-between items-center h-16 px-5 md:px-8">
           <Link to="/" className="flex items-center gap-2.5 no-underline">
             <div className="w-9 h-9 bg-[#00695C] rounded-xl flex items-center justify-center shadow-sm">
@@ -1116,6 +1167,7 @@ const LandingPage = () => {
             <Link to="/privacy" className="hidden md:inline text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline">Privacy</Link>
             <Link to="/history" className="text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline">History</Link>
             <Link to="/maps" className="hidden sm:inline text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline">Maps</Link>
+            <Link to="/luggage" className="hidden sm:inline text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline">Luggage</Link>
             <Link to="/dashboard" className="hidden sm:inline text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline">Dashboard</Link>
             <Link to="/create" className="btn-primary text-xs !py-2 !px-5 no-underline">
               Start Trip <ChevronRight size={12} />
@@ -1176,10 +1228,7 @@ const LandingPage = () => {
             <Zap size={13} className="text-[#F59E0B]" /> Offline AI Travel Companion
           </span>
           <h1 className="font-display text-4xl md:text-6xl lg:text-7xl font-bold leading-tight tracking-tight mb-6 max-w-4xl mx-auto">
-            <span className="word-reveal">Travel</span>{' '}
-            <span className="word-reveal">confidently,</span>{' '}
-            <span className="word-reveal">even</span>{' '}
-            <span className="word-reveal">offline.</span>
+            Travel <span className="text-[#F59E0B] italic">confidently</span>, even <span className="text-[#F59E0B] italic">offline.</span>
           </h1>
           <p className="text-teal-100 text-base sm:text-lg md:text-xl mb-10 max-w-xl mx-auto font-medium">
             One companion. Any city in India. Even offline.
@@ -1201,66 +1250,62 @@ const LandingPage = () => {
       </section>
 
       {/* ── 2. VERIFIED STRIP ── */}
-      <section className="section-rhythm bg-white border-y border-gray-100 reveal-element">
+      <section className="bg-cream py-16 border-t border-gray-150">
         <div className="max-w-[1200px] mx-auto px-5 md:px-8">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-12 text-center md:text-left">
-            <div>
-              <div className="flex items-center gap-2 justify-center md:justify-start">
-                <Shield size={20} className="text-[#00695C]" />
-                <span className="font-display font-bold text-lg text-ink">Sanchar AI</span>
-              </div>
-              <p className="text-muted text-sm mt-1">Verified city packs across India</p>
-            </div>
+          <div className="text-center mb-12">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-[#F59E0B] block mb-2">Verified Coverage</span>
+            <h2 className="font-display text-3xl font-bold text-[#1F2937]">Curated offline directories across India</h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 reveal-stagger">
-            <div className="card-retreat flex flex-col h-72">
-              <img src="/images/india/stat_train.jpg" alt="Train stat card" className="h-40 w-full object-cover img-hover-zoom" loading="lazy" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-              <div className="p-5 flex-1 flex flex-col justify-center">
-                <h4 className="font-display font-bold text-base text-ink">8 City Packs</h4>
-                <p className="text-xs text-muted mt-1">Verified local safety directories and translation packs.</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="card-retreat bg-white p-8 rounded-3xl border border-gray-150 shadow-xs flex flex-col justify-between h-48 hover:shadow-md transition">
+              <div>
+                <span className="text-3xl mb-4 block">📦</span>
+                <h4 className="font-bold text-[#1F2937] text-base mb-1">City Packs</h4>
+                <p className="text-xs text-[#64748B]">Verified offline directories with emergency info and local phrases.</p>
               </div>
+              <span className="text-xs font-bold text-[#00695C] mt-2 inline-flex items-center gap-1">
+                <AnimatedCounter value={stats ? stats.cityPacksLive : 8} /> Packs Available
+              </span>
             </div>
-            <div className="card-retreat flex flex-col h-72">
-              <img src="/images/india/stat_temple.jpg" alt="Temple stat card" className="h-40 w-full object-cover img-hover-zoom" loading="lazy" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-              <div className="p-5 flex-1 flex flex-col justify-center">
-                <h4 className="font-display font-bold text-base text-ink">6 Languages</h4>
-                <p className="text-xs text-muted mt-1">On-device emergency translations & phrases.</p>
+            <div className="card-retreat bg-white p-8 rounded-3xl border border-gray-150 shadow-xs flex flex-col justify-between h-48 hover:shadow-md transition">
+              <div>
+                <span className="text-3xl mb-4 block">🗣️</span>
+                <h4 className="font-bold text-[#1F2937] text-base mb-1">Languages</h4>
+                <p className="text-xs text-[#64748B]">Pre-downloaded on-device local translation and phrases support.</p>
               </div>
+              <span className="text-xs font-bold text-[#00695C] mt-2 inline-flex items-center gap-1">
+                <AnimatedCounter value={6} /> Local languages
+              </span>
             </div>
-            <div className="card-retreat flex flex-col h-72">
-              <img src="/images/india/stat_food.jpg" alt="Food stat card" className="h-40 w-full object-cover img-hover-zoom" loading="lazy" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-              <div className="p-5 flex-1 flex flex-col justify-center">
-                <h4 className="font-display font-bold text-base text-ink">7,935 Urban Centres</h4>
-                <p className="text-xs text-muted mt-1">Live data lookups & offline maps.</p>
+            <div className="card-retreat bg-white p-8 rounded-3xl border border-gray-150 shadow-xs flex flex-col justify-between h-48 hover:shadow-md transition">
+              <div>
+                <span className="text-3xl mb-4 block">🏢</span>
+                <h4 className="font-bold text-[#1F2937] text-base mb-1">Urban Centres</h4>
+                <p className="text-xs text-[#64748B]">Real coordinate and attraction indexes covering Indian cities.</p>
               </div>
+              <span className="text-xs font-bold text-[#00695C] mt-2 inline-flex items-center gap-1">
+                <AnimatedCounter value={7935} /> Cities Indexed
+              </span>
             </div>
           </div>
         </div>
       </section>
 
       {/* ── 3. PLAN YOUR JOURNEY ── */}
-      <section id="plan-journey" className="section-rhythm relative bg-cover bg-center" style={{ backgroundImage: "url('/images/india/bg_section1.jpg')" }}>
-        <div className="absolute inset-0 bg-[#00695C]/90" />
-        <div className="relative z-10 max-w-[1200px] mx-auto px-5 md:px-8 flex flex-col lg:flex-row items-center gap-12">
-          <div className="flex-1 text-white text-center lg:text-left reveal-element">
-            <span className="badge bg-white/10 text-white border border-white/20 mb-4 inline-flex items-center gap-1.5 py-1 px-3 text-xs font-semibold rounded-full">
-              🧭 Real-Time Budgeting
-            </span>
-            <h2 className="font-display text-3xl md:text-5xl font-bold leading-tight mb-5">
-              Plan your travel budget with precision
-            </h2>
-            <p className="text-teal-100 text-sm md:text-base max-w-md">
-              Enter your route and travel style to generate an immediate suggested budget. Luggage porter rates are accounted for automatically.
-            </p>
+      <section id="plan-journey" className="bg-[#FAF7F2] py-20 border-t border-gray-150">
+        <div className="max-w-[1200px] mx-auto px-5 md:px-8">
+          <div className="text-center mb-12">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-[#F59E0B] block mb-2">Create journey</span>
+            <h2 className="font-display text-3xl md:text-4xl font-bold text-[#1F2937]">Configure your safety telemetry</h2>
           </div>
-          <div className="w-full max-w-md bg-white rounded-3xl p-6 md:p-8 shadow-2xl border border-gray-100 reveal-element">
+          <div className="bg-white p-6 md:p-10 rounded-3xl border border-gray-150 shadow-sm max-w-3xl mx-auto">
             <HeroSearchForm preFillDest={destinationPreFill} />
           </div>
         </div>
       </section>
 
       {/* ── 4. WHY SANCHAR ── */}
-      <section className="section-rhythm bg-cream reveal-element">
+      <section className="bg-cream py-20 border-t border-gray-150">
         <div className="max-w-[1200px] mx-auto px-5 md:px-8">
           <div className="max-w-3xl mx-auto text-center mb-16">
             <span className="badge badge-teal mb-3"><Compass size={14} /> Design DNA</span>
@@ -2060,7 +2105,27 @@ const ActiveTrip = () => {
   const [completing, setCompleting] = useState(false);
   const [lastNotYetTime, setLastNotYetTime] = useState(0);
   const [photoAddedMsg, setPhotoAddedMsg] = useState('');
+  const [lastRestTime, setLastRestTime] = useState(0);
+  const [lastNudgeTime, setLastNudgeTime] = useState(0);
   const navigate = useNavigate();
+
+  const handleLogLuggageAutoExpense = async () => {
+    try {
+      await axios.post(`/api/trips/${tripId}/expenses`, {
+        amount: 50,
+        category: 'transport',
+        merchant: 'Auto Rickshaw (Porter Nudge)',
+        date: new Date(),
+        source: 'manual',
+        confirmed: true
+      });
+      alert('Logged ₹50 transport expense.');
+      setLastNudgeTime(Date.now());
+      axios.get(`/api/trips/${tripId}`).then(r => setTrip(r.data)).catch(console.warn);
+    } catch (err) {
+      console.warn(err);
+    }
+  };
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -2407,31 +2472,31 @@ const ActiveTrip = () => {
         </div>
       )}
 
-      {/* Luggage Buddy Prompt (Mocked for Demo based on distance) */}
-      {trip?.heavyLuggage && distance > 1.5 && segment === 'walking' && (
+      {/* Luggage Buddy Prompt (cooldown logic checked via state) */}
+      {trip?.heavyLuggage && distance > 1.5 && segment === 'walking' && (Date.now() - lastRestTime > 1800000) && (
         <div className="px-5 md:px-8 mb-4">
           <div className="p-4 bg-amber-50 rounded-2xl border border-amber-200 shadow-sm relative">
-            <button className="absolute top-2 right-2 text-amber-600 font-bold p-1"><Check size={16} /></button>
+            <button onClick={() => setLastRestTime(Date.now())} className="absolute top-2 right-2 text-amber-600 font-bold p-1 cursor-pointer"><Check size={16} /></button>
             <h4 className="font-bold text-amber-900 mb-1 flex items-center gap-1"><AlertTriangle size={14} /> Heavy load? Take a break.</h4>
             <p className="text-xs text-amber-800 mb-3">You've been walking for a while with heavy luggage. There are water stations and rest areas nearby (approximate).</p>
             <div className="flex gap-2">
-              <button className="bg-amber-600 text-white text-xs font-bold py-1.5 px-3 rounded-lg">Find Rest Area</button>
-              <button className="bg-amber-200 text-amber-900 text-xs font-bold py-1.5 px-3 rounded-lg">Got it</button>
+              <button onClick={() => { alert('Locating nearest rest zone...'); setLastRestTime(Date.now()); }} className="bg-amber-600 text-white text-xs font-bold py-1.5 px-3 rounded-lg cursor-pointer">Find Rest Area</button>
+              <button onClick={() => setLastRestTime(Date.now())} className="bg-amber-200 text-amber-900 text-xs font-bold py-1.5 px-3 rounded-lg cursor-pointer">Got it</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Luggage Buddy Auto Nudge (Mocked for Demo based on distance) */}
-      {trip?.heavyLuggage && distance > 2.0 && segment === 'walking' && (
+      {/* Luggage Buddy Auto Nudge (cooldown logic checked via state) */}
+      {trip?.heavyLuggage && distance > 2.0 && segment === 'walking' && (Date.now() - lastNudgeTime > 1800000) && (
         <div className="px-5 md:px-8 mb-4">
           <div className="p-4 bg-blue-50 rounded-2xl border border-blue-200 shadow-sm relative">
-            <button className="absolute top-2 right-2 text-blue-600 font-bold p-1"><Check size={16} /></button>
+            <button onClick={() => setLastNudgeTime(Date.now())} className="absolute top-2 right-2 text-blue-600 font-bold p-1 cursor-pointer"><Check size={16} /></button>
             <h4 className="font-bold text-blue-900 mb-1 flex items-center gap-1"><Smartphone size={14} /> Smart Transport Nudge</h4>
             <p className="text-xs text-blue-800 mb-3">With heavy bags, an auto is worth it — typical fare for ~2 km: ₹40–60 (typical range).</p>
             <div className="flex gap-2">
-              <button className="bg-blue-600 text-white text-xs font-bold py-1.5 px-3 rounded-lg">Log as expense</button>
-              <button className="bg-blue-200 text-blue-900 text-xs font-bold py-1.5 px-3 rounded-lg">I'll walk</button>
+              <button onClick={handleLogLuggageAutoExpense} className="bg-blue-600 text-white text-xs font-bold py-1.5 px-3 rounded-lg cursor-pointer">Log as expense</button>
+              <button onClick={() => setLastNudgeTime(Date.now())} className="bg-blue-200 text-blue-900 text-xs font-bold py-1.5 px-3 rounded-lg cursor-pointer">I'll walk</button>
             </div>
           </div>
         </div>

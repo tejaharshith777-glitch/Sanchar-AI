@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Bot, X, Send, Sparkles, WifiOff, Wifi, RotateCcw, Trash2 } from 'lucide-react';
 import axios from 'axios';
 import { saveAiChat, getAiChats, clearAiChats, getCachedCityPack } from '../store/db';
@@ -77,8 +78,32 @@ export default function SancharChatbot({ activeTrip }: SancharChatbotProps) {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [messages, setMessages] = useState<Message[]>([]);
   const [loadedFromDB, setLoadedFromDB] = useState(false);
+  const [citySpots, setCitySpots] = useState<any[]>([]);
 
   const chatEndRef = useRef<HTMLDivElement>(null);
+
+  // Load spots from city pack dynamically (online or local cache fallback)
+  useEffect(() => {
+    if (!activeTrip?.destinationCity) return;
+    const dest = activeTrip.destinationCity;
+    if (navigator.onLine) {
+      axios.get(`/api/city-packs/${encodeURIComponent(dest)}`)
+        .then(res => {
+          if (res.data?.spots) {
+            setCitySpots(res.data.spots);
+          }
+        })
+        .catch(() => {
+          getCachedCityPack(dest).then(pack => {
+            if (pack?.spots) setCitySpots(pack.spots);
+          });
+        });
+    } else {
+      getCachedCityPack(dest).then(pack => {
+        if (pack?.spots) setCitySpots(pack.spots);
+      });
+    }
+  }, [activeTrip, isOnline]);
 
   // ─── ONLINE/OFFLINE DETECTION ───
   useEffect(() => {
@@ -344,6 +369,29 @@ export default function SancharChatbot({ activeTrip }: SancharChatbotProps) {
                   }`}
                 >
                   <p className="whitespace-pre-line">{msg.text}</p>
+                  
+                  {/* View Place Navigation Chips */}
+                  {msg.sender === 'ai' && citySpots.length > 0 && (() => {
+                    const lowercaseText = msg.text.toLowerCase();
+                    const matchedSpots = citySpots.filter(spot => 
+                      lowercaseText.includes(spot.name.toLowerCase())
+                    );
+                    if (matchedSpots.length === 0) return null;
+                    return (
+                      <div className="flex flex-wrap gap-1.5 mt-2.5 pt-2 border-t border-gray-100">
+                        {matchedSpots.map(spot => (
+                          <Link
+                            key={spot.slug || spot.name}
+                            to={`/spot/${encodeURIComponent((activeTrip?.destinationCity || '').toLowerCase())}/${encodeURIComponent(spot.slug || spot.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''))}`}
+                            onClick={() => setIsOpen(false)}
+                            className="inline-flex items-center gap-1.5 text-[10px] font-bold bg-orange-50 text-[#E65100] px-2.5 py-1 rounded-full border border-orange-100 hover:bg-[#FF6F00] hover:text-white transition-all no-underline cursor-pointer"
+                          >
+                            📍 View {spot.name}
+                          </Link>
+                        ))}
+                      </div>
+                    );
+                  })()}
                 </div>
                 <div className="flex items-center gap-2 mt-1 px-1">
                   <span className="text-[10px] text-gray-400">{formatTime(msg.timestamp)}</span>

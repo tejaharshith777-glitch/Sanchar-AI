@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
-import { Trip, LocationPoint, JourneySegment, Expense, CityPack, SafetyEvent, MobilityAggregate, PilotSignup, CitySpot, IdempotencyKey } from '../models';
-import { processTripPrivacySync } from '../services/privacy';
+import { Trip, LocationPoint, JourneySegment, Expense, CityPack, SafetyEvent, MobilityAggregate, PilotSignup, CitySpot, IdempotencyKey, LuggageSpot, LuggageCheckIn } from '../models';
 import { isMemoryFallback, memoryStore } from '../services/db';
+import { processTripPrivacySync } from '../services/privacy';
 
 const router = Router();
 
@@ -81,18 +81,65 @@ router.get('/cities', (req, res) => {
 
 router.get('/city-packs/:city', async (req, res) => {
   try {
-    const city = req.params.city;
-    if (isMemoryFallback) {
-      let pack = memoryStore.cityPacks.find(p => p.city.toLowerCase() === city.toLowerCase());
-      if (!pack) pack = memoryStore.cityPacks.find(p => p.city === 'default');
-      return res.json(pack);
+    const city = normalizeCityName(req.params.city);
+    if (!city) {
+      return res.status(400).json({ error: 'City parameter is required.' });
     }
 
-    let pack = await CityPack.findOne({ city });
-    if (!pack) pack = await CityPack.findOne({ city: 'default' }); // Fallback
-    res.json(pack);
+    // 1. Get or create spots for this city via Wikipedia live engine
+    const spotRecord = await getOrCreateCitySpots(city);
+    
+    // 2. Find CityPack or use general default fallback
+    let pack: any = null;
+    if (isMemoryFallback) {
+      pack = memoryStore.cityPacks.find(p => p.city.toLowerCase() === city.toLowerCase());
+      if (!pack) {
+        const defaultPack = memoryStore.cityPacks.find(p => p.city === 'default');
+        pack = defaultPack ? { ...defaultPack, city } : null;
+      }
+    } else {
+      const dbPack = await CityPack.findOne({ city: new RegExp(`^${city}$`, 'i') });
+      if (dbPack) {
+        pack = dbPack.toObject();
+      } else {
+        const defaultPack = await CityPack.findOne({ city: 'default' });
+        if (defaultPack) {
+          pack = defaultPack.toObject();
+          pack.city = city;
+        }
+      }
+    }
+
+    if (!pack) {
+      pack = {
+        city,
+        languages: ["English", "Hindi"],
+        emergencyNumbers: [
+          { label: "National Emergency", number: "112" },
+          { label: "Railway Helpline", number: "139" }
+        ],
+        transportGuidance: "General India guidance. Always confirm auto/taxi fares before boarding.",
+        phrases: [
+          { en: "Please help me.", local: "कृपया मेरी मदद करें।", localLang: "Hindi" },
+          { en: "Where is the station?", local: "स्टेशन कहाँ है?", localLang: "Hindi" }
+        ],
+        contentStatus: "generic-fallback"
+      };
+    }
+
+    const spots = spotRecord ? spotRecord.spots : [];
+    const source = spotRecord ? spotRecord.source : 'wikipedia-live';
+    const spotCount = spotRecord ? spotRecord.count : 0;
+
+    res.json({
+      ...pack,
+      spots,
+      source,
+      spotCount
+    });
   } catch (error) {
-    res.status(500).json({ error: 'Server error' });
+    console.error('Error fetching city pack:', error);
+    res.status(500).json({ error: 'Server error fetching city pack.' });
   }
 });
 
@@ -248,204 +295,335 @@ function normalizeCityName(str: string): string {
   return trimmed.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
 }
 
-router.get('/city-spots/:city', async (req, res) => {
+async function fetchWikiCoordinates(spotName: string): Promise<{ lat: number; lng: number } | null> {
   try {
-    const city = normalizeCityName(req.params.city);
-    if (!city) {
-      return res.status(400).json({ error: 'City parameter is required.' });
+    const url = `https://en.wikipedia.org/w/api.php?action=query&prop=coordinates&format=json&titles=${encodeURIComponent(spotName)}&redirects=1`;
+    const res = await fetch(url, { headers: { 'User-Agent': 'SancharAI/1.0' } });
+    const data = await res.json();
+    if (data.query && data.query.pages) {
+      const pages = data.query.pages;
+      const pageId = Object.keys(pages)[0];
+      if (pageId && pages[pageId].coordinates && pages[pageId].coordinates[0]) {
+        const coords = pages[pageId].coordinates[0];
+        return { lat: coords.lat, lng: coords.lon };
+      }
     }
+  } catch (err) {
+    console.warn(`Failed to fetch coordinates for ${spotName}:`, err);
+  }
+  return null;
+}
 
-    // 1. Check Cache
+import { curatedSpotsData } from '../data/spotsData';
+
+async function getOrCreateCitySpots(cityName: string): Promise<any> {
+  const city = normalizeCityName(cityName);
+  if (!city) return null;
+
+  // 1. Check Curated static first
+  const curated = curatedSpotsData[city];
+
+  // 2. Check Database/Memory Cache
+  let cached: any = null;
+  if (isMemoryFallback) {
+    cached = memoryStore.citySpots.find(c => c.city.toLowerCase() === city.toLowerCase());
+  } else {
+    cached = await CitySpot.findOne({ city: new RegExp(`^${city}$`, 'i') });
+  }
+
+  if (cached) {
+    return cached;
+  }
+
+  // If curated static exists and not cached, seed it
+  if (curated) {
+    const record = {
+      city,
+      source: 'curated-sample' as const,
+      count: curated.length,
+      spots: curated,
+      fetchedAt: new Date()
+    };
     if (isMemoryFallback) {
-      const cached = memoryStore.citySpots.find(c => c.city.toLowerCase() === city.toLowerCase());
-      if (cached) return res.json(cached);
+      memoryStore.citySpots.push(record);
     } else {
-      const cached = await CitySpot.findOne({ city: new RegExp(`^${city}$`, 'i') });
-      if (cached) return res.json(cached);
+      const doc = new CitySpot(record);
+      await doc.save();
     }
+    return record;
+  }
 
-    // 2. Curated showcase check
-    const curatedList = CURATED_CITY_SPOTS[city];
-    if (curatedList) {
-      const spots = curatedList.map(name => {
-        const category = getCategoryForSpot(name);
-        return {
+  // 3. Wikipedia Live attraction scraper
+  console.log(`[WIKI SCRAPER] Fetching tourist spots for ${city}...`);
+  const listTitlesToTry = [
+    `List of tourist attractions in ${city}`,
+    `Tourist attractions in ${city}`,
+    `Places of interest in ${city}`,
+    `Tourism in ${city}`
+  ];
+
+  let wikitext = '';
+  const spotsList: any[] = [];
+
+  const cleanDesc = (desc: string) => {
+    let d = desc.trim();
+    d = d.replace(/^''':?\s*/, '');
+    if (d.startsWith('-') || d.startsWith('–') || d.startsWith(':') || d.startsWith(',')) {
+      d = d.substring(1).trim();
+    }
+    d = d.replace(/\[\[(?:[^|\]]*\|)?([^\]]+)\]\]/g, '$1');
+    d = d.replace(/\{\{.*?\}\}/g, '');
+    d = d.replace(/<ref.*?>.*?<\/ref>/g, '');
+    d = d.replace(/<.*?>/g, '');
+    return d;
+  };
+
+  const addSpot = (name: string, desc: string) => {
+    if (name && !/^(file|image|category|special|media|wikipedia):/i.test(name) && !isInvalidSpot(name)) {
+      if (!spotsList.some(s => s.name.toLowerCase() === name.toLowerCase())) {
+        const category = getCategoryForSpot(name).toLowerCase();
+        spotsList.push({
           name,
-          category,
-          blurb: getCuratedBlurbForSpot(name, category, city)
-        };
-      });
-
-      const citySpotRecord = {
-        city,
-        source: 'curated-sample' as const,
-        count: spots.length,
-        spots,
-        fetchedAt: new Date()
-      };
-
-      if (isMemoryFallback) {
-        memoryStore.citySpots.push(citySpotRecord);
-      } else {
-        const doc = new CitySpot(citySpotRecord);
-        await doc.save();
+          slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+          category: category || 'monument',
+          blurb: cleanDesc(desc) || `A real tourist attraction in ${city}.`,
+          bestThing: `Discovering the historic charm of ${name}.`,
+          bestTime: '—',
+          timeToSpend: '—',
+          entryCost: '—',
+          nearTransport: '—',
+          tips: ['—'],
+          image: '',
+          source: 'wikipedia-live'
+        });
       }
-
-      return res.json(citySpotRecord);
     }
+  };
 
-    // 3. Live Wikipedia Fetch
-    const listTitlesToTry = [
-      `List of tourist attractions in ${city}`,
-      `${city} tourist attractions`,
-      `Tourism in ${city}`,
-      `${city} sightseeing`
-    ];
-
-    let wikitext = '';
-    
-    // Helper to clean wikitext descriptions
-    const cleanDesc = (desc: string) => {
-      let d = desc.trim();
-      d = d.replace(/^''':?\s*/, '');
-      if (d.startsWith('-') || d.startsWith('–') || d.startsWith(':') || d.startsWith(',')) {
-        d = d.substring(1).trim();
-      }
-      d = d.replace(/\[\[(?:[^|\]]*\|)?([^\]]+)\]\]/g, '$1');
-      d = d.replace(/\{\{.*?\}\}/g, '');
-      d = d.replace(/<ref.*?>.*?<\/ref>/g, '');
-      d = d.replace(/<.*?>/g, '');
-      return d;
-    };
-
-    const spotsList: { name: string; category: string; blurb: string }[] = [];
-    const addSpot = (name: string, desc: string) => {
-      console.log('addSpot called with:', name);
-      if (name && !/^(file|image|category|special|media|wikipedia):/i.test(name) && !isInvalidSpot(name)) {
-        if (!spotsList.some(s => s.name.toLowerCase() === name.toLowerCase())) {
-          const category = getCategoryForSpot(name);
-          spotsList.push({
-            name,
-            category,
-            blurb: cleanDesc(desc) || ''
-          });
-          console.log('Added spot:', name);
+  for (const title of listTitlesToTry) {
+    try {
+      const url = `https://en.wikipedia.org/w/api.php?action=parse&page=${encodeURIComponent(title)}&prop=wikitext&format=json&redirects=1`;
+      const wikiRes = await fetch(url, { headers: { 'User-Agent': 'SancharAI/1.0' } });
+      const data = await wikiRes.json();
+      if (data.parse && data.parse.wikitext) {
+        wikitext = data.parse.wikitext['*'];
+        const lines = wikitext.split('\n');
+        for (const line of lines) {
+          const trimmed = line.trim();
+          const match = trimmed.match(/^\*\s*(?:'''''|'''|'')?\[\[(.*?)\]\](.*)/) || trimmed.match(/^\*\s*\{\{.*?\}\}\s*(?:'''''|'''|'')?\[\[(.*?)\]\](.*)/) || trimmed.match(/^#\s*(?:'''''|'''|'')?\[\[(.*?)\]\](.*)/);
+          if (match) {
+            const parts = match[1].split('|');
+            const name = parts[0].split('#')[0].trim();
+            addSpot(name, match[2]);
+          }
         }
-      } else {
-        console.log('Rejected spot:', name, 'isInvalid:', isInvalidSpot(name));
+        if (spotsList.length >= 8) break;
       }
-    };
+    } catch (err) {
+      // ignore
+    }
+  }
 
-    for (const title of listTitlesToTry) {
-      try {
-        console.log('Fetching list page:', title);
-        const url = `https://en.wikipedia.org/w/api.php?action=parse&page=${encodeURIComponent(title)}&prop=wikitext&format=json&redirects=1`;
-        const wikiRes = await fetch(url, { headers: { 'User-Agent': 'SancharAI/1.0' } });
-        const data = await wikiRes.json();
-        if (data.parse && data.parse.wikitext) {
-          console.log('Found list page wikitext for:', title);
-          wikitext = data.parse.wikitext['*'];
-          const lines = wikitext.split('\n');
-          for (const line of lines) {
-            const trimmed = line.trim();
-            const match = trimmed.match(/^\*\s*(?:'''''|'''|'')?\[\[(.*?)\]\](.*)/) || trimmed.match(/^\*\s*\{\{.*?\}\}\s*(?:'''''|'''|'')?\[\[(.*?)\]\](.*)/) || trimmed.match(/^#\s*(?:'''''|'''|'')?\[\[(.*?)\]\](.*)/);
+  // Fallback to City main article
+  if (spotsList.length < 3) {
+    try {
+      const url = `https://en.wikipedia.org/w/api.php?action=parse&page=${encodeURIComponent(city)}&prop=wikitext&format=json&redirects=1`;
+      const wikiRes = await fetch(url, { headers: { 'User-Agent': 'SancharAI/1.0' } });
+      const data = await wikiRes.json();
+      if (data.parse && data.parse.wikitext) {
+        wikitext = data.parse.wikitext['*'];
+        const lines = wikitext.split('\n');
+        let inTourism = false;
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (/==\s*(Tourist attractions|Places of interest|Sights|Tourism)\s*==/i.test(trimmed)) {
+            inTourism = true;
+          } else if (inTourism && /^==[^=]/m.test(trimmed)) {
+            inTourism = false;
+          }
+          if (inTourism) {
+            const match = trimmed.match(/^\*\s*(?:'''''|'''|'')?\[\[(.*?)\]\](.*)/) || trimmed.match(/^\*\s*\{\{.*?\}\}\s*(?:'''''|'''|'')?\[\[(.*?)\]\](.*)/);
             if (match) {
               const parts = match[1].split('|');
               const name = parts[0].split('#')[0].trim();
               addSpot(name, match[2]);
             }
           }
-          if (spotsList.length > 5) break; // found enough in this list page
         }
-      } catch (err) {
-        console.warn(`Wikipedia list page load failed for ${title}:`, err);
       }
+    } catch (err) {
+      // ignore
+    }
+  }
+
+  // Rate-limited coordinates query: fetch coordinates for up to 10 spots sequentially with 200ms sleep
+  const finalSpots = spotsList.slice(0, 25);
+  for (let i = 0; i < Math.min(finalSpots.length, 10); i++) {
+    const spot = finalSpots[i];
+    const coords = await fetchWikiCoordinates(spot.name);
+    if (coords) {
+      spot.lat = coords.lat;
+      spot.lng = coords.lng;
+      spot.coords = coords;
+    }
+    await new Promise(resolve => setTimeout(resolve, 200)); // polite delay
+  }
+
+  const record = {
+    city,
+    source: 'wikipedia-live' as const,
+    count: finalSpots.length,
+    spots: finalSpots,
+    fetchedAt: new Date()
+  };
+
+  if (isMemoryFallback) {
+    memoryStore.citySpots.push(record);
+  } else {
+    try {
+      const doc = new CitySpot(record);
+      await doc.save();
+    } catch (err) {
+      console.warn('Failed to cache generated city spots:', err);
+    }
+  }
+
+  return record;
+}
+
+// 1. GET /api/city-spots/:city (Legacy support)
+router.get('/city-spots/:city', async (req, res) => {
+  try {
+    const city = normalizeCityName(req.params.city);
+    if (!city) {
+      return res.status(400).json({ error: 'City parameter is required.' });
+    }
+    const spots = await getOrCreateCitySpots(city);
+    res.json(spots || { found: false, spots: [], source: 'wikipedia-live', count: 0 });
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// 2. GET /api/spots/:city/:slug (Individual Spot Detail)
+router.get('/spots/:city/:slug', async (req, res) => {
+  try {
+    const city = normalizeCityName(req.params.city);
+    const slug = req.params.slug.trim().toLowerCase();
+
+    const spotRecord = await getOrCreateCitySpots(city);
+    if (!spotRecord || !spotRecord.spots) {
+      return res.status(404).json({ error: 'City pack not found.' });
     }
 
-    // If still no spots found, query the main city page
-    if (spotsList.length < 5) {
-      try {
-        console.log('Fetching main page:', city);
-        const url = `https://en.wikipedia.org/w/api.php?action=parse&page=${encodeURIComponent(city)}&prop=wikitext&format=json&redirects=1`;
-        const wikiRes = await fetch(url, { headers: { 'User-Agent': 'SancharAI/1.0' } });
-        const data = await wikiRes.json();
-        if (data.parse && data.parse.wikitext) {
-          console.log('Found main page wikitext for:', city);
-          wikitext = data.parse.wikitext['*'];
-          
-          const lines = wikitext.split('\n');
-          let inTourism = false;
-          
-          for (const line of lines) {
-            const trimmed = line.trim();
-            if (/==\s*(Tourist attractions|Places of interest|Sights|Tourism)\s*==/i.test(trimmed)) {
-              inTourism = true;
-            } else if (inTourism && /^==[^=]/m.test(trimmed)) {
-              inTourism = false;
-            }
-            
-            if (inTourism) {
-              const match = trimmed.match(/^\*\s*(?:'''''|'''|'')?\[\[(.*?)\]\](.*)/) || trimmed.match(/^\*\s*\{\{.*?\}\}\s*(?:'''''|'''|'')?\[\[(.*?)\]\](.*)/);
-              if (match) {
-                const parts = match[1].split('|');
-                const name = parts[0].split('#')[0].trim();
-                addSpot(name, match[2]);
-              }
-            }
-          }
-          
-          if (spotsList.length < 10) {
-            inTourism = false;
-            for (const line of lines) {
-              const trimmed = line.trim();
-              if (/==\s*(Tourist attractions|Places of interest|Sights|Tourism)\s*==/i.test(trimmed)) {
-                inTourism = true;
-              } else if (inTourism && /^==[^=]/m.test(trimmed)) {
-                inTourism = false;
-              }
-              
-              if (inTourism) {
-                const inlineMatches = trimmed.matchAll(/\[\[(.*?)\]\]/g);
-                for (const m of inlineMatches) {
-                  const parts = m[1].split('|');
-                  const name = parts[0].split('#')[0].trim();
-                  const ignoreList = ['india', 'state', 'district', 'city', 'tourism', 'tourist', 'government', 'railway station', 'airport', 'national highway', 'stupa', 'buddhism', 'hinduism', 'jainism', 'culture', 'history', 'population', 'demographics', 'climate', 'tiger', 'forest', 'census', 'latitude', 'longitude', 'utc', 'madhya pradesh', 'uttar pradesh', 'maharashtra', 'karnataka', 'tamil nadu', 'kerala', 'andhra pradesh', 'telangana', 'assam', 'west bengal', 'odisha', 'bihar', 'gujarat', 'rajasthan', 'punjab', 'haryana', 'jammu and kashmir', 'maharashtra', 'india'];
-                  if (!ignoreList.includes(name.toLowerCase())) {
-                    addSpot(name, '');
-                  }
-                }
-              }
-            }
+    const spot = spotRecord.spots.find((s: any) => (s.slug || '').toLowerCase() === slug || s.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') === slug);
+    if (!spot) {
+      return res.status(404).json({ error: 'Spot not found.' });
+    }
+
+    res.json(spot);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error fetching spot details.' });
+  }
+});
+
+// 3. GET /api/luggage-spots (Luggage Radar search)
+router.get('/luggage-spots', async (req, res) => {
+  try {
+    const city = req.query.city ? normalizeCityName(req.query.city as string) : '';
+    if (!city) {
+      return res.status(400).json({ error: 'City query parameter is required.' });
+    }
+
+    let spots: any[] = [];
+    if (isMemoryFallback) {
+      spots = memoryStore.luggageSpots.filter(s => s.city.toLowerCase() === city.toLowerCase());
+    } else {
+      spots = await LuggageSpot.find({ city: new RegExp(`^${city}$`, 'i') });
+    }
+
+    // Compute status based on last 24h checkins
+    const cutoff24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const cutoff2h = new Date(Date.now() - 2 * 60 * 60 * 1000);
+
+    const finalSpots = [];
+    for (const spot of spots) {
+      const spotObj = typeof spot.toObject === 'function' ? spot.toObject() : { ...spot };
+      let checkins: any[] = [];
+
+      if (isMemoryFallback) {
+        checkins = memoryStore.luggageCheckIns.filter(c => String(c.spotId) === String(spotObj._id) && c.createdAt >= cutoff24h);
+      } else {
+        checkins = await LuggageCheckIn.find({ spotId: spotObj._id, createdAt: { $gte: cutoff24h } });
+      }
+
+      const reportCount = checkins.length;
+      let status = 'No reports yet — be the first to report';
+
+      if (reportCount > 0) {
+        const recentFull = checkins.some(c => c.status === 'full' && c.createdAt >= cutoff2h);
+        if (recentFull) {
+          status = 'Full';
+        } else {
+          const fullCount = checkins.filter(c => c.status === 'full').length;
+          const limitedCount = checkins.filter(c => c.status === 'limited').length;
+          const availableCount = checkins.filter(c => c.status === 'available').length;
+
+          if (fullCount > 0 && availableCount > 0) {
+            status = 'Limited';
+          } else if (limitedCount > availableCount) {
+            status = 'Limited';
+          } else {
+            status = 'High availability';
           }
         }
-      } catch (err) {
-        console.warn(`Wikipedia main page load failed for city ${city}:`, err);
       }
+
+      finalSpots.push({
+        ...spotObj,
+        status,
+        reportCount
+      });
     }
 
-    if (spotsList.length === 0) {
-      return res.json({ found: false });
-    }
+    res.json(finalSpots);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error fetching luggage spots.' });
+  }
+});
 
-    const finalSpots = spotsList.slice(0, 25);
-    const citySpotRecord = {
-      city,
-      source: 'wikipedia-live' as const,
-      count: finalSpots.length,
-      spots: finalSpots,
-      fetchedAt: new Date()
-    };
+// Rate-limiter for checkins: max 5 requests per hour per IP
+const checkinLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  message: { error: 'Rate limit exceeded. Maximum 5 reports per hour.' }
+});
+
+// 4. POST /api/luggage-spots/:id/checkin (Report availability)
+router.post('/luggage-spots/:id/checkin', checkinLimiter, async (req, res) => {
+  try {
+    const spotId = req.params.id;
+    const { status } = req.body;
+    if (!status || !['full', 'limited', 'available'].includes(status)) {
+      return res.status(400).json({ error: 'Invalid check-in status.' });
+    }
 
     if (isMemoryFallback) {
-      memoryStore.citySpots.push(citySpotRecord);
+      const record = {
+        _id: generateId(),
+        spotId: spotId as any,
+        status: status as any,
+        createdAt: new Date()
+      };
+      memoryStore.luggageCheckIns.push(record);
     } else {
-      const doc = new CitySpot(citySpotRecord);
-      await doc.save();
+      const checkin = new LuggageCheckIn({ spotId, status });
+      await checkin.save();
     }
 
-    res.json(citySpotRecord);
+    res.json({ success: true, message: 'Thank you for reporting!' });
   } catch (error) {
-    res.status(500).json({ error: 'Server error while fetching city spots.' });
+    res.status(500).json({ error: 'Server error processing check-in.' });
   }
 });
 
@@ -1020,6 +1198,7 @@ router.post('/ai/chat', aiLimiter, async (req, res) => {
 
     // Server-constructed system prompt
     let contextStr = 'None';
+    let spotsContextStr = '';
     if (tripContext) {
       const origin = tripContext.originCity || 'Origin';
       const dest = tripContext.destinationCity || 'Destination';
@@ -1032,9 +1211,21 @@ router.post('/ai/chat', aiLimiter, async (req, res) => {
       const fares = tripContext.typicalFares || 'Auto ₹30-50/km';
 
       contextStr = `${origin} → ${dest} · day ${day} · budget ${budget} · remaining ${remaining} · current segment ${mode} · destination highlights: ${highlights} · key phrases: ${phrases} · typical fares: ${fares}`;
+
+      if (dest) {
+        try {
+          const destSpots = await getOrCreateCitySpots(dest);
+          if (destSpots && destSpots.spots && destSpots.spots.length > 0) {
+            const spotsInfo = destSpots.spots.slice(0, 10).map((s: any) => `${s.name} (${s.category})`).join(', ');
+            spotsContextStr = ` Verified spots in ${dest} (${destSpots.source}): ${spotsInfo}.`;
+          }
+        } catch (e) {
+          // ignore
+        }
+      }
     }
 
-    const systemPrompt = `You are Sanchar AI, a practical Indian travel companion. Answer SHORT (2-4 sentences). If the user writes in Tamil/Telugu/Hindi/Kannada/Malayalam, answer in that language; else English. Never invent exact prices — honest ranges only. Mention 112 whenever safety is involved. Injected context: ${contextStr}. Politely redirect non-travel questions.`;
+    const systemPrompt = `You are Sanchar AI, a practical Indian travel companion. Answer SHORT (2-4 sentences). If the user writes in Tamil/Telugu/Hindi/Kannada/Malayalam, answer in that language; else English. Never invent exact prices — honest ranges only. Mention 112 whenever safety is involved. Injected context: ${contextStr}.${spotsContextStr} If describing places, mention real attractions from the injected list. If the city spots source is 'wikipedia-live', honestly note 'based on Wikipedia data — verify locally'. Never invent history, timing, or prices.`;
 
     // 10s AbortController timeout
     const controller = new AbortController();
