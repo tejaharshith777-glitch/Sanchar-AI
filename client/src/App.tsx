@@ -1036,6 +1036,26 @@ const DiarySlide = () => {
   );
 };
 
+// ─── CAROUSEL CITIES ──────────────────────────────────────────
+const CAROUSEL_CITIES = [
+  { name: 'Hyderabad', img: '/images/india/hyderabad.jpg' },
+  { name: 'Delhi', img: '/images/india/delhi.jpg' },
+  { name: 'Odisha', img: '/images/india/stat_temple.jpg' },
+  { name: 'Chennai', img: '/images/india/chennai.jpg' },
+  { name: 'Mumbai', img: '/images/india/mumbai.jpg' },
+  { name: 'Kolkata', img: '/images/india/kolkata.jpg' },
+  { name: 'Guwahati', img: '/images/india/guwahati_river.jpg' },
+  { name: 'Uttarakhand', img: '/images/india/hero.jpg' },
+  { name: 'Himachal Pradesh', img: '/images/india/bg_section1.jpg' },
+  { name: 'Bangalore', img: '/images/india/bengaluru.jpg' },
+  { name: 'Amaravathi', img: '/images/india/bg_section2.jpg' },
+  { name: 'Jaipur', img: '/images/india/jaipur.jpg' },
+  { name: 'Sikkim', img: '/images/india/stat_temple.jpg' },
+  { name: 'Goa', img: '/images/india/kochi_nets.jpg' },
+  { name: 'Kerala', img: '/images/india/kochi.jpg' },
+  { name: 'Punjab', img: '/images/india/hero.jpg' }
+];
+
 // ─── LANDING PAGE ────────────────────────────────────────────
 const LandingPage = () => {
   const { isBackendOffline, isConnecting, isOnline, dbMode, activeTrip, lastCompletedTrip } = useContext(HealthContext);
@@ -1287,6 +1307,45 @@ const LandingPage = () => {
                 <AnimatedCounter value={7935} /> Cities Indexed
               </span>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── SLIDING CITIES CAROUSEL ── */}
+      <section className="bg-cream py-12 border-t border-gray-150 overflow-hidden relative">
+        <div className="text-center mb-8">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-[#00695C] block mb-1.5 font-['Plus_Jakarta_Sans']">Explore India</span>
+          <h3 className="font-display font-bold text-2xl md:text-3xl text-gray-800">Featured Cities & States</h3>
+        </div>
+        <div className="relative w-full flex items-center overflow-hidden py-2 select-none">
+          <div className="animate-marquee flex gap-6">
+            {[...CAROUSEL_CITIES, ...CAROUSEL_CITIES].map((item, idx) => (
+              <div 
+                key={idx} 
+                onClick={() => handleOpenCity(item.name)}
+                className="w-64 h-36 rounded-3xl overflow-hidden relative shadow-sm flex-shrink-0 group hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer"
+              >
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent z-10" />
+                <img 
+                  src={item.img} 
+                  alt={item.name} 
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-br from-[#00695C] to-[#004D40] -z-10" />
+                
+                <div className="absolute bottom-4 left-4 z-20">
+                  <span className="text-[9px] font-bold uppercase tracking-widest text-[#F59E0B] bg-[#F59E0B]/10 px-2 py-0.5 rounded border border-[#F59E0B]/20 mb-1 inline-block font-['Plus_Jakarta_Sans']">
+                    Explore
+                  </span>
+                  <h4 className="text-white font-display text-lg font-bold tracking-tight">
+                    {item.name}
+                  </h4>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>

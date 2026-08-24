@@ -465,3 +465,19 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
+/* Marquee sliding horizontal cards */
+@keyframes marquee {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee 45s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
