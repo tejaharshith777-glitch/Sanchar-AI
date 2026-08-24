@@ -946,52 +946,167 @@ const FaqAccordionItem = ({ question, answer }: { question: string; answer: stri
   );
 };
 
+const CURATED_SPECIAL_SPOTS = [
+  {
+    city: 'Hyderabad',
+    slug: 'charminar',
+    name: 'Charminar & Laad Bazaar',
+    category: 'Heritage Monument',
+    location: 'Old City, Hyderabad, Telangana',
+    timing: '6:00 AM - 6:30 PM (Daily)',
+    trustedCount: '340+',
+    img: '/images/india/charminar.jpg'
+  },
+  {
+    city: 'Chennai',
+    slug: 'marina-beach',
+    name: 'Marina Beach & Promenade',
+    category: 'Coastal Viewpoint',
+    location: 'Beach Road, Chennai, Tamil Nadu',
+    timing: 'Open 24 Hours · Best at Sunrise',
+    trustedCount: '520+',
+    img: '/images/india/marina_beach.jpg'
+  },
+  {
+    city: 'Jaipur',
+    slug: 'amber-fort',
+    name: 'Amber Fort & Maota Lake',
+    category: 'Fortress & Palace',
+    location: 'Amer, Jaipur, Rajasthan',
+    timing: '8:00 AM - 5:30 PM',
+    trustedCount: '410+',
+    img: '/images/india/jaipur.jpg'
+  },
+  {
+    city: 'Mumbai',
+    slug: 'gateway-of-india',
+    name: 'Gateway of India & Harbor',
+    category: 'Historic Archway',
+    location: 'Apollo Bunder, Mumbai, Maharashtra',
+    timing: 'Open 24 Hours · Ferries available',
+    trustedCount: '680+',
+    img: '/images/india/gateway_of_india.jpg'
+  },
+  {
+    city: 'Kochi',
+    slug: 'chinese-fishing-nets',
+    name: 'Chinese Fishing Nets & Fort Kochi',
+    category: 'Heritage Waterfront',
+    location: 'Fort Kochi, Kerala',
+    timing: 'Sunrise to Sunset (Daily)',
+    trustedCount: '290+',
+    img: '/images/india/kochi_nets.jpg'
+  },
+  {
+    city: 'Varanasi',
+    slug: 'kashi-vishwanath-temple',
+    name: 'Kashi Vishwanath Temple & Ghats',
+    category: 'Sacred Temple',
+    location: 'Varanasi, Uttar Pradesh',
+    timing: '3:00 AM - 11:00 PM',
+    trustedCount: '890+',
+    img: '/images/india/kashi_vishwanath.jpg'
+  },
+  {
+    city: 'Bengaluru',
+    slug: 'cubbon-park',
+    name: 'Cubbon Park & Bamboo Groves',
+    category: 'Botanical Reserve',
+    location: 'Kasturba Road, Bengaluru',
+    timing: '6:00 AM - 7:00 PM',
+    trustedCount: '310+',
+    img: '/images/india/bengaluru.jpg'
+  },
+  {
+    city: 'Guwahati',
+    slug: 'kamakhya-temple',
+    name: 'Kamakhya Temple & Nilachal Hill',
+    category: 'Ancient Shrine',
+    location: 'Nilachal Hill, Guwahati, Assam',
+    timing: '8:00 AM - 6:00 PM',
+    trustedCount: '270+',
+    img: '/images/india/guwahati_river.jpg'
+  },
+  {
+    city: 'Delhi',
+    slug: 'qutub-minar',
+    name: 'Qutub Minar & Complex',
+    category: 'UNESCO Monument',
+    location: 'Mehrauli, New Delhi',
+    timing: '7:00 AM - 5:00 PM',
+    trustedCount: '610+',
+    img: '/images/india/delhi.jpg'
+  },
+  {
+    city: 'Kolkata',
+    slug: 'victoria-memorial',
+    name: 'Victoria Memorial & Gardens',
+    category: 'Heritage Museum',
+    location: 'Queens Way, Kolkata, West Bengal',
+    timing: '10:00 AM - 5:00 PM',
+    trustedCount: '480+',
+    img: '/images/india/kolkata.jpg'
+  }
+];
+
 const SpecialSpotsGrid = () => {
-  const [spots, setSpots] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchSpots = async () => {
-      const list = [];
-      for (const city of SHOWCASE_CITIES) {
-        try {
-          const res = await axios.get(`/api/city-packs/${city}`);
-          if (res.data && res.data.pois && res.data.pois.length > 0) {
-            const attraction = res.data.pois.find((p: any) => p.type === 'attraction' || p.type === 'temple');
-            if (attraction) {
-              list.push({
-                city,
-                spotName: attraction.name,
-                img: `/images/india/${city.toLowerCase() === 'kochi' ? 'kochi_nets' : city.toLowerCase() === 'chennai' ? 'marina_beach' : city.toLowerCase() === 'jaipur' ? 'hawa_mahal' : city.toLowerCase() === 'mumbai' ? 'gateway_of_india' : city.toLowerCase() === 'hyderabad' ? 'charminar' : city.toLowerCase() === 'delhi' ? 'delhi' : city.toLowerCase() === 'kolkata' ? 'kolkata' : 'hero'}.jpg`
-              });
-            }
-          }
-        } catch { /* skip */ }
-      }
-      setSpots(list);
-      setLoading(false);
-    };
-    fetchSpots();
-  }, []);
-
-  if (loading) return <div className="text-center py-8 text-muted">Loading spots...</div>;
-  if (spots.length === 0) return null;
+  const navigate = useNavigate();
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-6 reveal-stagger">
-      {spots.map((spot, i) => (
-        <Link to={`/city/${spot.city}`} key={i} className="card-retreat flex flex-col no-underline">
-          <div className="relative h-44 overflow-hidden">
-            <img src={spot.img} alt={spot.spotName} className="w-full h-full object-cover img-hover-zoom" loading="lazy" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-            <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-xs px-2.5 py-1 rounded-full text-[10px] font-bold text-[#00695C] border border-teal-100">
-              📍 {spot.city}
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 reveal-stagger">
+      {CURATED_SPECIAL_SPOTS.map((spot, i) => (
+        <div 
+          key={i} 
+          onClick={() => navigate(`/spot/${spot.city.toLowerCase()}/${spot.slug}`)}
+          className="bg-[#0D1A1A] rounded-[24px] overflow-hidden border border-teal-900/50 p-6 flex flex-col md:flex-row gap-6 hover:shadow-2xl hover:border-[#F59E0B]/30 transition-all duration-300 group cursor-pointer"
+        >
+          {/* Content Left */}
+          <div className="flex-1 flex flex-col justify-between py-1">
+            <div>
+              <h3 className="font-['Plus_Jakarta_Sans'] font-bold text-2xl md:text-3xl text-white tracking-tight leading-tight group-hover:text-[#F59E0B] transition-colors">
+                {spot.name}
+              </h3>
+              <div className="text-[13px] font-bold text-emerald-400 mt-2 font-['Plus_Jakarta_Sans']">
+                from Verified Offline Pack
+              </div>
+
+              <div className="mt-5 space-y-2 text-xs text-gray-400 font-['Plus_Jakarta_Sans']">
+                <div className="flex items-center gap-2">
+                  <span className="text-[#F59E0B]">📍</span> {spot.location}
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[#F59E0B]">📅</span> {spot.timing}
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[#F59E0B]">👥</span> {spot.category}
+                </div>
+                <div className="flex items-center gap-2 text-emerald-400 font-semibold pt-1">
+                  ★★★★★ <span className="text-[11px] text-gray-400 font-normal">Trusted by {spot.trustedCount} travelers</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <div className="w-full md:w-auto inline-flex bg-[#142A2A] hover:bg-[#1E3E3E] text-white text-xs font-bold px-6 py-3.5 rounded-full items-center justify-between gap-3 border border-teal-800/80 transition-all group-hover:border-[#F59E0B]/40 font-['Plus_Jakarta_Sans']">
+                <span>Explore Spot</span>
+                <span className="text-[#F59E0B] text-sm group-hover:translate-x-1 transition-transform">→</span>
+              </div>
             </div>
           </div>
-          <div className="p-4 flex-1 flex flex-col justify-between">
-            <h4 className="font-display font-bold text-sm text-[#1F2937] leading-snug">{spot.spotName}</h4>
-            <span className="text-[11px] font-bold text-teal-700 mt-2 block">Explore {spot.city} →</span>
+
+          {/* Image Right */}
+          <div className="w-full md:w-56 h-52 md:h-auto rounded-[20px] overflow-hidden shrink-0 relative">
+            <img 
+              src={spot.img} 
+              alt={spot.name} 
+              className="w-full h-full object-cover group-hover:scale-105 transition-all duration-700" 
+              loading="lazy" 
+              onError={(e) => { e.currentTarget.src = '/images/india/hero.jpg'; }} 
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0A1616]/40 to-transparent" />
           </div>
-        </Link>
+
+        </div>
       ))}
     </div>
   );
@@ -1533,13 +1648,19 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* ── 6. SPECIAL SPOTS ACROSS INDIA ── */}
-      <section className="section-rhythm bg-cream reveal-element">
+      {/* ── 6. SPECIAL SPOTS ACROSS INDIA (Remade as picture 2 dark theme layout) ── */}
+      <section className="section-rhythm bg-[#0A1616] py-24 text-white border-y border-teal-950 reveal-element">
         <div className="max-w-[1200px] mx-auto px-5 md:px-8">
-          <div className="text-center mb-12">
-            <span className="badge badge-teal mb-3"><Globe size={14} /> Curated spots</span>
-            <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight text-ink">Special spots across India</h2>
-            <p className="text-muted text-sm mt-2">Dynamic highlights fetched from verified city pack data.</p>
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-16 border-b border-teal-900/60 pb-8">
+            <div>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-[#F59E0B] block mb-2 font-['Plus_Jakarta_Sans']">Curated Highlights</span>
+              <h2 className="font-['Plus_Jakarta_Sans'] text-4xl md:text-5xl font-extrabold tracking-tight text-white">
+                Special Spots <span className="italic font-serif text-[#F59E0B]">Across India</span>
+              </h2>
+            </div>
+            <p className="text-gray-400 text-sm max-w-md md:text-right leading-relaxed font-['Plus_Jakarta_Sans']">
+              Discover verified historic monuments, sacred temples, scenic viewpoints, and heritage landmarks fetched directly from local city packs.
+            </p>
           </div>
           <SpecialSpotsGrid />
         </div>
@@ -1997,8 +2118,6 @@ const HeroSearchForm = ({ preFillDest }: { preFillDest: string }) => {
     </form>
   );
 };
-
-const SHOWCASE_CITIES = ['Chennai', 'Kochi', 'Bengaluru', 'Mumbai', 'Delhi', 'Kolkata', 'Hyderabad', 'Jaipur'];
 
 
 
