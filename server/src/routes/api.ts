@@ -995,4 +995,105 @@ router.get('/mobility/heatmap', async (req, res) => {
   }
 });
 
+// AI CHATBOT ASSISTANT ENDPOINT (POST /api/ai/chat)
+const aiLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 10, // 10 requests per minute per IP
+  message: { error: 'Too many questions — wait a moment' },
+  statusCode: 429
+});
+
+router.post('/ai/chat', aiLimiter, async (req, res) => {
+  const apiKey = process.env.AI_API_KEY;
+  const modelName = process.env.AI_MODEL || 'gemini-2.0-flash';
+
+  if (!apiKey) {
+    console.warn(`[AI-CHAT] [${new Date().toISOString()}] Config Error: Missing AI_API_KEY env variable.`);
+    return res.status(503).json({ error: 'AI service is being configured — try shortly' });
+  }
+
+  try {
+    const { message, tripContext } = req.body || {};
+    if (!message || typeof message !== 'string' || !message.trim()) {
+      return res.status(400).json({ error: 'Message text is required.' });
+    }
+
+    // Server-constructed system prompt
+    let contextStr = 'None';
+    if (tripContext) {
+      const origin = tripContext.originCity || 'Origin';
+      const dest = tripContext.destinationCity || 'Destination';
+      const day = tripContext.dayNumber || 1;
+      const budget = tripContext.budgetTotal ? `₹${tripContext.budgetTotal}` : 'Not set';
+      const remaining = tripContext.budgetRemaining ? `₹${tripContext.budgetRemaining}` : 'N/A';
+      const mode = tripContext.currentMode || 'transit';
+      const highlights = Array.isArray(tripContext.topAttractions) ? tripContext.topAttractions.slice(0, 5).join(', ') : 'City highlights';
+      const phrases = Array.isArray(tripContext.keyPhrases) ? tripContext.keyPhrases.slice(0, 3).join(', ') : 'Local phrases';
+      const fares = tripContext.typicalFares || 'Auto ₹30-50/km';
+
+      contextStr = `${origin} → ${dest} · day ${day} · budget ${budget} · remaining ${remaining} · current segment ${mode} · destination highlights: ${highlights} · key phrases: ${phrases} · typical fares: ${fares}`;
+    }
+
+    const systemPrompt = `You are Sanchar AI, a practical Indian travel companion. Answer SHORT (2-4 sentences). If the user writes in Tamil/Telugu/Hindi/Kannada/Malayalam, answer in that language; else English. Never invent exact prices — honest ranges only. Mention 112 whenever safety is involved. Injected context: ${contextStr}. Politely redirect non-travel questions.`;
+
+    // 10s AbortController timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+    
+    const apiRes = await fetch(geminiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [
+          {
+            role: 'user',
+            parts: [
+              { text: `${systemPrompt}\n\nUser Question: ${message}` }
+            ]
+          }
+        ]
+      }),
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+
+    // Logging timestamp + token estimate ONLY (zero prompt/key logging)
+    const tokenEst = Math.ceil((systemPrompt.length + message.length) / 4);
+    console.log(`[AI-CHAT] [${new Date().toISOString()}] Tokens est: ~${tokenEst} | Status: ${apiRes.status}`);
+
+    if (apiRes.status === 404 || apiRes.status === 400) {
+      const errBody = await apiRes.text().catch(() => '');
+      console.warn(`[AI-CHAT] Model/Key Config error (${apiRes.status}): ${errBody.slice(0, 200)}`);
+      return res.status(503).json({ error: 'AI service is being configured — try shortly' });
+    }
+
+    if (apiRes.status === 429) {
+      return res.status(429).json({ error: 'Too many questions — wait a moment' });
+    }
+
+    if (!apiRes.ok) {
+      return res.status(503).json({ error: 'AI is busy — try again in a moment' });
+    }
+
+    const data: any = await apiRes.json();
+    const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (!reply) {
+      return res.status(503).json({ error: 'AI is busy — try again in a moment' });
+    }
+
+    return res.json({ reply });
+  } catch (err: any) {
+    if (err.name === 'AbortError') {
+      console.warn(`[AI-CHAT] [${new Date().toISOString()}] Request timed out after 10s`);
+      return res.status(503).json({ error: 'AI is busy — try again in a moment' });
+    }
+    console.warn(`[AI-CHAT] [${new Date().toISOString()}] Server Error:`, err.message || err);
+    return res.status(503).json({ error: 'AI is busy — try again in a moment' });
+  }
+});
+
 export default router;

@@ -12,6 +12,7 @@ import { queueOfflineMutation, getOfflineQueue, removeQueueItem } from './store/
 import { ocrProvider } from './ocr/OcrProvider';
 import PocketMap from './components/PocketMap';
 import SancharChatbot from './components/SancharChatbot';
+import MapsPage from './pages/MapsPage';
 
 // ─── Constants ───────────────────────────────────────────────
 const CITIES = [
@@ -251,6 +252,7 @@ const App = () => {
           <Route path="/features" element={<AppShell><FeaturesPage /></AppShell>} />
           <Route path="/faq" element={<AppShell><FaqPage /></AppShell>} />
           <Route path="/dashboard" element={<AppShell><Dashboard /></AppShell>} />
+          <Route path="/maps" element={<AppShell><MapsPage /></AppShell>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
@@ -260,7 +262,7 @@ const App = () => {
 
 // ─── App Shell Wrapper ───────────────────────────────────────
 const AppShell = ({ children }: { children: React.ReactNode }) => {
-  const { isBackendOffline, dbMode } = useContext(HealthContext);
+  const { isBackendOffline, dbMode, activeTrip } = useContext(HealthContext);
   return (
     <div className="min-h-screen bg-[#FAFAF7] flex flex-col relative">
       <InnerNav />
@@ -278,7 +280,7 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
       <main className="flex-1 max-w-2xl mx-auto w-full">
         {children}
       </main>
-      <SancharChatbot />
+      <SancharChatbot activeTrip={activeTrip} />
     </div>
   );
 };
@@ -453,6 +455,7 @@ const InnerNav = () => {
           <Link to="/features" className="text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline hidden sm:inline">Features</Link>
           <Link to="/privacy" className="text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline hidden sm:inline">Privacy</Link>
           <Link to="/history" className="text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline">History</Link>
+          <Link to="/maps" className="text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline hidden sm:inline">Maps</Link>
           <Link to="/dashboard" className="text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline hidden sm:inline">Dashboard</Link>
           
           {activeTrip && (
@@ -933,6 +936,7 @@ const LandingPage = () => {
             <Link to="/features" className="hidden md:inline text-sm font-medium text-[#64748B] hover:text-[#00695C] transition-colors no-underline">Features</Link>
             <Link to="/privacy" className="hidden md:inline text-sm font-medium text-[#64748B] hover:text-[#00695C] transition-colors no-underline">Privacy</Link>
             <Link to="/history" className="text-sm font-medium text-[#64748B] hover:text-[#00695C] transition-colors no-underline">History</Link>
+            <Link to="/maps" className="hidden sm:inline text-sm font-medium text-[#64748B] hover:text-[#00695C] transition-colors no-underline">Maps</Link>
             <Link to="/dashboard" className="hidden sm:inline text-sm font-medium text-[#64748B] hover:text-[#00695C] transition-colors no-underline">Dashboard</Link>
             <Link to="/create" className="btn-primary text-sm !py-2 !px-5 no-underline">
               Start Trip <ChevronRight size={14} />
@@ -3219,6 +3223,7 @@ const PrivacyPage = () => {
           <li className="flex items-start gap-2"><Check size={16} className="text-teal-600 mt-0.5 shrink-0" /> Analytics off by default — requires explicit user opt-in.</li>
           <li className="flex items-start gap-2"><Check size={16} className="text-teal-600 mt-0.5 shrink-0" /> First and last 300–500 meters are stripped automatically from any logs.</li>
           <li className="flex items-start gap-2"><Check size={16} className="text-teal-600 mt-0.5 shrink-0" /> Photos & voice notes are encrypted with Web Crypto SHA-256 local PIN.</li>
+          <li className="flex items-start gap-2"><Check size={16} className="text-teal-600 mt-0.5 shrink-0" /> AI assistant chats are processed live and never stored on our servers or synced.</li>
         </ul>
       </div>
     </div>

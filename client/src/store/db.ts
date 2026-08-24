@@ -47,10 +47,20 @@ interface SancharDB extends DBSchema {
     };
     indexes: { 'by-trip': string };
   };
+  aiChats: {
+    key: string;
+    value: {
+      id: string;
+      sender: 'user' | 'ai';
+      text: string;
+      mode: 'online' | 'offline';
+      timestamp: number;
+    };
+  };
 }
 
 const DB_NAME = 'sanchar-ai-db';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 export async function initDB() {
   return openDB<SancharDB>(DB_NAME, DB_VERSION, {
@@ -72,8 +82,28 @@ export async function initDB() {
         const momentStore = db.createObjectStore('moments', { keyPath: 'id' });
         momentStore.createIndex('by-trip', 'tripId');
       }
+      if (!db.objectStoreNames.contains('aiChats')) {
+        db.createObjectStore('aiChats', { keyPath: 'id' });
+      }
     },
   });
+}
+
+// ─── AI CHAT LOCAL STORAGE (EXPLICITLY EXCLUDED FROM ALL SYNC/QUEUES) ───
+export async function saveAiChat(chat: { id: string; sender: 'user' | 'ai'; text: string; mode: 'online' | 'offline'; timestamp: number }) {
+  const db = await initDB();
+  await db.put('aiChats', chat);
+}
+
+export async function getAiChats() {
+  const db = await initDB();
+  const chats = await db.getAll('aiChats');
+  return chats.sort((a, b) => a.timestamp - b.timestamp);
+}
+
+export async function clearAiChats() {
+  const db = await initDB();
+  await db.clear('aiChats');
 }
 
 /**
