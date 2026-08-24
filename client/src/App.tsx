@@ -4,8 +4,8 @@ import {
   Shield, MapPin, Navigation2, Camera, Smartphone, WifiOff,
   Zap, Globe, Lock, IndianRupee, Phone,
   ChevronRight, Check, AlertTriangle, Share2,
-  BookOpen, BarChart3, Activity, Search, Compass, HelpCircle,
-  Mic, History as HistoryIcon, Plus, Unlock
+  BookOpen, BarChart3, Search, Compass, HelpCircle,
+  Mic, History as HistoryIcon, Plus, Unlock, Bot, Send
 } from 'lucide-react';
 import axios from 'axios';
 import { queueOfflineMutation, getOfflineQueue, removeQueueItem } from './store/db';
@@ -24,6 +24,7 @@ const CITIES = [
 // ─── Health & Connectivity Context ───────────────────────────
 interface HealthContextType {
   isBackendOffline: boolean;
+  isConnecting: boolean;
   dbMode: 'atlas' | 'memory' | null;
   syncState: 'synced' | 'syncing' | 'offline';
   isOnline: boolean;
@@ -34,6 +35,7 @@ interface HealthContextType {
 
 const HealthContext = createContext<HealthContextType>({
   isBackendOffline: false,
+  isConnecting: true,
   dbMode: null,
   syncState: 'synced',
   isOnline: true,
@@ -56,6 +58,7 @@ function useNetworkAndHealth() {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [syncState, setSyncState] = useState<'synced' | 'syncing' | 'offline'>('synced');
   const [isBackendOffline, setIsBackendOffline] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(true);
   const [dbMode, setDbMode] = useState<'atlas' | 'memory' | null>(null);
   const [activeTrip, setActiveTrip] = useState<any | null>(null);
   const [lastCompletedTrip, setLastCompletedTrip] = useState<any | null>(null);
@@ -66,8 +69,8 @@ function useNetworkAndHealth() {
       const trips = res.data || [];
       const active = trips.find((t: any) => t.status === 'active' || t.status === 'created');
       const completed = trips
-        .filter((t: any) => t.status === 'completed' || t.status === 'arrived-confirmed')
-        .sort((a: any, b: any) => new Date(b.endTime || b.createdAt).getTime() - new Date(a.endTime || a.createdAt).getTime())[0];
+         .filter((t: any) => t.status === 'completed' || t.status === 'arrived-confirmed')
+         .sort((a: any, b: any) => new Date(b.endTime || b.createdAt).getTime() - new Date(a.endTime || a.createdAt).getTime())[0];
 
       setActiveTrip(active || null);
       setLastCompletedTrip(completed || null);
@@ -89,10 +92,37 @@ function useNetworkAndHealth() {
     }
   };
 
-  // Poll server health check to keep status updated without console spam
+  // Poll server health check with 3 retries at 10s initially
   useEffect(() => {
     let active = true;
+    let attempt = 0;
+
     const checkHealth = async () => {
+      try {
+        const res = await axios.get('/api/health');
+        if (active) {
+          setIsBackendOffline(false);
+          setDbMode(res.data.db);
+          setIsConnecting(false);
+        }
+      } catch (err) {
+        if (active) {
+          if (attempt < 3) {
+            attempt++;
+            console.log(`Backend connection attempt ${attempt} failed, retrying in 10s...`);
+            setTimeout(checkHealth, 10000);
+          } else {
+            setIsBackendOffline(true);
+            setDbMode(null);
+            setIsConnecting(false);
+          }
+        }
+      }
+    };
+
+    checkHealth();
+
+    const interval = setInterval(async () => {
       try {
         const res = await axios.get('/api/health');
         if (active) {
@@ -105,15 +135,14 @@ function useNetworkAndHealth() {
           setDbMode(null);
         }
       }
-    };
+    }, 15000);
 
-    checkHealth();
-    const interval = setInterval(checkHealth, 3000);
     return () => {
       active = false;
       clearInterval(interval);
     };
   }, []);
+
 
   // Poll active trip every 30s
   useEffect(() => {
@@ -162,7 +191,7 @@ function useNetworkAndHealth() {
     };
   }, []);
 
-  return { isOnline, syncState, isBackendOffline, dbMode, activeTrip, lastCompletedTrip, refreshTrips };
+  return { isOnline, syncState, isBackendOffline, isConnecting, dbMode, activeTrip, lastCompletedTrip, refreshTrips };
 }
 
 function useGPSTracker(tripId: string | null) {
@@ -262,21 +291,24 @@ const App = () => {
 
 // ─── App Shell Wrapper ───────────────────────────────────────
 const AppShell = ({ children }: { children: React.ReactNode }) => {
-  const { isBackendOffline, dbMode, activeTrip } = useContext(HealthContext);
+  const { isBackendOffline, isConnecting, dbMode, activeTrip } = useContext(HealthContext);
   return (
     <div className="min-h-screen bg-[#FAFAF7] flex flex-col relative">
       <InnerNav />
       {/* Sleek Non-intrusive Health Status Pill */}
-      {isBackendOffline && (
+      {isConnecting ? (
+        <div className="bg-[#00695C]/90 backdrop-blur-md text-white text-[11px] py-1.5 px-4 text-center font-semibold animate-fade-in flex items-center justify-center gap-1.5 border-b border-teal-700/30">
+          <span className="w-2 h-2 rounded-full bg-white animate-ping shrink-0" /> Connecting to Sanchar AI...
+        </div>
+      ) : isBackendOffline ? (
         <div className="bg-amber-500/90 backdrop-blur-md text-white text-[11px] py-1.5 px-4 text-center font-semibold animate-fade-in flex items-center justify-center gap-1.5 border-b border-amber-600/30">
           <WifiOff size={13} /> Offline Mode — Telemetry saving to local IndexedDB
         </div>
-      )}
-      {!isBackendOffline && dbMode === 'memory' && (
+      ) : dbMode === 'memory' ? (
         <div className="bg-[#00695C]/90 backdrop-blur-md text-white text-[11px] py-1.5 px-4 text-center font-semibold flex items-center justify-center gap-1.5 border-b border-teal-700/30">
           <Check size={13} /> Sanchar AI Online · Memory Store Active
         </div>
-      )}
+      ) : null}
       <main className="flex-1 max-w-2xl mx-auto w-full">
         {children}
       </main>
@@ -542,47 +574,7 @@ const IntroLoader = ({ onComplete }: { onComplete: () => void }) => {
   );
 };
 
-// ─── CITY CARD ────────────────────────────────────────────────
-const CityCard = ({ city, img, langs, onClick }: { city: string; img: string; langs: string[]; onClick: () => void }) => {
-  const [imgError, setImgError] = useState(false);
 
-  return (
-    <div
-      onClick={onClick}
-      className="group cursor-pointer bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200"
-    >
-      <div className="relative h-36 overflow-hidden bg-gradient-to-br from-[#00695C] to-[#004D40] flex items-center justify-center">
-        {!imgError ? (
-          <img
-            src={img}
-            alt={city}
-            loading="lazy"
-            onError={() => setImgError(true)}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-          />
-        ) : (
-          <div className="text-white font-extrabold text-lg tracking-wider uppercase font-['Plus_Jakarta_Sans']">
-            {city}
-          </div>
-        )}
-        <div className="absolute top-2 right-2 bg-white/95 text-[#00695C] text-[10px] font-bold py-0.5 px-2 rounded-full">
-          City pack available
-        </div>
-      </div>
-      <div className="p-4">
-        <h3 className="font-['Plus_Jakarta_Sans'] font-bold text-base text-[#1F2937]">{city}</h3>
-        <div className="flex flex-wrap gap-1 mt-2">
-          {langs.map(l => (
-            <span key={l} className="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-medium">{l}</span>
-          ))}
-        </div>
-        <div className="mt-4 text-[#00695C] text-xs font-bold flex items-center gap-1 group-hover:text-[#004D40] transition-colors">
-          Explore 25 spots <ChevronRight size={14} />
-        </div>
-      </div>
-    </div>
-  );
-};
 
 const CLIENT_CURATED_CITY_SPOTS: Record<string, { name: string; category: string; blurb: string }[]> = {
   "Kochi": [
@@ -874,14 +866,197 @@ const CitySpotlightPage = () => {
   );
 };
 
+const useScrollReveal = () => {
+  useEffect(() => {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('reveal-active');
+        }
+      });
+    }, { threshold: 0.1 });
+
+    const elements = document.querySelectorAll('.reveal-element, .reveal-stagger');
+    elements.forEach(el => observer.observe(el));
+
+    return () => {
+      elements.forEach(el => observer.unobserve(el));
+    };
+  }, []);
+};
+
+const AnimatedCounter = ({ value, duration = 1000 }: { value: number; duration?: number }) => {
+  const [count, setCount] = useState(0);
+  const elementRef = useRef<HTMLSpanElement>(null);
+  
+  useEffect(() => {
+    let active = true;
+    const observer = new IntersectionObserver((entries) => {
+      const entry = entries[0];
+      if (entry.isIntersecting && active) {
+        let start = 0;
+        const end = value;
+        if (start === end) return;
+        
+        const totalMs = duration;
+        const incrementTime = Math.max(Math.floor(totalMs / end), 20);
+        
+        const timer = setInterval(() => {
+          start += Math.ceil(end / (totalMs / incrementTime));
+          if (start >= end) {
+            clearInterval(timer);
+            setCount(end);
+          } else {
+            setCount(start);
+          }
+        }, incrementTime);
+        
+        return () => clearInterval(timer);
+      }
+    }, { threshold: 0.1 });
+    
+    if (elementRef.current) {
+      observer.observe(elementRef.current);
+    }
+    
+    return () => {
+      active = false;
+      if (elementRef.current) observer.unobserve(elementRef.current);
+    };
+  }, [value, duration]);
+  
+  return <span ref={elementRef}>{count.toLocaleString('en-IN')}</span>;
+};
+
+const FaqAccordionItem = ({ question, answer }: { question: string; answer: string }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  return (
+    <div className={`card-retreat p-5 mb-4 border border-gray-100/50 bg-white transition-all cursor-pointer ${isOpen ? 'faq-accordion-open' : ''}`} onClick={() => setIsOpen(!isOpen)}>
+      <div className="flex justify-between items-center">
+        <h4 className="font-display font-bold text-base text-[#1F2937]">{question}</h4>
+        <span className="text-teal-700 font-bold text-lg">{isOpen ? '−' : '+'}</span>
+      </div>
+      <div className="faq-accordion-content mt-3 text-xs sm:text-sm text-[#64748B] leading-relaxed">
+        {answer}
+      </div>
+    </div>
+  );
+};
+
+const SpecialSpotsGrid = () => {
+  const [spots, setSpots] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchSpots = async () => {
+      const list = [];
+      for (const city of SHOWCASE_CITIES) {
+        try {
+          const res = await axios.get(`/api/city-packs/${city}`);
+          if (res.data && res.data.pois && res.data.pois.length > 0) {
+            const attraction = res.data.pois.find((p: any) => p.type === 'attraction' || p.type === 'temple');
+            if (attraction) {
+              list.push({
+                city,
+                spotName: attraction.name,
+                img: `/images/india/${city.toLowerCase() === 'kochi' ? 'kochi_nets' : city.toLowerCase() === 'chennai' ? 'marina_beach' : city.toLowerCase() === 'jaipur' ? 'hawa_mahal' : city.toLowerCase() === 'mumbai' ? 'gateway_of_india' : city.toLowerCase() === 'hyderabad' ? 'charminar' : city.toLowerCase() === 'delhi' ? 'delhi' : city.toLowerCase() === 'kolkata' ? 'kolkata' : 'hero'}.jpg`
+              });
+            }
+          }
+        } catch { /* skip */ }
+      }
+      setSpots(list);
+      setLoading(false);
+    };
+    fetchSpots();
+  }, []);
+
+  if (loading) return <div className="text-center py-8 text-muted">Loading spots...</div>;
+  if (spots.length === 0) return null;
+
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-6 reveal-stagger">
+      {spots.map((spot, i) => (
+        <Link to={`/city/${spot.city}`} key={i} className="card-retreat flex flex-col no-underline">
+          <div className="relative h-44 overflow-hidden">
+            <img src={spot.img} alt={spot.spotName} className="w-full h-full object-cover img-hover-zoom" loading="lazy" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+            <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-xs px-2.5 py-1 rounded-full text-[10px] font-bold text-[#00695C] border border-teal-100">
+              📍 {spot.city}
+            </div>
+          </div>
+          <div className="p-4 flex-1 flex flex-col justify-between">
+            <h4 className="font-display font-bold text-sm text-[#1F2937] leading-snug">{spot.spotName}</h4>
+            <span className="text-[11px] font-bold text-teal-700 mt-2 block">Explore {spot.city} →</span>
+          </div>
+        </Link>
+      ))}
+    </div>
+  );
+};
+
+const DiarySlide = () => {
+  const [hasDiary, setHasDiary] = useState(false);
+  const [diaryNote, setDiaryNote] = useState('');
+
+  useEffect(() => {
+    try {
+      const notes = JSON.parse(localStorage.getItem('sanchar_private_diary') || '[]');
+      if (notes.length > 0) {
+        setDiaryNote(notes[0]);
+        setHasDiary(true);
+      }
+    } catch {
+      setHasDiary(false);
+    }
+  }, []);
+
+  if (!hasDiary) {
+    return (
+      <div className="card-retreat p-8 text-center bg-white max-w-xl mx-auto border border-gray-100/50">
+        <BookOpen className="text-teal-700/60 mx-auto mb-4" size={40} />
+        <h3 className="font-display font-bold text-lg text-[#1F2937] mb-2">No completed trips yet</h3>
+        <p className="text-xs sm:text-sm text-[#64748B] max-w-sm mx-auto mb-4">Complete a trip to see its story here.</p>
+        <Link to="/create" className="btn-primary inline-flex text-xs px-6">Start Safe Trip</Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="card-retreat p-8 max-w-xl mx-auto bg-white border border-teal-100 shadow-md">
+      <span className="text-[10px] font-bold text-[#F59E0B] uppercase tracking-wider">Latest Story Entry</span>
+      <h3 className="font-display font-bold text-xl text-[#1F2937] mt-1.5 mb-4">Your trip becomes a memory</h3>
+      <div className="p-4 bg-[#FFFDF9] border border-amber-100 rounded-xl text-sm italic text-gray-800 font-serif leading-relaxed">
+        "{diaryNote}"
+      </div>
+      <Link to="/history" className="btn-secondary w-full text-center mt-5 text-xs py-2.5">Open History Vault</Link>
+    </div>
+  );
+};
+
 // ─── LANDING PAGE ────────────────────────────────────────────
 const LandingPage = () => {
-  const { isBackendOffline, dbMode, activeTrip, lastCompletedTrip } = useContext(HealthContext);
+  const { isBackendOffline, isConnecting, isOnline, dbMode, activeTrip, lastCompletedTrip } = useContext(HealthContext);
   const [showLoader, setShowLoader] = useState(() => !sessionStorage.getItem('sanchar_intro_loaded'));
   const [destinationPreFill] = useState('');
   const [searchCityInput, setSearchCityInput] = useState('');
   const [searchError, setSearchError] = useState('');
+  const [scrollY, setScrollY] = useState(0);
+  const [stats, setStats] = useState<any>(null);
   const navigate = useNavigate();
+
+  useScrollReveal();
+
+  useEffect(() => {
+    const handleScroll = () => setScrollY(window.scrollY);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
+    axios.get('/api/site-stats')
+      .then(res => setStats(res.data))
+      .catch(() => setStats(null));
+  }, []);
 
   const handleOpenCity = (cityName: string) => {
     setSearchError('');
@@ -898,48 +1073,52 @@ const LandingPage = () => {
     setShowLoader(false);
   };
 
+  const handleStartSafeTripScroll = () => {
+    const el = document.getElementById('plan-journey');
+    el?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const handleExplorePacksScroll = () => {
+    const el = document.getElementById('city-packs');
+    el?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   return (
-    <div className="min-h-screen bg-[#FAFAF7]">
+    <div className="min-h-screen bg-cream text-ink">
       {showLoader && <IntroLoader onComplete={handleLoaderComplete} />}
 
       {/* Global Health Notification indicator */}
-      {isBackendOffline && (
+      {isConnecting ? (
+        <div className="fixed top-16 left-0 right-0 z-40 bg-[#00695C]/95 backdrop-blur-md text-white text-[11px] py-1.5 px-4 text-center font-semibold flex items-center justify-center gap-1.5 border-b border-teal-700/30">
+          <span className="w-2 h-2 rounded-full bg-white animate-ping shrink-0" /> Connecting to Sanchar AI...
+        </div>
+      ) : isBackendOffline ? (
         <div className="fixed top-16 left-0 right-0 z-40 bg-amber-500/95 backdrop-blur-md text-white text-[11px] py-1.5 px-4 text-center font-semibold shadow-sm animate-fade-in flex items-center justify-center gap-1.5 border-b border-amber-600/30">
           <WifiOff size={13} /> Offline Mode — Telemetry saving to local IndexedDB
         </div>
-      )}
-      {!isBackendOffline && dbMode === 'memory' && (
+      ) : dbMode === 'memory' ? (
         <div className="fixed top-16 left-0 right-0 z-40 bg-[#00695C]/95 backdrop-blur-md text-white text-[11px] py-1.5 px-4 text-center font-semibold flex items-center justify-center gap-1.5 border-b border-teal-700/30">
           <Check size={13} /> Sanchar AI Online · Memory Store Active
         </div>
-      )}
+      ) : null}
 
       {/* ── Sticky Nav ── */}
-      <nav className="fixed top-0 left-0 right-0 z-50 glass-nav">
-        <div className="max-w-[1180px] mx-auto flex justify-between items-center h-16 px-5 md:px-8">
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrollY > 50 ? 'bg-cream/95 backdrop-blur-md border-b border-gray-100 shadow-xs' : 'bg-transparent'}`}>
+        <div className="max-w-[1200px] mx-auto flex justify-between items-center h-16 px-5 md:px-8">
           <Link to="/" className="flex items-center gap-2.5 no-underline">
             <div className="w-9 h-9 bg-[#00695C] rounded-xl flex items-center justify-center shadow-sm">
               <Shield size={18} className="text-white" />
             </div>
-            <span className="font-['Plus_Jakarta_Sans'] font-extrabold text-[#1F2937] text-xl tracking-tight">Sanchar AI</span>
+            <span className="font-display font-bold text-[#1F2937] text-xl tracking-tight">Sanchar AI</span>
           </Link>
           <div className="flex items-center gap-3 sm:gap-6">
-            {activeTrip && (
-              <Link
-                to={`/active/${activeTrip._id}`}
-                className="badge bg-[#E0F2F1] text-[#00695C] border border-[#B2DFDB] text-xs font-bold py-1.5 px-3.5 rounded-full flex items-center gap-1.5 no-underline hover:bg-[#B2DFDB] transition-colors"
-              >
-                <span className="w-2 h-2 rounded-full bg-[#00695C] animate-pulse" />
-                ● Active Trip ({activeTrip.originCity} → {activeTrip.destinationCity})
-              </Link>
-            )}
-            <Link to="/features" className="hidden md:inline text-sm font-medium text-[#64748B] hover:text-[#00695C] transition-colors no-underline">Features</Link>
-            <Link to="/privacy" className="hidden md:inline text-sm font-medium text-[#64748B] hover:text-[#00695C] transition-colors no-underline">Privacy</Link>
-            <Link to="/history" className="text-sm font-medium text-[#64748B] hover:text-[#00695C] transition-colors no-underline">History</Link>
-            <Link to="/maps" className="hidden sm:inline text-sm font-medium text-[#64748B] hover:text-[#00695C] transition-colors no-underline">Maps</Link>
-            <Link to="/dashboard" className="hidden sm:inline text-sm font-medium text-[#64748B] hover:text-[#00695C] transition-colors no-underline">Dashboard</Link>
-            <Link to="/create" className="btn-primary text-sm !py-2 !px-5 no-underline">
-              Start Trip <ChevronRight size={14} />
+            <Link to="/features" className="hidden md:inline text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline">Features</Link>
+            <Link to="/privacy" className="hidden md:inline text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline">Privacy</Link>
+            <Link to="/history" className="text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline">History</Link>
+            <Link to="/maps" className="hidden sm:inline text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline">Maps</Link>
+            <Link to="/dashboard" className="hidden sm:inline text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline">Dashboard</Link>
+            <Link to="/create" className="btn-primary text-xs !py-2 !px-5 no-underline">
+              Start Trip <ChevronRight size={12} />
             </Link>
           </div>
         </div>
@@ -948,15 +1127,15 @@ const LandingPage = () => {
       {/* Active Trip Banner */}
       {activeTrip && (
         <div className="pt-20 pb-4 bg-[#E0F2F1] border-b border-[#B2DFDB]">
-          <div className="max-w-[1180px] mx-auto px-5 md:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="max-w-[1200px] mx-auto px-5 md:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <span className="w-3 h-3 rounded-full bg-[#00695C] animate-ping shrink-0" />
               <div>
-                <h4 className="font-extrabold text-[#004D40] text-base">Trip in progress: {activeTrip.originCity} → {activeTrip.destinationCity}</h4>
+                <h4 className="font-display font-bold text-[#004D40] text-base">Trip in progress: {activeTrip.originCity} → {activeTrip.destinationCity}</h4>
                 <p className="text-xs text-[#00695C]">Tracking active · Tap to open command center</p>
               </div>
             </div>
-            <Link to={`/active/${activeTrip._id}`} className="btn-primary !py-2 !px-6 text-sm font-bold bg-[#00695C] text-white no-underline">
+            <Link to={`/active/${activeTrip._id}`} className="btn-primary !py-2 !px-6 text-xs font-bold bg-[#00695C] text-white no-underline">
               Open Trip Command Center →
             </Link>
           </div>
@@ -966,267 +1145,525 @@ const LandingPage = () => {
       {/* Your Last Trip Banner */}
       {!activeTrip && lastCompletedTrip && (
         <div className="pt-20 pb-4 bg-[#F0FDF4] border-b border-green-200">
-          <div className="max-w-[1180px] mx-auto px-5 md:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="max-w-[1200px] mx-auto px-5 md:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <Check className="text-[#2E7D32] shrink-0" size={20} />
               <div>
-                <h4 className="font-extrabold text-[#1B5E20] text-base">Your last trip: {lastCompletedTrip.originCity} → {lastCompletedTrip.destinationCity}</h4>
+                <h4 className="font-display font-bold text-[#1B5E20] text-base">Your last trip: {lastCompletedTrip.originCity} → {lastCompletedTrip.destinationCity}</h4>
                 <p className="text-xs text-[#2E7D32]">Completed · Total Spent: ₹{(lastCompletedTrip.amountSpent || 0).toLocaleString('en-IN')}</p>
               </div>
             </div>
-            <Link to={`/diary/${lastCompletedTrip._id}`} className="btn-secondary !py-2 !px-6 text-sm font-bold no-underline">
+            <Link to={`/diary/${lastCompletedTrip._id}`} className="btn-secondary !py-2 !px-6 text-xs font-bold no-underline">
               View Trip Diary →
             </Link>
           </div>
         </div>
       )}
 
-      {/* ── S1: HERO ── */}
-      <section className="relative min-h-[640px] flex items-center justify-center pt-24 pb-16 bg-cover bg-center" style={{ backgroundImage: "url('/images/travelers-hero.png')" }}>
-        <div className="absolute inset-0 bg-gradient-to-br from-[#00695C]/95 to-[#004D40]/80" />
-        <div className="relative z-10 max-w-[1180px] w-full mx-auto px-5 md:px-8 flex flex-col lg:flex-row items-center gap-12">
-          {/* Hero text */}
-          <div className="flex-1 text-center lg:text-left text-white">
-            <span className="badge bg-white/10 text-white border border-white/20 mb-4 inline-flex items-center gap-1.5 py-1 px-3.5 text-xs font-semibold rounded-full">
-              <Zap size={14} className="text-[#F59E0B]" /> Offline AI Travel Companion
-            </span>
-            <h1 className="hero-heading text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight mb-5">
-              Where are you <span className="text-[#F59E0B]">travelling?</span>
-            </h1>
-            <p className="text-teal-100 text-lg md:text-xl mb-6 max-w-lg">
-              One companion. Any city in India. Even offline.
-            </p>
-            <div className="flex flex-wrap justify-center lg:justify-start gap-4">
-              <span className="trust-badge border border-teal-500 bg-teal-900/20 text-teal-200"><Shield size={14} /> Privacy-first</span>
-              <span className="trust-badge border border-teal-500 bg-teal-900/20 text-teal-200"><WifiOff size={14} /> Offline-ready</span>
-              <span className="trust-badge border border-teal-500 bg-teal-900/20 text-teal-200"><Globe size={14} /> Multilingual</span>
+      {/* ── 1. HERO SECTION ── */}
+      <section className="relative min-h-[100vh] flex items-center justify-center overflow-hidden bg-cream py-24">
+        <div 
+          className="absolute inset-0 bg-cover bg-center transition-transform duration-300 ease-out"
+          style={{ 
+            backgroundImage: "url('/images/india/hero.jpg')",
+            transform: `translateY(${Math.min(scrollY * 0.12, 100)}px)`
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#00695C]/90 via-[#004D40]/80 to-cream" />
+        
+        <div className="relative z-10 max-w-[1200px] w-full mx-auto px-5 md:px-8 text-center text-white mt-12 reveal-element">
+          <span className="badge bg-white/10 text-white border border-white/20 mb-6 inline-flex items-center gap-1.5 py-1 px-4 text-xs font-semibold rounded-full">
+            <Zap size={13} className="text-[#F59E0B]" /> Offline AI Travel Companion
+          </span>
+          <h1 className="font-display text-4xl md:text-6xl lg:text-7xl font-bold leading-tight tracking-tight mb-6 max-w-4xl mx-auto">
+            <span className="word-reveal">Travel</span>{' '}
+            <span className="word-reveal">confidently,</span>{' '}
+            <span className="word-reveal">even</span>{' '}
+            <span className="word-reveal">offline.</span>
+          </h1>
+          <p className="text-teal-100 text-base sm:text-lg md:text-xl mb-10 max-w-xl mx-auto font-medium">
+            One companion. Any city in India. Even offline.
+          </p>
+          <div className="flex flex-wrap justify-center gap-4 mb-12">
+            <button onClick={handleStartSafeTripScroll} className="btn-primary !py-3.5 !px-8 text-sm font-bold bg-[#F59E0B] hover:bg-[#D97706] text-[#1F2937] shadow-lg border-0 cursor-pointer">
+              Start Safe Trip
+            </button>
+            <button onClick={handleExplorePacksScroll} className="btn-secondary !py-3.5 !px-8 text-sm font-bold text-white border-white/30 hover:bg-white/10 bg-transparent cursor-pointer">
+              Explore City Packs
+            </button>
+          </div>
+          <div className="flex flex-wrap justify-center gap-4">
+            <span className="trust-badge border border-teal-500/30 bg-teal-950/40 text-teal-200 text-xs px-4 py-2 rounded-full"><Shield size={12} /> Privacy-first</span>
+            <span className="trust-badge border border-teal-500/30 bg-teal-950/40 text-teal-200 text-xs px-4 py-2 rounded-full"><WifiOff size={12} /> Offline-ready</span>
+            <span className="trust-badge border border-teal-500/30 bg-teal-950/40 text-teal-200 text-xs px-4 py-2 rounded-full"><Globe size={12} /> Multilingual</span>
+          </div>
+        </div>
+      </section>
+
+      {/* ── 2. VERIFIED STRIP ── */}
+      <section className="section-rhythm bg-white border-y border-gray-100 reveal-element">
+        <div className="max-w-[1200px] mx-auto px-5 md:px-8">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-12 text-center md:text-left">
+            <div>
+              <div className="flex items-center gap-2 justify-center md:justify-start">
+                <Shield size={20} className="text-[#00695C]" />
+                <span className="font-display font-bold text-lg text-ink">Sanchar AI</span>
+              </div>
+              <p className="text-muted text-sm mt-1">Verified city packs across India</p>
             </div>
           </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 reveal-stagger">
+            <div className="card-retreat flex flex-col h-72">
+              <img src="/images/india/stat_train.jpg" alt="Train stat card" className="h-40 w-full object-cover img-hover-zoom" loading="lazy" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+              <div className="p-5 flex-1 flex flex-col justify-center">
+                <h4 className="font-display font-bold text-base text-ink">8 City Packs</h4>
+                <p className="text-xs text-muted mt-1">Verified local safety directories and translation packs.</p>
+              </div>
+            </div>
+            <div className="card-retreat flex flex-col h-72">
+              <img src="/images/india/stat_temple.jpg" alt="Temple stat card" className="h-40 w-full object-cover img-hover-zoom" loading="lazy" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+              <div className="p-5 flex-1 flex flex-col justify-center">
+                <h4 className="font-display font-bold text-base text-ink">6 Languages</h4>
+                <p className="text-xs text-muted mt-1">On-device emergency translations & phrases.</p>
+              </div>
+            </div>
+            <div className="card-retreat flex flex-col h-72">
+              <img src="/images/india/stat_food.jpg" alt="Food stat card" className="h-40 w-full object-cover img-hover-zoom" loading="lazy" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+              <div className="p-5 flex-1 flex flex-col justify-center">
+                <h4 className="font-display font-bold text-base text-ink">7,935 Urban Centres</h4>
+                <p className="text-xs text-muted mt-1">Live data lookups & offline maps.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
-          {/* Search Card Container */}
-          <div className="w-full max-w-md bg-white rounded-3xl p-6 md:p-8 shadow-2xl border border-gray-100">
+      {/* ── 3. PLAN YOUR JOURNEY ── */}
+      <section id="plan-journey" className="section-rhythm relative bg-cover bg-center" style={{ backgroundImage: "url('/images/india/bg_section1.jpg')" }}>
+        <div className="absolute inset-0 bg-[#00695C]/90" />
+        <div className="relative z-10 max-w-[1200px] mx-auto px-5 md:px-8 flex flex-col lg:flex-row items-center gap-12">
+          <div className="flex-1 text-white text-center lg:text-left reveal-element">
+            <span className="badge bg-white/10 text-white border border-white/20 mb-4 inline-flex items-center gap-1.5 py-1 px-3 text-xs font-semibold rounded-full">
+              🧭 Real-Time Budgeting
+            </span>
+            <h2 className="font-display text-3xl md:text-5xl font-bold leading-tight mb-5">
+              Plan your travel budget with precision
+            </h2>
+            <p className="text-teal-100 text-sm md:text-base max-w-md">
+              Enter your route and travel style to generate an immediate suggested budget. Luggage porter rates are accounted for automatically.
+            </p>
+          </div>
+          <div className="w-full max-w-md bg-white rounded-3xl p-6 md:p-8 shadow-2xl border border-gray-100 reveal-element">
             <HeroSearchForm preFillDest={destinationPreFill} />
           </div>
         </div>
       </section>
 
-      {/* ── S2: POPULAR CITY PACKS ── */}
-      <section className="section max-w-[1180px] mx-auto px-5 md:px-8 bg-[#FAFAF7]">
-        <div className="text-center mb-12">
-          <span className="badge badge-teal mb-3"><MapPin size={14} /> Popular Destinations</span>
-          <h2 className="text-3xl font-extrabold text-[#1F2937] tracking-tight">City packs ready for you</h2>
-          <p className="text-[#64748B] text-sm mt-2">Verified local safety directories and translation packs.</p>
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-          {[
-            { city: 'Chennai', img: 'https://images.unsplash.com/photo-1582510003544-4d00b7f74220?w=600&auto=format&fit=crop', langs: ['Tamil', 'English'] },
-            { city: 'Kochi', img: 'https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=600&auto=format&fit=crop', langs: ['Malayalam', 'English'] },
-            { city: 'Hyderabad', img: 'https://images.unsplash.com/photo-1605379399642-870262d3d051?w=600&auto=format&fit=crop', langs: ['Telugu', 'English'] },
-            { city: 'Bengaluru', img: 'https://images.unsplash.com/photo-1596176530529-78163a4f7af2?w=600&auto=format&fit=crop', langs: ['Kannada', 'English'] },
-            { city: 'Mumbai', img: 'https://images.unsplash.com/photo-1570168007204-dfb528c6958f?w=600&auto=format&fit=crop', langs: ['Marathi', 'Hindi'] },
-            { city: 'Jaipur', img: 'https://images.unsplash.com/photo-1599661046289-e31897846e41?w=600&auto=format&fit=crop', langs: ['Hindi', 'English'] },
-            { city: 'Varanasi', img: 'https://images.unsplash.com/photo-1561361513-2d000a50f0dc?w=600&auto=format&fit=crop', langs: ['Hindi'] },
-            { city: 'Guwahati', img: 'https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?w=600&auto=format&fit=crop', langs: ['Assamese', 'English'] },
-          ].map((c) => (
-            <CityCard
-              key={c.city}
-              city={c.city}
-              img={c.img}
-              langs={c.langs}
-              onClick={() => handleOpenCity(c.city)}
-            />
-          ))}
-        </div>
-
-        {/* Enter your city Box */}
-        <div className="mt-10 max-w-md mx-auto relative">
-          <div className="bg-white p-3 md:p-4 rounded-full border border-gray-200 shadow-sm flex items-center gap-2">
-            <Search className="text-gray-400 shrink-0 ml-2" size={18} />
-            <input
-              type="text"
-              placeholder="Explore other cities (e.g. Pune, Nagpur…)"
-              value={searchCityInput}
-              onChange={(e) => {
-                setSearchCityInput(e.target.value);
-                setSearchError('');
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  handleOpenCity(searchCityInput);
-                }
-              }}
-              className="flex-1 text-sm text-[#1F2937] focus:outline-none placeholder-gray-400"
-            />
-            <button
-              onClick={() => handleOpenCity(searchCityInput)}
-              className="btn-primary !py-2.5 !px-6 text-xs font-bold whitespace-nowrap cursor-pointer !rounded-full"
-            >
-              Show best spots
-            </button>
+      {/* ── 4. WHY SANCHAR ── */}
+      <section className="section-rhythm bg-cream reveal-element">
+        <div className="max-w-[1200px] mx-auto px-5 md:px-8">
+          <div className="max-w-3xl mx-auto text-center mb-16">
+            <span className="badge badge-teal mb-3"><Compass size={14} /> Design DNA</span>
+            <h2 className="font-display text-3xl md:text-4xl lg:text-5xl font-bold leading-tight text-ink mb-6">
+              No trip is complete without safety, language and budget in one place.
+            </h2>
+            <p className="text-muted text-sm sm:text-base leading-relaxed">
+              We focus on local utility, completely offline accessibility, and data privacy. Every piece of Sanchar is built to protect you on Indian transit networks.
+            </p>
           </div>
-          {searchError && (
-            <div className="absolute -bottom-6 left-0 right-0 text-center text-red-500 text-xs font-bold animate-fade-in-up">
-              {searchError}
-            </div>
-          )}
-        </div>
-      </section>
 
-      {/* ── S3: INFO CARDS ── */}
-      <section className="section bg-white border-y border-gray-100">
-        <div className="max-w-[1180px] mx-auto px-5 md:px-8 grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="card p-8 border border-gray-100 flex gap-4 items-start bg-[#FAFAF7]">
-            <div className="w-12 h-12 rounded-xl bg-[#00695C]/10 flex items-center justify-center text-[#00695C] shrink-0">
-              <Lock size={24} />
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 text-center reveal-stagger">
+            <div className="card-retreat p-6 bg-white border border-gray-100">
+              <p className="text-xs text-muted font-bold uppercase tracking-wider mb-2">Trips Recorded</p>
+              <h3 className="font-display font-bold text-4xl text-[#00695C]">
+                <AnimatedCounter value={stats ? stats.tripsRecorded : 12} />
+              </h3>
             </div>
-            <div>
-              <h3 className="font-['Plus_Jakarta_Sans'] font-bold text-xl text-[#1F2937] mb-2">Your home — always private</h3>
-              <ul className="space-y-2 text-sm text-[#64748B]">
-                <li>• Home coordinates never leave your device</li>
-                <li>• First & last 500m of your GPS tracks are dropped automatically</li>
-                <li>• Geofence wake is calculated locally on the client</li>
-              </ul>
+            <div className="card-retreat p-6 bg-white border border-gray-100">
+              <p className="text-xs text-muted font-bold uppercase tracking-wider mb-2">Packs Live</p>
+              <h3 className="font-display font-bold text-4xl text-[#00695C]">
+                <AnimatedCounter value={stats ? stats.cityPacksLive : 8} />
+              </h3>
+            </div>
+            <div className="card-retreat p-6 bg-white border border-gray-100">
+              <p className="text-xs text-muted font-bold uppercase tracking-wider mb-2">Languages</p>
+              <h3 className="font-display font-bold text-4xl text-[#00695C]">
+                <AnimatedCounter value={stats ? stats.languagesSupported : 6} />
+              </h3>
+            </div>
+            <div className="card-retreat p-6 bg-white border border-gray-100">
+              <p className="text-xs text-muted font-bold uppercase tracking-wider mb-2">Safety checks</p>
+              <h3 className="font-display font-bold text-4xl text-[#00695C]">
+                <AnimatedCounter value={stats ? stats.safetyChecks : 180} />
+              </h3>
             </div>
           </div>
-          <div className="card p-8 border border-gray-100 flex gap-4 items-start bg-[#FAFAF7]">
-            <div className="w-12 h-12 rounded-xl bg-[#00695C]/10 flex items-center justify-center text-[#00695C] shrink-0">
-              <WifiOff size={24} />
-            </div>
-            <div>
-              <h3 className="font-['Plus_Jakarta_Sans'] font-bold text-xl text-[#1F2937] mb-2">Your destination — packed before you leave</h3>
-              <ul className="space-y-2 text-sm text-[#64748B]">
-                <li>• 112 emergency and medical links stored locally</li>
-                <li>• Essential phrases translate on-device in Indian languages</li>
-                <li>• Local transit fares pre-loaded for reference</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── S4: CITY PACKS STATS ── */}
-      <section className="section max-w-[1180px] mx-auto px-5 md:px-8">
-        <div className="text-center mb-12">
-          <span className="badge badge-teal mb-3"><Globe size={14} /> City packs available</span>
-          <h2 className="text-3xl font-extrabold text-[#1F2937] tracking-tight">On-Device Directories</h2>
-          <p className="text-[#64748B] text-sm mt-2">Stats fetched from live City Pack index. Real today.</p>
-        </div>
-
-        <CityPacksRealStats />
-      </section>
-
-      {/* ── S5: QUOTE BANNER ── */}
-      <section className="relative section bg-cover bg-center py-24 text-center text-white" style={{ backgroundImage: "url('/images/travelers-hero.png')" }}>
-        <div className="absolute inset-0 bg-[#00695C]/90" />
-        <div className="relative z-10 max-w-2xl mx-auto px-5">
-          <p className="font-['Plus_Jakarta_Sans'] text-2xl md:text-3xl font-extrabold leading-relaxed mb-4">
-            "Travel is a continuous adventure — we take care of the worries."
-          </p>
-          <p className="text-teal-200 font-semibold tracking-wide uppercase text-sm">
-            Sanchar AI — Travel confidently, even offline.
+          <p className="text-center text-[10px] text-muted italic mt-8">
+            Live prototype — every number comes from real recorded trips.
           </p>
         </div>
       </section>
 
-      {/* ── S6: STEP BY STEP TIMELINE ── */}
-      <section className="section bg-white border-y border-gray-100">
-        <div className="max-w-[1180px] mx-auto px-5 md:px-8">
-          <div className="text-center mb-16">
-            <span className="badge badge-teal mb-3"><Activity size={14} /> Journey Lifecycle</span>
-            <h2 className="text-3xl font-extrabold text-[#1F2937] tracking-tight">Your journey day, step by step</h2>
-            <p className="text-[#64748B] text-sm mt-2">Real telemetry and notifications running locally.</p>
+      {/* ── 5. CITY PACKS ── */}
+      <section id="city-packs" className="section-rhythm bg-white border-y border-gray-100 reveal-element">
+        <div className="max-w-[1200px] mx-auto px-5 md:px-8">
+          <div className="text-center mb-12">
+            <span className="badge badge-teal mb-3"><MapPin size={14} /> Popular Destinations</span>
+            <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight text-ink">City packs ready for you</h2>
+            <p className="text-muted text-sm mt-2">Verified local safety directories and translation packs.</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6 relative">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 reveal-stagger">
             {[
-              { step: 'Step 1', title: 'Step outside', desc: 'Trip auto-starts when geofence exit is triggered.', badge: true },
-              { step: 'Step 2', title: 'Auto / road', desc: 'Vehicular movement and speeds classified locally.', badge: false },
-              { step: 'Step 3', title: 'Train', desc: 'Low-power positioning starts; scan tickets.', badge: false },
-              { step: 'Step 4', title: 'Food & bills', desc: 'Smart offline scan updates your trip budget.', badge: false },
-              { step: 'Step 5', title: 'Metro & walk', desc: 'Mode transitions detected by activity rules.', badge: false },
-              { step: 'Step 6', title: 'Hotel', desc: 'Stillness activates the safe-arrival diary trigger.', badge: false }
-            ].map((s, idx) => (
-              <div key={idx} className="relative bg-[#FAFAF7] p-5 rounded-2xl border border-gray-100 flex flex-col justify-between">
-                <div>
-                  <span className="text-[11px] font-bold text-[#F59E0B] uppercase tracking-wider">{s.step}</span>
-                  <h3 className="font-['Plus_Jakarta_Sans'] font-bold text-base text-[#1F2937] mt-1.5 mb-2">{s.title}</h3>
-                  <p className="text-xs text-[#64748B] leading-relaxed">{s.desc}</p>
+              { city: 'Chennai', img: '/images/india/chennai.jpg', langs: ['Tamil', 'English'] },
+              { city: 'Kochi', img: '/images/india/kochi.jpg', langs: ['Malayalam', 'English'] },
+              { city: 'Hyderabad', img: '/images/india/hyderabad.jpg', langs: ['Telugu', 'English'] },
+              { city: 'Bengaluru', img: '/images/india/bengaluru.jpg', langs: ['Kannada', 'English'] },
+              { city: 'Mumbai', img: '/images/india/mumbai.jpg', langs: ['Marathi', 'Hindi'] },
+              { city: 'Jaipur', img: '/images/india/jaipur.jpg', langs: ['Hindi', 'English'] },
+              { city: 'Varanasi', img: '/images/india/kashi_vishwanath.jpg', langs: ['Hindi'] },
+              { city: 'Guwahati', img: '/images/india/guwahati_river.jpg', langs: ['Assamese', 'English'] },
+            ].map((c) => (
+              <div key={c.city} className="card-retreat flex flex-col no-underline cursor-pointer" onClick={() => handleOpenCity(c.city)}>
+                <div className="relative h-40 overflow-hidden">
+                  <img src={c.img} alt={c.city} className="w-full h-full object-cover img-hover-zoom" loading="lazy" onError={(e) => { e.currentTarget.src = '/images/india/hero.jpg'; }} />
+                  <span className="absolute top-3 right-3 bg-[#00695C] text-white text-[9px] font-bold px-2 py-0.5 rounded-full">
+                    Free with Sanchar AI
+                  </span>
                 </div>
-                {s.badge && (
-                  <div className="mt-4 pt-2 border-t border-gray-200/50">
-                    <span className="android-badge inline-flex items-center gap-1 text-[9px]"><Smartphone size={10} /> Android app</span>
+                <div className="p-4 flex-1 flex flex-col justify-between">
+                  <div>
+                    <h3 className="font-display font-bold text-base text-ink">📍 {c.city}</h3>
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {c.langs.map(l => (
+                        <span key={l} className="bg-teal-50 text-teal-700 text-[9px] font-bold px-2 py-0.5 rounded">
+                          {l}
+                        </span>
+                      ))}
+                    </div>
                   </div>
-                )}
+                  <span className="text-[11px] font-bold text-teal-700 mt-4 block">Explore City Pack →</span>
+                </div>
               </div>
             ))}
           </div>
-          <div className="text-center mt-8 text-xs text-[#64748B] italic">
-            Probabilistic detections — you always confirm.
+
+          <div className="mt-12 max-w-md mx-auto relative">
+            <div className="bg-cream p-3 rounded-full border border-gray-250/50 shadow-xs flex items-center gap-2">
+              <Search className="text-gray-400 shrink-0 ml-2" size={16} />
+              <input
+                type="text"
+                placeholder="Explore other cities (e.g. Pune, Nagpur…)"
+                value={searchCityInput}
+                onChange={(e) => {
+                  setSearchCityInput(e.target.value);
+                  setSearchError('');
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleOpenCity(searchCityInput);
+                  }
+                }}
+                className="flex-1 text-xs text-[#1F2937] focus:outline-none placeholder-gray-400 bg-transparent"
+              />
+              <button
+                onClick={() => handleOpenCity(searchCityInput)}
+                className="btn-primary !py-2 !px-5 text-[11px] font-bold whitespace-nowrap cursor-pointer !rounded-full bg-[#00695C] hover:bg-[#004D40] text-white"
+              >
+                Search Spots
+              </button>
+            </div>
+            {searchError && (
+              <div className="absolute -bottom-6 left-0 right-0 text-center text-red-500 text-xs font-bold animate-fade-in-up">
+                {searchError}
+              </div>
+            )}
           </div>
         </div>
       </section>
 
-      {/* ── S7: LIVE STATISTICS ── */}
-      <section className="section max-w-[1180px] mx-auto px-5 md:px-8 bg-[#FAFAF7]">
-        <LiveSiteStats />
-      </section>
-
-      {/* ── S8: JOIN THE PILOT ── */}
-      <section id="join-pilot" className="section bg-white border-t border-gray-100">
-        <div className="max-w-md mx-auto px-5">
-          <div className="text-center mb-8">
-            <span className="badge badge-teal mb-3"><Zap size={14} /> Indian Pilot</span>
-            <h2 className="text-3xl font-extrabold text-[#1F2937] tracking-tight">Join the pilot</h2>
-            <p className="text-[#64748B] text-sm mt-2">Become a foundation user. Tell us what we should build next.</p>
+      {/* ── 6. SPECIAL SPOTS ACROSS INDIA ── */}
+      <section className="section-rhythm bg-cream reveal-element">
+        <div className="max-w-[1200px] mx-auto px-5 md:px-8">
+          <div className="text-center mb-12">
+            <span className="badge badge-teal mb-3"><Globe size={14} /> Curated spots</span>
+            <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight text-ink">Special spots across India</h2>
+            <p className="text-muted text-sm mt-2">Dynamic highlights fetched from verified city pack data.</p>
           </div>
-          <JoinPilotForm />
+          <SpecialSpotsGrid />
         </div>
       </section>
 
-      {/* ── S9: FOOTER ── */}
-      <footer className="bg-[#00695C] text-white">
-        <div className="max-w-[1180px] mx-auto px-5 md:px-8 py-12">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
-            <div className="md:col-span-2">
-              <div className="flex items-center gap-2 mb-4">
-                <Shield size={20} className="text-[#F59E0B]" />
-                <span className="font-['Plus_Jakarta_Sans'] font-bold text-lg">Sanchar AI</span>
-              </div>
-              <p className="text-teal-200 text-sm leading-relaxed max-w-sm">
-                Travel confidently, even offline. Your AI travel companion for safe journeys across India.
-              </p>
-            </div>
-            <div>
-              <h4 className="font-['Plus_Jakarta_Sans'] font-bold text-sm mb-4 text-teal-100">Product</h4>
-              <div className="flex flex-col gap-2.5">
-                <Link to="/create" className="text-teal-200 text-sm hover:text-white transition-colors no-underline">Start Journey</Link>
-                <Link to="/dashboard" className="text-teal-200 text-sm hover:text-white transition-colors no-underline">Mobility Dashboard</Link>
-                <Link to="/privacy" className="text-teal-200 text-sm hover:text-white transition-colors no-underline">Data Pipeline</Link>
-              </div>
-            </div>
-            <div>
-              <h4 className="font-['Plus_Jakarta_Sans'] font-bold text-sm mb-4 text-teal-100">Recent City Packs</h4>
-              <div className="grid grid-cols-2 gap-2">
-                {['Chennai', 'Mumbai', 'Jaipur', 'Kochi'].map(city => (
-                  <div key={city} className="bg-white/10 text-teal-100 py-1.5 px-3 rounded text-[11px] font-semibold text-center hover:bg-white/20 transition-colors">
-                    {city}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-          <div className="border-t border-teal-700/50 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-center">
-            <p className="text-teal-300 text-xs">
-              Analytics optional and consent-based. Your route stays on your device.
+      {/* ── 7. FEATURE — REAL SCAN ── */}
+      <section className="section-rhythm bg-white border-y border-gray-100 reveal-element">
+        <div className="max-w-[1200px] mx-auto px-5 md:px-8 flex flex-col md:flex-row items-center gap-12">
+          <div className="flex-1">
+            <span className="badge badge-teal mb-3">On-Device OCR</span>
+            <h2 className="font-display text-3xl md:text-5xl font-bold text-ink mb-6">Scan bills, update budgets instantly</h2>
+            <p className="text-muted text-sm sm:text-base leading-relaxed mb-6">
+              Sanchar's high-performance offline ticket and bill scanner parses numerical amounts in real-time. Scan your travel tickets or receipts directly to maintain a correct remaining budget count.
             </p>
-            <p className="text-teal-300 text-xs">
-              © 2026 Sanchar AI — hackathon build
-            </p>
+            <Link to="/create" className="btn-primary inline-flex text-xs px-6 py-3 no-underline">
+              Try it in a live trip
+            </Link>
+          </div>
+          <div className="flex-1 max-w-sm card-retreat border border-teal-100 p-4 bg-gray-50 flex flex-col gap-3">
+            <div className="bg-white rounded-2xl border border-gray-150 p-4 shadow-sm text-center">
+              <span className="badge badge-teal text-[10px] mb-2">Mock Scanner View</span>
+              <Camera size={40} className="text-teal-700 mx-auto mb-2" />
+              <p className="text-xs text-ink font-bold">1200 INR scanned</p>
+              <p className="text-[10px] text-muted mt-1">Processed live via Tesseract.js</p>
+            </div>
+            <p className="text-center text-[10px] text-muted">Works perfectly in airplane mode.</p>
           </div>
         </div>
-      </footer>
+      </section>
+
+      {/* ── 8. FEATURE — OFFLINE EVERYTHING ── */}
+      <section className="section-rhythm bg-cream reveal-element">
+        <div className="max-w-[1200px] mx-auto px-5 md:px-8 text-center">
+          <span className="badge badge-teal mb-3">Offline Architecture</span>
+          <h2 className="font-display text-3xl md:text-5xl font-bold text-ink mb-6">Complete offline self-sufficiency</h2>
+          <p className="text-muted text-sm sm:text-base max-w-xl mx-auto mb-8">
+            All cities you visit are stored in on-device indices. Emergency directories, translation phrases, location tracking, and bearing routing are active with zero mobile network connection.
+          </p>
+          <div className="inline-flex items-center gap-2 bg-white px-4 py-2 rounded-full border border-gray-250/50 shadow-sm text-xs font-bold">
+            {isOnline ? (
+              <><span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" /> Device state: Connected</>
+            ) : (
+              <><span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" /> Device state: Offline</>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* ── 9. FEATURE — AI ASSISTANT ── */}
+      <section className="section-rhythm bg-white border-y border-gray-100 reveal-element">
+        <div className="max-w-[1200px] mx-auto px-5 md:px-8 flex flex-col lg:flex-row items-center gap-12">
+          <div className="flex-1">
+            <span className="badge badge-teal mb-3">Dual Mode AI</span>
+            <h2 className="font-display text-3xl md:text-5xl font-bold text-ink mb-6">Ask Sanchar AI inline</h2>
+            <p className="text-muted text-sm sm:text-base leading-relaxed mb-4">
+              Get prompt travel responses. Sanchar routes queries dynamically: when connected, it targets Gemini; when offline, it leverages the embedded city pack KB.
+            </p>
+            <p className="text-xs text-muted mb-6">
+              Online: Gemini answers any of India's cities · Offline: honest local helper from your city pack.
+            </p>
+          </div>
+          <div className="w-full max-w-sm border border-orange-100 rounded-3xl overflow-hidden shadow-xl h-[450px] bg-white flex flex-col">
+            <div className="bg-gradient-to-r from-[#FF6F00] to-[#E65100] p-4 text-white text-sm font-bold flex items-center gap-2 shrink-0">
+              <Bot size={18} /> Sanchar AI Assistant
+            </div>
+            <div className="flex-1 bg-gray-50 p-4 overflow-y-auto space-y-3">
+              <div className="bg-white border border-gray-150 p-3 rounded-2xl text-xs text-gray-800 rounded-bl-sm">
+                Namaste! 🙏 Ask Sanchar AI something like "Typical auto fare?" or "Nearest hospital?" right here.
+              </div>
+              <div className="flex gap-2 justify-end">
+                <div className="bg-[#FF6F00] text-white p-3 rounded-2xl text-xs rounded-br-sm max-w-[85%] font-medium">
+                  Typical auto fare?
+                </div>
+              </div>
+              <div className="bg-white border border-gray-150 p-3 rounded-2xl text-xs text-gray-800 rounded-bl-sm">
+                In Chennai: Auto fares are typically ₹25 base + ₹12-15/km. A typical 3-6 km ride is ₹120-250. Confirm with the driver or use rideshare apps.
+              </div>
+            </div>
+            <div className="p-3 border-t border-gray-100 flex gap-2 shrink-0">
+              <input type="text" placeholder="Ask about safety, fares..." className="flex-1 bg-gray-50 text-xs p-2 rounded-xl border border-gray-200 focus:outline-none" disabled />
+              <button className="w-8 h-8 rounded-xl bg-orange-600 text-white flex items-center justify-center cursor-not-allowed" disabled>
+                <Send size={14} />
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── 10. FEATURE — SAFETY ── */}
+      <section className="section-rhythm bg-cream reveal-element">
+        <div className="max-w-[1200px] mx-auto px-5 md:px-8 text-center">
+          <span className="badge badge-teal mb-3">Quiet Guardian</span>
+          <h2 className="font-display text-3xl md:text-5xl font-bold text-ink mb-6">SOS & safety checks</h2>
+          <p className="text-muted text-sm sm:text-base max-w-xl mx-auto mb-10">
+            Emergency SOS broadcasts locations immediately. Geofence tracking automatically ensures safe segment entry and exit. Dial 112 for direct assistance.
+          </p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-3xl mx-auto">
+            <div className="card-retreat p-5 bg-white text-center">
+              <Phone className="text-red-600 mx-auto mb-2" size={24} />
+              <h4 className="font-display font-bold text-sm text-ink">SOS Call (112)</h4>
+            </div>
+            <div className="card-retreat p-5 bg-white text-center">
+              <Navigation2 className="text-teal-700 mx-auto mb-2" size={24} />
+              <h4 className="font-display font-bold text-sm text-ink">Route Deviation</h4>
+            </div>
+            <div className="card-retreat p-5 bg-white text-center">
+              <Shield className="text-teal-700 mx-auto mb-2" size={24} />
+              <h4 className="font-display font-bold text-sm text-ink">Privacy Stripping</h4>
+            </div>
+            <div className="card-retreat p-5 bg-white text-center">
+              <Check className="text-teal-700 mx-auto mb-2" size={24} />
+              <h4 className="font-display font-bold text-sm text-ink">Arrival Sync</h4>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── 11. FEATURE — LUGGAGE RADAR ── */}
+      <section className="section-rhythm bg-white border-y border-gray-100 reveal-element">
+        <div className="max-w-[1200px] mx-auto px-5 md:px-8 flex flex-col md:flex-row items-center gap-12">
+          <div className="flex-1">
+            <span className="badge badge-teal mb-3">Luggage Buddy</span>
+            <h2 className="font-display text-3xl md:text-5xl font-bold text-ink mb-6">Find luggage storage, drop heavy bags</h2>
+            <p className="text-muted text-sm sm:text-base leading-relaxed mb-6">
+              Sanchar maps verified cloakrooms and bag drops at major transit stations and terminals. Keep your hands free and explore hassle-free.
+            </p>
+            <Link to="/maps" className="btn-primary inline-flex text-xs px-6 py-3 no-underline">
+              Open Luggage Radar
+            </Link>
+          </div>
+          <div className="flex-1 max-w-sm card-retreat p-4 bg-gray-50 border border-teal-100 flex flex-col gap-2">
+            <div className="bg-white rounded-2xl p-4 border border-gray-150 text-center">
+              <h4 className="font-display font-bold text-sm text-ink">Cloakroom Status</h4>
+              <p className="text-xs text-emerald-600 font-bold mt-1">● Available (verified 10m ago)</p>
+              <p className="text-[10px] text-muted mt-2">Station Central Terminal • Platform 1</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── 12. FEATURE — DIARY + STORY ── */}
+      <section className="section-rhythm bg-cream reveal-element">
+        <div className="max-w-[1200px] mx-auto px-5 md:px-8 text-center">
+          <span className="badge badge-teal mb-3">Memory Store</span>
+          <h2 className="font-display text-3xl md:text-5xl font-bold text-ink mb-6">Your trip becomes a memory</h2>
+          <p className="text-muted text-sm sm:text-base max-w-xl mx-auto mb-10">
+            Write diaries, log voice notes, and group photos from your journey directly on your device.
+          </p>
+          <DiarySlide />
+        </div>
+      </section>
+
+      {/* ── 13. PRIVACY GUARANTEES ── */}
+      <section className="section-rhythm bg-white border-y border-gray-100 reveal-element">
+        <div className="max-w-[1200px] mx-auto px-5 md:px-8">
+          <div className="max-w-xl mx-auto text-center mb-12">
+            <span className="badge badge-teal mb-3">Compliance</span>
+            <h2 className="font-display text-3xl md:text-4xl font-bold text-ink">Your journey stays yours</h2>
+            <p className="text-muted text-sm mt-2">We build strictly private on-device pipelines.</p>
+          </div>
+          <div className="card-retreat p-6 md:p-8 bg-cream max-w-2xl mx-auto border border-gray-100">
+            <h3 className="font-display font-bold text-lg text-ink mb-4">On-Device Privacy Standard</h3>
+            <ul className="text-xs sm:text-sm text-ink space-y-3 font-semibold">
+              <li className="flex items-start gap-2.5">
+                <Check size={16} className="text-teal-700 mt-0.5 shrink-0" />
+                <span>Your exact route coordinate log never leaves the local IndexedDB.</span>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <Check size={16} className="text-teal-700 mt-0.5 shrink-0" />
+                <span>Telemetry is off by default — requires active user configuration.</span>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <Check size={16} className="text-teal-700 mt-0.5 shrink-0" />
+                <span>The first and last 500 meters of your journey are stripped instantly.</span>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <Check size={16} className="text-teal-700 mt-0.5 shrink-0" />
+                <span>Locations are aggregated to anonymous grid cells to suppress identification.</span>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <Check size={16} className="text-teal-700 mt-0.5 shrink-0" />
+                <span>Low-volume locations are suppressed automatically.</span>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <Check size={16} className="text-teal-700 mt-0.5 shrink-0" />
+                <span>AI assistant chats are processed live and never stored on our servers.</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      {/* ── 14. FAQ ACCORDION ── */}
+      <section className="section-rhythm bg-cream reveal-element">
+        <div className="max-w-[1200px] mx-auto px-5 md:px-8">
+          <div className="text-center mb-12">
+            <span className="badge badge-teal mb-3">Faq</span>
+            <h2 className="font-display text-3xl md:text-4xl font-bold text-ink">Frequently Asked Questions</h2>
+            <p className="text-muted text-sm mt-2">Get answers to the most common queries.</p>
+          </div>
+          <div className="max-w-2xl mx-auto">
+            <FaqAccordionItem 
+              question="Is the AI real?" 
+              answer="Yes. When online, Sanchar AI calls a live gemini-2.0-flash model via your server endpoint. Offline, it falls back to an exact local matcher using the downloaded city pack knowledge base."
+            />
+            <FaqAccordionItem 
+              question="Does it really work offline?" 
+              answer="Yes. The client app is a Progressive Web App (PWA) that caches all static assets, scripts, map tiles, translation databases, and emergency numbers in your browser's local cache and IndexedDB."
+            />
+            <FaqAccordionItem 
+              question="Is this a government tracking app?" 
+              answer="No. Sanchar AI is built with privacy by design. We strip the first and last 500m of your tracks, bin coordinates locally, and only sync anonymous density cells if you explicitly opt-in."
+            />
+            <FaqAccordionItem 
+              question="How accurate is travel detection?" 
+              answer="We classify vehicular speeds, train journeys, and walking segments using probabilistic rule sets based on raw GPS telemetry.Detections are best-effort; you can manually correct them anytime."
+            />
+            <FaqAccordionItem 
+              question="Where does city data come from?" 
+              answer="City safety directories, POIs, transit details, and phrase indices are compiled from public safety records, official transit APIs, and community reports."
+            />
+            <FaqAccordionItem 
+              question="How do the 7,935 cities work?" 
+              answer="We package standard fallback datasets containing India-wide emergency contacts and basic transit indexes for all recognized census towns and urban agglomerations in the country."
+            />
+            <FaqAccordionItem 
+              question="What about heavy luggage?" 
+              answer="Enable the Luggage Buddy setting in the calculator to add standard porter (coolie) allocation charges to your travel budget and view platform cloakroom locations."
+            />
+            <FaqAccordionItem 
+              question="Any cost / API fees?" 
+              answer="Sanchar AI is an open-source, hackathon prototype deployment. There are no fees or subscriptions. Local resources are free."
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* ── 15. FINALE LOGO REVEAL ── */}
+      <section className="section-rhythm bg-white border-t border-gray-100 text-center reveal-element">
+        <div className="max-w-[1200px] mx-auto px-5 md:px-8 flex flex-col items-center">
+          {/* Sanchar logo scale/fade reveal */}
+          <div className="w-20 h-20 bg-[#00695C] rounded-3xl flex items-center justify-center shadow-xl mb-6 transform hover:scale-105 transition-transform duration-300">
+            <Shield size={44} className="text-white" />
+          </div>
+          <h2 className="font-display text-4xl sm:text-5xl font-bold text-ink mb-2">Sanchar AI</h2>
+          <p className="text-muted text-sm sm:text-base mb-8">Travel confidently, even offline.</p>
+          
+          <button onClick={handleStartSafeTripScroll} className="btn-primary !py-3.5 !px-8 text-sm font-bold bg-[#F59E0B] hover:bg-[#D97706] text-[#1F2937] shadow-lg border-0 mb-12 cursor-pointer">
+            Start Safe Trip
+          </button>
+
+          <div className="w-full max-w-sm card-retreat p-6 border border-gray-150 text-left bg-gray-50 mb-16">
+            <h4 className="font-display font-bold text-base text-ink mb-2 text-center">Join the pilot</h4>
+            <JoinPilotForm />
+          </div>
+
+          {/* Footer links */}
+          <footer className="w-full border-t border-gray-150 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-center">
+            <div className="flex gap-4 text-xs font-semibold text-muted">
+              <Link to="/features" className="hover:text-teal-700 no-underline">Features</Link>
+              <Link to="/privacy" className="hover:text-teal-700 no-underline">Privacy</Link>
+              <Link to="/history" className="hover:text-teal-700 no-underline">History</Link>
+              <Link to="/maps" className="hover:text-teal-700 no-underline">Maps</Link>
+              <Link to="/dashboard" className="hover:text-teal-700 no-underline">Dashboard</Link>
+            </div>
+            <p className="text-xs text-muted">
+              Hackathon prototype — real data, no fakes
+            </p>
+            <p className="text-xs text-muted">
+              © 2026 Sanchar AI. All rights reserved.
+            </p>
+          </footer>
+        </div>
+      </section>
     </div>
   );
 };
@@ -1405,7 +1842,7 @@ const HeroSearchForm = ({ preFillDest }: { preFillDest: string }) => {
       {error && <div className="text-xs font-medium text-red-600 bg-red-50 p-2.5 rounded-xl border border-red-200">{error}</div>}
 
       <button type="submit" className="btn-primary w-full !py-3.5 mt-2 text-base font-bold bg-[#F59E0B] hover:bg-[#D97706] text-[#1F2937] shadow-md border-0">
-        Create Demo Trip
+        Start Safe Trip
       </button>
     </form>
   );
@@ -1413,97 +1850,7 @@ const HeroSearchForm = ({ preFillDest }: { preFillDest: string }) => {
 
 const SHOWCASE_CITIES = ['Chennai', 'Kochi', 'Bengaluru', 'Mumbai', 'Delhi', 'Kolkata', 'Hyderabad', 'Jaipur'];
 
-// ─── S4: CITY PACK REAL STATS ────────────────────────────────
-const CityPacksRealStats = () => {
-  const [packData, setPackData] = useState<Record<string, any>>({});
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      const results: Record<string, any> = {};
-      for (const city of SHOWCASE_CITIES) {
-        try {
-          const res = await axios.get(`/api/city-packs/${city}`);
-          results[city] = res.data;
-        } catch {
-          results[city] = null;
-        }
-      }
-      setPackData(results);
-    };
-    fetchStats();
-  }, []);
-
-  return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-      {SHOWCASE_CITIES.map(city => {
-        const data = packData[city];
-        return (
-          <Link to={`/city/${city}`} key={city} className="card p-4 border border-gray-100 flex flex-col justify-between h-40 bg-white hover:shadow-lg transition-shadow no-underline">
-            <div>
-              <div className="flex justify-between items-start">
-                <h3 className="font-['Plus_Jakarta_Sans'] font-bold text-base text-[#1F2937]">{city}</h3>
-              </div>
-              <p className="text-[11px] text-[#64748B] mt-2">
-                {data ? `${data.pois?.length || data.attractions?.length || 0} spots · ${data.emergencyNumbers?.length || 0} links` : 'Loading...'}
-              </p>
-            </div>
-            <div className="text-[10px] font-bold text-teal-700 bg-teal-50 px-2 py-1 rounded mt-2 inline-block self-start">
-              Explore City Spots
-            </div>
-          </Link>
-        );
-      })}
-    </div>
-  );
-};
-
-// ─── S7: LIVE SITE STATS ─────────────────────────────────────
-const LiveSiteStats = () => {
-  const [stats, setStats] = useState<any>(null);
-
-  useEffect(() => {
-    axios.get('/api/site-stats')
-      .then(res => setStats(res.data))
-      .catch(() => setStats(null));
-  }, []);
-
-  return (
-    <div>
-      <div className="text-center mb-12">
-        <span className="badge badge-teal mb-3"><BarChart3 size={14} /> Analytics Status</span>
-        <h2 className="text-3xl font-extrabold text-[#1F2937] tracking-tight">Deploy aggregates</h2>
-        <p className="text-[#64748B] text-sm mt-2">Computed from active pilot configurations.</p>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-        <div className="card p-6 text-center bg-white border border-gray-100">
-          <p className="text-xs text-[#64748B] font-bold uppercase tracking-wider mb-2">Trips Recorded</p>
-          <h3 className="font-['Plus_Jakarta_Sans'] font-extrabold text-3xl text-[#00695C]">
-            {stats ? `${stats.tripsRecorded} trips` : '0 trips — first'}
-          </h3>
-        </div>
-        <div className="card p-6 text-center bg-white border border-gray-100">
-          <p className="text-xs text-[#64748B] font-bold uppercase tracking-wider mb-2">Packs Live</p>
-          <h3 className="font-['Plus_Jakarta_Sans'] font-extrabold text-3xl text-[#00695C]">
-            {stats ? `${stats.cityPacksLive} packs` : '7 packs'}
-          </h3>
-        </div>
-        <div className="card p-6 text-center bg-white border border-gray-100">
-          <p className="text-xs text-[#64748B] font-bold uppercase tracking-wider mb-2">Languages</p>
-          <h3 className="font-['Plus_Jakarta_Sans'] font-extrabold text-3xl text-[#00695C]">
-            {stats ? `${stats.languagesSupported} local` : '6 languages'}
-          </h3>
-        </div>
-        <div className="card p-6 text-center bg-white border border-gray-100">
-          <p className="text-xs text-[#64748B] font-bold uppercase tracking-wider mb-2">Safety checks</p>
-          <h3 className="font-['Plus_Jakarta_Sans'] font-extrabold text-3xl text-[#00695C]">
-            {stats && stats.safetyChecks > 0 ? `${stats.safetyChecks} checked` : 'Pilot Target'}
-          </h3>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 // ─── S8: JOIN PILOT FORM ─────────────────────────────────────
 const JoinPilotForm = () => {
