@@ -1511,21 +1511,76 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* ── 8. FEATURE — OFFLINE EVERYTHING ── */}
-      <section className="section-rhythm bg-cream reveal-element">
-        <div className="max-w-[1200px] mx-auto px-5 md:px-8 text-center">
-          <span className="badge badge-teal mb-3">Offline Architecture</span>
-          <h2 className="font-display text-3xl md:text-5xl font-bold text-ink mb-6">Complete offline self-sufficiency</h2>
-          <p className="text-muted text-sm sm:text-base max-w-xl mx-auto mb-8">
-            All cities you visit are stored in on-device indices. Emergency directories, translation phrases, location tracking, and bearing routing are active with zero mobile network connection.
-          </p>
-          <div className="inline-flex items-center gap-2 bg-white px-4 py-2 rounded-full border border-gray-250/50 shadow-sm text-xs font-bold">
-            {isOnline ? (
-              <><span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" /> Device state: Connected</>
-            ) : (
-              <><span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" /> Device state: Offline</>
-            )}
+      {/* ── 8. FEATURE — OFFLINE EVERYTHING (Remade to match Picture 1 Combine Retreat layout) ── */}
+      <section className="relative min-h-[600px] py-24 bg-cover bg-center text-white overflow-hidden reveal-element" style={{ backgroundImage: "url('/images/india/hero.jpg')" }}>
+        {/* Dark warm overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0A1616] via-[#0A1616]/75 to-black/50" />
+
+        <div className="relative z-10 max-w-[1200px] mx-auto px-5 md:px-8 flex flex-col justify-between min-h-[480px]">
+          
+          {/* Top Section */}
+          <div className="max-w-2xl">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-[#F59E0B] block mb-3 font-['Plus_Jakarta_Sans'] bg-[#F59E0B]/10 px-3 py-1 rounded-full border border-[#F59E0B]/20 w-fit">
+              Offline Architecture
+            </span>
+            <h2 className="font-['Plus_Jakarta_Sans'] text-4xl md:text-6xl font-extrabold text-white tracking-tight leading-tight mb-8">
+              Combine Sanchar
+            </h2>
+
+            {/* Plus Sub-Items matching Picture 1 */}
+            <div className="space-y-4 font-['Plus_Jakarta_Sans']">
+              <div className="flex items-center gap-3 text-2xl md:text-3xl font-extrabold text-white/95">
+                <span className="text-gray-400 font-normal">+</span> City Packs & Offline Maps
+              </div>
+              <div className="flex items-center gap-3 text-2xl md:text-3xl font-extrabold text-white/95">
+                <span className="text-gray-400 font-normal">+</span> Live Telemetry & GPS Bearing
+              </div>
+              <div className="flex items-center gap-3 text-2xl md:text-3xl font-extrabold text-white/95">
+                <span className="text-gray-400 font-normal">+</span> Luggage Radar & Emergency 112
+              </div>
+            </div>
           </div>
+
+          {/* Bottom Bar Row matching Picture 1 */}
+          <div className="mt-16 pt-8 border-t border-white/20 grid grid-cols-1 md:grid-cols-5 gap-8 items-end">
+            <div className="md:col-span-1">
+              <p className="text-xs text-gray-300 leading-relaxed font-['Plus_Jakarta_Sans']">
+                Combine all travel tools into one seamless offline companion. Zero mobile network connection required.
+              </p>
+              <div className="mt-3 inline-flex items-center gap-2 bg-black/40 backdrop-blur-xs px-3 py-1.5 rounded-full border border-white/20 text-[10px] font-bold">
+                {isOnline ? (
+                  <><span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /> Connected</>
+                ) : (
+                  <><span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" /> Airplane Mode</>
+                )}
+              </div>
+            </div>
+
+            <div className="md:col-span-1 border-l border-white/10 pl-6">
+              <div className="font-['Plus_Jakarta_Sans'] text-3xl md:text-4xl font-extrabold text-white mb-1">01</div>
+              <p className="text-xs font-bold text-gray-200">Plan</p>
+              <p className="text-[10px] text-gray-400 mt-0.5">City Packs & Safety Rules</p>
+            </div>
+
+            <div className="md:col-span-1 border-l border-white/10 pl-6">
+              <div className="font-['Plus_Jakarta_Sans'] text-3xl md:text-4xl font-extrabold text-white mb-1">02</div>
+              <p className="text-xs font-bold text-gray-200">Track</p>
+              <p className="text-[10px] text-gray-400 mt-0.5">Live Route & Bearing Map</p>
+            </div>
+
+            <div className="md:col-span-1 border-l border-white/10 pl-6">
+              <div className="font-['Plus_Jakarta_Sans'] text-3xl md:text-4xl font-extrabold text-white mb-1">03</div>
+              <p className="text-xs font-bold text-gray-200">Assist</p>
+              <p className="text-[10px] text-gray-400 mt-0.5">Offline AI & OCR Scanner</p>
+            </div>
+
+            <div className="md:col-span-1 border-l border-white/10 pl-6">
+              <div className="font-['Plus_Jakarta_Sans'] text-3xl md:text-4xl font-extrabold text-white mb-1">04</div>
+              <p className="text-xs font-bold text-gray-200">Store</p>
+              <p className="text-[10px] text-gray-400 mt-0.5">Luggage Radar & Diary</p>
+            </div>
+          </div>
+
         </div>
       </section>
 
