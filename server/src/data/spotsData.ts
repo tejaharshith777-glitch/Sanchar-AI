@@ -396,6 +396,7 @@ export const curatedSpotsData: Record<string, any[]> = {
 // Seed Cloakrooms/Luggage Spots for 8 Curated Cities
 export const seedLuggageSpots = [
   {
+    _id: "luggage-chennai-central",
     city: "Chennai",
     name: "Chennai Central Cloakroom",
     type: "railway_cloakroom",
@@ -408,6 +409,7 @@ export const seedLuggageSpots = [
     verified: true
   },
   {
+    _id: "luggage-chennai-egmore",
     city: "Chennai",
     name: "Egmore Station Cloakroom",
     type: "railway_cloakroom",
@@ -420,6 +422,7 @@ export const seedLuggageSpots = [
     verified: true
   },
   {
+    _id: "luggage-kochi-ernakulam",
     city: "Kochi",
     name: "Ernakulam Junction Cloakroom",
     type: "railway_cloakroom",
@@ -432,6 +435,7 @@ export const seedLuggageSpots = [
     verified: true
   },
   {
+    _id: "luggage-bengaluru-ksr",
     city: "Bengaluru",
     name: "KSR Bengaluru Cloakroom",
     type: "railway_cloakroom",
@@ -444,6 +448,7 @@ export const seedLuggageSpots = [
     verified: true
   },
   {
+    _id: "luggage-mumbai-csmt",
     city: "Mumbai",
     name: "CSMT Cloakroom",
     type: "railway_cloakroom",
@@ -456,6 +461,7 @@ export const seedLuggageSpots = [
     verified: true
   },
   {
+    _id: "luggage-delhi-newdelhi",
     city: "Delhi",
     name: "New Delhi Railway Cloakroom",
     type: "railway_cloakroom",
@@ -468,6 +474,7 @@ export const seedLuggageSpots = [
     verified: true
   },
   {
+    _id: "luggage-kolkata-howrah",
     city: "Kolkata",
     name: "Howrah Station Cloakroom",
     type: "railway_cloakroom",
@@ -480,6 +487,7 @@ export const seedLuggageSpots = [
     verified: true
   },
   {
+    _id: "luggage-hyderabad-secunderabad",
     city: "Hyderabad",
     name: "Secunderabad Cloakroom",
     type: "railway_cloakroom",
@@ -492,6 +500,7 @@ export const seedLuggageSpots = [
     verified: true
   },
   {
+    _id: "luggage-jaipur-junction",
     city: "Jaipur",
     name: "Jaipur Junction Cloakroom",
     type: "railway_cloakroom",

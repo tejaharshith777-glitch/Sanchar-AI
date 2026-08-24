@@ -438,31 +438,15 @@ async function getOrCreateCitySpots(cityName: string): Promise<any> {
     }
   }
 
-  // Fallback to City main article
-  if (spotsList.length < 3) {
+  // Fallback to Wikipedia Category API if spotsList is still sparse
+  if (spotsList.length < 5) {
     try {
-      const url = `https://en.wikipedia.org/w/api.php?action=parse&page=${encodeURIComponent(city)}&prop=wikitext&format=json&redirects=1`;
-      const wikiRes = await fetch(url, { headers: { 'User-Agent': 'SancharAI/1.0' } });
-      const data = await wikiRes.json();
-      if (data.parse && data.parse.wikitext) {
-        wikitext = data.parse.wikitext['*'];
-        const lines = wikitext.split('\n');
-        let inTourism = false;
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (/==\s*(Tourist attractions|Places of interest|Sights|Tourism)\s*==/i.test(trimmed)) {
-            inTourism = true;
-          } else if (inTourism && /^==[^=]/m.test(trimmed)) {
-            inTourism = false;
-          }
-          if (inTourism) {
-            const match = trimmed.match(/^\*\s*(?:'''''|'''|'')?\[\[(.*?)\]\](.*)/) || trimmed.match(/^\*\s*\{\{.*?\}\}\s*(?:'''''|'''|'')?\[\[(.*?)\]\](.*)/);
-            if (match) {
-              const parts = match[1].split('|');
-              const name = parts[0].split('#')[0].trim();
-              addSpot(name, match[2]);
-            }
-          }
+      const catUrl = `https://en.wikipedia.org/w/api.php?action=query&list=categorymembers&cmtitle=Category:Tourist_attractions_in_${encodeURIComponent(city)}&cmlimit=25&cmtype=page&format=json`;
+      const catRes = await fetch(catUrl, { headers: { 'User-Agent': 'SancharAI/1.0' } });
+      const catData = await catRes.json();
+      if (catData.query && catData.query.categorymembers) {
+        for (const member of catData.query.categorymembers) {
+          addSpot(member.title, `A verified tourist attraction in ${city}.`);
         }
       }
     } catch (err) {
@@ -472,41 +456,18 @@ async function getOrCreateCitySpots(cityName: string): Promise<any> {
 
   const finalSpots = spotsList.slice(0, 25);
 
-  if (finalSpots.length === 0) {
-    const center = CITY_CENTERS_MAP[city] || [16.3067, 80.4365];
-    const generated = [
-      { name: `${city} Kondaveedu Fort`, category: 'fort', blurb: `Historic 14th-century hill fortress and heritage site in ${city}.`, lat: center[0] + 0.01, lng: center[1] + 0.01 },
-      { name: `${city} Amaravati Stupa & Museum`, category: 'heritage', blurb: `Sacred ancient Buddhist heritage site and archaeological museum near ${city}.`, lat: center[0] - 0.01, lng: center[1] - 0.01 },
-      { name: `${city} Central Lake & Park`, category: 'park', blurb: `Scenic urban lake promenade and green park in ${city}.`, lat: center[0] + 0.02, lng: center[1] - 0.01 },
-      { name: `${city} Uppalapadu Bird Sanctuary`, category: 'park', blurb: `Famous wetland sanctuary hosting migratory spot-billed pelicans near ${city}.`, lat: center[0] - 0.02, lng: center[1] + 0.02 },
-      { name: `${city} Cultural Sculpture Garden`, category: 'viewpoint', blurb: `Artistic cultural garden and open-air sculpture square in ${city}.`, lat: center[0] + 0.005, lng: center[1] - 0.015 },
-      { name: `${city} Hilltop Temple Shrine`, category: 'temple', blurb: `Renowned hilltop temple dedicated to regional deity near ${city}.`, lat: center[0] - 0.025, lng: center[1] - 0.02 },
-      { name: `${city} Heritage Spice Market`, category: 'market', blurb: `Bustling local market and historic trading hub in ${city}.`, lat: center[0] + 0.015, lng: center[1] + 0.005 },
-      { name: `${city} Rail Junction Square`, category: 'transit', blurb: `Major civic transportation landmark and historic junction square in ${city}.`, lat: center[0], lng: center[1] }
-    ];
-    for (const g of generated) {
-      finalSpots.push({
-        ...g,
-        slug: g.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
-        bestThing: `Exploring ${g.name} in ${city}`,
-        bestTime: '8:00 AM - 6:00 PM',
-        timeToSpend: '1-2 Hours',
-        entryCost: 'Free (verify locally)',
-        nearTransport: `${city} Central Station`,
-        tips: ['Carry water and wear walking shoes.'],
-        source: 'wikipedia-live'
-      });
-    }
-  } else {
-    for (let i = 0; i < Math.min(finalSpots.length, 10); i++) {
-      const spot = finalSpots[i];
-      const coords = await fetchWikiCoordinates(spot.name);
-      if (coords) {
-        spot.lat = coords.lat;
-        spot.lng = coords.lng;
-        spot.coords = coords;
-      }
-      await new Promise(resolve => setTimeout(resolve, 200));
+  // Fetch coordinates for real spots
+  const center = CITY_CENTERS_MAP[city] || [16.3067, 80.4365];
+  for (let i = 0; i < Math.min(finalSpots.length, 12); i++) {
+    const spot = finalSpots[i];
+    const coords = await fetchWikiCoordinates(spot.name);
+    if (coords) {
+      spot.lat = coords.lat;
+      spot.lng = coords.lng;
+      spot.coords = coords;
+    } else {
+      spot.lat = center[0] + (Math.random() - 0.5) * 0.04;
+      spot.lng = center[1] + (Math.random() - 0.5) * 0.04;
     }
   }
 
@@ -1189,11 +1150,16 @@ router.get('/mobility/summary', async (req, res) => {
     let aggregates: any[] = [];
 
     if (isMemoryFallback) {
-      trips = (memoryStore.trips || []).filter(t => t.analyticsConsented !== false);
+      trips = (memoryStore.trips || []).filter(t => t.analyticsConsent !== false && t.analyticsConsented !== false);
       safetyEvents = memoryStore.safetyEvents || [];
       aggregates = memoryStore.mobilityAggregates || [];
     } else {
-      trips = await Trip.find({ analyticsConsented: { $ne: false } });
+      trips = await Trip.find({
+        $or: [
+          { analyticsConsent: { $ne: false } },
+          { analyticsConsented: { $ne: false } }
+        ]
+      });
       safetyEvents = await SafetyEvent.find();
       aggregates = await MobilityAggregate.find();
     }
@@ -1297,6 +1263,71 @@ router.get('/mobility/heatmap', async (req, res) => {
     res.json(safeHeat);
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// POST /api/trips/:id/safety-checks (Record safety response / check)
+router.post('/trips/:id/safety-checks', async (req, res) => {
+  try {
+    const tripId = req.params.id;
+    const { type, userResponse, notes, category } = req.body || {};
+
+    const safetyCategory = category || (type === 'route-deviation' ? 'route-deviation' : type === 'late-arrival' ? 'late-arrival' : 'sos');
+
+    const eventRecord = {
+      tripId,
+      eventType: type || 'safety-check',
+      category: safetyCategory,
+      details: notes || userResponse || `Safety check response: ${type}`,
+      userResponse: userResponse || 'acknowledged',
+      createdAt: new Date(),
+      analyticsConsent: true
+    };
+
+    if (isMemoryFallback) {
+      memoryStore.safetyEvents.push(eventRecord);
+    } else {
+      const doc = new SafetyEvent(eventRecord);
+      await doc.save();
+    }
+
+    res.json({ success: true, event: eventRecord });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to record safety check.' });
+  }
+});
+
+// GET /api/mobility/issues (Aggregated Reported Safety & Mobility Issues)
+router.get('/mobility/issues', async (req, res) => {
+  try {
+    let events: any[] = [];
+    if (isMemoryFallback) {
+      events = memoryStore.safetyEvents || [];
+    } else {
+      events = await SafetyEvent.find();
+    }
+
+    const categoryMap: Record<string, number> = {
+      Language: 0,
+      Signage: 0,
+      Overcharging: 0,
+      Accessibility: 0,
+      Transport: 0
+    };
+
+    events.forEach(e => {
+      const cat = (e.eventType || e.category || 'Transport').toLowerCase();
+      if (cat.includes('lang')) categoryMap.Language++;
+      else if (cat.includes('sign')) categoryMap.Signage++;
+      else if (cat.includes('charge') || cat.includes('cost') || cat.includes('fare')) categoryMap.Overcharging++;
+      else if (cat.includes('access')) categoryMap.Accessibility++;
+      else categoryMap.Transport++;
+    });
+
+    const issues = Object.entries(categoryMap).map(([category, count]) => ({ category, count }));
+    res.json(issues);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error fetching mobility issues.' });
   }
 });
 

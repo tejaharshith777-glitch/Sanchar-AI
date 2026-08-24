@@ -669,22 +669,11 @@ function getFallbackSpotData(city: string) {
     };
   }
 
-  const genericSpots = [
-    { name: `${normalized} Heritage Central Plaza`, category: "Fort", blurb: `Historic town square and civic landmark in ${normalized}.` },
-    { name: `${normalized} Central Temple & Shrine`, category: "Temple", blurb: `Famous spiritual temple dedicated to local deity in ${normalized}.` },
-    { name: `${normalized} Main Bazaar & Craft Street`, category: "Market", blurb: `Bustling local market for handicrafts, spices, and souvenirs.` },
-    { name: `${normalized} Waterfront Promenade`, category: "Beach", blurb: `Scenic riverfront/lake walkway for evening walks and street food.` },
-    { name: `${normalized} City Museum & Art Gallery`, category: "Museum", blurb: `Repository of regional art, history, and cultural artifacts.` },
-    { name: `${normalized} Botanical Gardens & Public Park`, category: "Park", blurb: `Lush green park offering peaceful nature retreats.` },
-    { name: `${normalized} Food & Street Snack Hub`, category: "Food", blurb: `Popular food lane serving authentic regional delicacies.` },
-    { name: `${normalized} Sunset Viewpoint Hill`, category: "Viewpoint", blurb: `High viewpoint offering panoramic cityscape vistas.` }
-  ];
-
   return {
     city: normalized,
-    source: 'curated-sample',
-    count: genericSpots.length,
-    spots: genericSpots
+    source: 'wikipedia-live',
+    count: 0,
+    spots: []
   };
 }
 
@@ -765,12 +754,12 @@ const CitySpotlightPage = () => {
 
         {!loading && data && (
           <div className="animate-fade-in-up">
-            {data.found === false ? (
+            {(!data.spots || data.spots.length === 0) ? (
               <div className="card p-10 text-center max-w-xl mx-auto border border-amber-200 bg-amber-50/30 my-12 rounded-3xl shadow-sm">
                 <HelpCircle className="text-[#F59E0B] mx-auto mb-4" size={44} />
-                <h2 className="font-bold text-2xl text-[#1F2937] mb-3">No verified spot list for '{data.city || formattedCity}' yet</h2>
+                <h2 className="font-bold text-2xl text-[#1F2937] mb-3">Few verified places for '{data.city || formattedCity}' so far</h2>
                 <p className="text-sm text-[#64748B] leading-relaxed mb-8">
-                  Our general India pack works here: 112 emergency · national rail enquiry 139 · basic travel guidance.
+                  General India pack works everywhere: 112 emergency · 139 rail enquiry · basic guidance.
                 </p>
                 <div className="flex flex-col sm:flex-row justify-center gap-4">
                   <button
@@ -800,13 +789,13 @@ const CitySpotlightPage = () => {
                           : 'bg-blue-50 text-blue-700 border-blue-100'
                       }`}>
                         {data.source === 'curated-sample'
-                          ? 'Curated sample — verify before visiting'
-                          : 'Live from Wikipedia — verify before visiting'}
+                          ? 'Curated verified pack · verify before visiting'
+                          : 'Live data from Wikipedia · verify before visiting'}
                       </span>
                     </div>
                     <p className="text-[#64748B] text-sm flex items-center gap-2 font-medium">
                       <Compass size={16} className="text-[#00695C]" />
-                      {data.count < 25 ? `${data.count} spots found` : `Spotlight features ${data.count} best places to explore.`}
+                      {`${data.spots.length} real places — live data from Wikipedia · verify before visiting`}
                     </p>
                   </div>
 
@@ -1275,7 +1264,7 @@ const LandingPage = () => {
                 <p className="text-xs text-[#64748B]">Verified offline directories with emergency info and local phrases.</p>
               </div>
               <span className="text-xs font-bold text-[#00695C] mt-2 inline-flex items-center gap-1">
-                <AnimatedCounter value={stats ? stats.cityPacksLive : 8} /> Packs Available
+                {isConnecting && !stats ? '—' : <AnimatedCounter value={stats ? stats.cityPacksLive : 8} />} Packs Available
               </span>
             </div>
             <div className="card-retreat bg-white p-8 rounded-3xl border border-gray-150 shadow-xs flex flex-col justify-between h-48 hover:shadow-md transition">
@@ -1285,7 +1274,7 @@ const LandingPage = () => {
                 <p className="text-xs text-[#64748B]">Pre-downloaded on-device local translation and phrases support.</p>
               </div>
               <span className="text-xs font-bold text-[#00695C] mt-2 inline-flex items-center gap-1">
-                <AnimatedCounter value={6} /> Local languages
+                {isConnecting && !stats ? '—' : <AnimatedCounter value={stats ? stats.languagesSupported : 6} />} Local languages
               </span>
             </div>
             <div className="card-retreat bg-white p-8 rounded-3xl border border-gray-150 shadow-xs flex flex-col justify-between h-48 hover:shadow-md transition">
@@ -1306,7 +1295,7 @@ const LandingPage = () => {
       <section className="bg-cream py-12 border-t border-gray-150 overflow-hidden relative">
         <div className="text-center mb-8">
           <span className="text-[10px] font-bold uppercase tracking-widest text-[#00695C] block mb-1.5 font-['Plus_Jakarta_Sans']">Explore India</span>
-          <h3 className="font-display font-bold text-2xl md:text-3xl text-gray-800">Featured Cities & States</h3>
+          <h3 className="font-display font-bold text-2xl md:text-3xl text-gray-800">Featured Indian Cities</h3>
         </div>
         <div className="relative w-full flex items-center overflow-hidden py-2 select-none">
           <div className="animate-marquee flex gap-6">
@@ -1371,30 +1360,30 @@ const LandingPage = () => {
             <div className="card-retreat p-6 bg-white border border-gray-100">
               <p className="text-xs text-muted font-bold uppercase tracking-wider mb-2">Trips Recorded</p>
               <h3 className="font-display font-bold text-4xl text-[#00695C]">
-                <AnimatedCounter value={stats ? stats.tripsRecorded : 12} />
+                {isConnecting && !stats ? '—' : <AnimatedCounter value={stats ? stats.tripsRecorded : 12} />}
               </h3>
             </div>
             <div className="card-retreat p-6 bg-white border border-gray-100">
               <p className="text-xs text-muted font-bold uppercase tracking-wider mb-2">Packs Live</p>
               <h3 className="font-display font-bold text-4xl text-[#00695C]">
-                <AnimatedCounter value={stats ? stats.cityPacksLive : 8} />
+                {isConnecting && !stats ? '—' : <AnimatedCounter value={stats ? stats.cityPacksLive : 8} />}
               </h3>
             </div>
             <div className="card-retreat p-6 bg-white border border-gray-100">
               <p className="text-xs text-muted font-bold uppercase tracking-wider mb-2">Languages</p>
               <h3 className="font-display font-bold text-4xl text-[#00695C]">
-                <AnimatedCounter value={stats ? stats.languagesSupported : 6} />
+                {isConnecting && !stats ? '—' : <AnimatedCounter value={stats ? stats.languagesSupported : 6} />}
               </h3>
             </div>
             <div className="card-retreat p-6 bg-white border border-gray-100">
               <p className="text-xs text-muted font-bold uppercase tracking-wider mb-2">Safety checks</p>
               <h3 className="font-display font-bold text-4xl text-[#00695C]">
-                <AnimatedCounter value={stats ? stats.safetyChecks : 180} />
+                {isConnecting && !stats ? '—' : <AnimatedCounter value={stats ? stats.safetyChecks : 180} />}
               </h3>
             </div>
           </div>
           <p className="text-center text-[10px] text-muted italic mt-8">
-            Live prototype — every number comes from real recorded trips.
+            {isConnecting && !stats ? 'Connecting to live data…' : 'Live prototype — every number comes from real recorded trips.'}
           </p>
         </div>
       </section>
