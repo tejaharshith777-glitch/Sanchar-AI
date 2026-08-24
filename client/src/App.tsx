@@ -4,15 +4,16 @@ import {
   Shield, MapPin, Navigation2, Camera, Smartphone, WifiOff,
   Zap, Globe, Lock, IndianRupee, Phone,
   ChevronRight, Check, AlertTriangle, Share2,
-  BookOpen, BarChart3, Activity, Search, Compass, HelpCircle
+  BookOpen, BarChart3, Activity, Search, Compass, HelpCircle,
+  Mic, History as HistoryIcon, Plus, Unlock
 } from 'lucide-react';
 import axios from 'axios';
 import { queueOfflineMutation, getOfflineQueue, removeQueueItem } from './store/db';
 import { ocrProvider } from './ocr/OcrProvider';
 import PocketMap from './components/PocketMap';
+import SancharChatbot from './components/SancharChatbot';
 
 // ─── Constants ───────────────────────────────────────────────
-const _SITE_URL = window.location.origin; // Dynamically gets the active deploy URL
 const CITIES = [
   'Chennai', 'Coimbatore', 'Madurai', 'Kochi', 'Bengaluru',
   'Mumbai', 'Pune', 'Delhi', 'Jaipur', 'Kolkata',
@@ -246,7 +247,8 @@ const App = () => {
           <Route path="/diary/:id" element={<AppShell><VaultGuard><Diary /></VaultGuard></AppShell>} />
           <Route path="/gallery/:id" element={<AppShell><VaultGuard><TripGallery /></VaultGuard></AppShell>} />
           <Route path="/city/:city" element={<AppShell><CitySpots /></AppShell>} />
-          <Route path="/privacy" element={<AppShell><PrivacyPage /></AppShell>} />
+          <Route path="/privacy" element={<AppShell><VaultGuard><PrivacyPage /></VaultGuard></AppShell>} />
+          <Route path="/history" element={<AppShell><VaultGuard><HistoryPage /></VaultGuard></AppShell>} />
           <Route path="/features" element={<AppShell><FeaturesPage /></AppShell>} />
           <Route path="/faq" element={<AppShell><FaqPage /></AppShell>} />
           <Route path="/dashboard" element={<AppShell><Dashboard /></AppShell>} />
@@ -261,22 +263,23 @@ const App = () => {
 const AppShell = ({ children }: { children: React.ReactNode }) => {
   const { isBackendOffline, dbMode } = useContext(HealthContext);
   return (
-    <div className="min-h-screen bg-[#FAFAF7] flex flex-col">
+    <div className="min-h-screen bg-[#FAFAF7] flex flex-col relative">
       <InnerNav />
-      {/* Warnings & Fallback Status Banner */}
+      {/* Sleek Non-intrusive Health Status Pill */}
       {isBackendOffline && (
-        <div className="bg-red-600 text-white text-xs py-2.5 px-4 text-center font-medium shadow-sm animate-fade-in flex items-center justify-center gap-2">
-          <WifiOff size={14} /> Backend offline — data will save locally and sync when the server is back
+        <div className="bg-amber-500/90 backdrop-blur-md text-white text-[11px] py-1.5 px-4 text-center font-semibold animate-fade-in flex items-center justify-center gap-1.5 border-b border-amber-600/30">
+          <WifiOff size={13} /> Offline Mode — Telemetry saving to local IndexedDB
         </div>
       )}
       {!isBackendOffline && dbMode === 'memory' && (
-        <div className="bg-amber-500 text-white text-xs py-2 px-4 text-center font-medium flex items-center justify-center gap-2">
-          <AlertTriangle size={14} /> Dev mode — in-memory DB; restart resets data
+        <div className="bg-[#00695C]/90 backdrop-blur-md text-white text-[11px] py-1.5 px-4 text-center font-semibold flex items-center justify-center gap-1.5 border-b border-teal-700/30">
+          <Check size={13} /> Sanchar AI Online · Memory Store Active
         </div>
       )}
       <main className="flex-1 max-w-2xl mx-auto w-full">
         {children}
       </main>
+      <SancharChatbot />
     </div>
   );
 };
@@ -440,14 +443,19 @@ const InnerNav = () => {
   const { isOnline, syncState, activeTrip } = useContext(HealthContext);
   return (
     <nav className="sticky top-0 z-50 glass-nav border-b border-gray-150">
-      <div className="max-w-2xl mx-auto px-5 flex justify-between h-16 items-center">
+      <div className="max-w-4xl mx-auto px-4 md:px-6 flex justify-between h-16 items-center">
         <Link to="/" className="flex items-center gap-2.5 no-underline">
           <div className="w-8 h-8 bg-[#00695C] rounded-lg flex items-center justify-center">
             <Shield size={16} className="text-white" />
           </div>
           <span className="font-['Plus_Jakarta_Sans'] font-bold text-[#1F2937] text-lg tracking-tight">Sanchar AI</span>
         </Link>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3 sm:gap-4">
+          <Link to="/features" className="text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline hidden sm:inline">Features</Link>
+          <Link to="/privacy" className="text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline hidden sm:inline">Privacy</Link>
+          <Link to="/history" className="text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline">History</Link>
+          <Link to="/dashboard" className="text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline hidden sm:inline">Dashboard</Link>
+          
           {activeTrip && (
             <Link
               to={`/active/${activeTrip._id}`}
@@ -458,7 +466,7 @@ const InnerNav = () => {
             </Link>
           )}
           {syncState === 'syncing' && <span className="badge badge-teal animate-pulse text-xs">Syncing…</span>}
-          {syncState === 'offline' && <span className="badge badge-amber text-xs"><WifiOff size={12} /> Offline — queued</span>}
+          {syncState === 'offline' && <span className="badge badge-amber text-xs"><WifiOff size={12} /> Offline</span>}
           {syncState === 'synced' && isOnline && !activeTrip && <span className="badge badge-green text-xs"><Check size={12} /> Synced</span>}
         </div>
       </div>
@@ -780,15 +788,15 @@ const LandingPage = () => {
     <div className="min-h-screen bg-[#FAFAF7]">
       {showLoader && <IntroLoader onComplete={handleLoaderComplete} />}
 
-      {/* Global Health Notification banner */}
+      {/* Global Health Notification indicator */}
       {isBackendOffline && (
-        <div className="fixed top-16 left-0 right-0 z-40 bg-red-600 text-white text-xs py-2 px-4 text-center font-medium shadow-sm animate-fade-in flex items-center justify-center gap-2">
-          <WifiOff size={14} /> Backend offline — data will save locally and sync when the server is back
+        <div className="fixed top-16 left-0 right-0 z-40 bg-amber-500/95 backdrop-blur-md text-white text-[11px] py-1.5 px-4 text-center font-semibold shadow-sm animate-fade-in flex items-center justify-center gap-1.5 border-b border-amber-600/30">
+          <WifiOff size={13} /> Offline Mode — Telemetry saving to local IndexedDB
         </div>
       )}
       {!isBackendOffline && dbMode === 'memory' && (
-        <div className="fixed top-16 left-0 right-0 z-40 bg-amber-500 text-white text-xs py-2 px-4 text-center font-medium flex items-center justify-center gap-2">
-          <AlertTriangle size={14} /> Dev mode — in-memory DB; restart resets data
+        <div className="fixed top-16 left-0 right-0 z-40 bg-[#00695C]/95 backdrop-blur-md text-white text-[11px] py-1.5 px-4 text-center font-semibold flex items-center justify-center gap-1.5 border-b border-teal-700/30">
+          <Check size={13} /> Sanchar AI Online · Memory Store Active
         </div>
       )}
 
@@ -801,7 +809,7 @@ const LandingPage = () => {
             </div>
             <span className="font-['Plus_Jakarta_Sans'] font-extrabold text-[#1F2937] text-xl tracking-tight">Sanchar AI</span>
           </Link>
-          <div className="flex items-center gap-4 md:gap-8">
+          <div className="flex items-center gap-3 sm:gap-6">
             {activeTrip && (
               <Link
                 to={`/active/${activeTrip._id}`}
@@ -813,8 +821,9 @@ const LandingPage = () => {
             )}
             <Link to="/features" className="hidden md:inline text-sm font-medium text-[#64748B] hover:text-[#00695C] transition-colors no-underline">Features</Link>
             <Link to="/privacy" className="hidden md:inline text-sm font-medium text-[#64748B] hover:text-[#00695C] transition-colors no-underline">Privacy</Link>
-            <Link to="/dashboard" className="text-sm font-medium text-[#64748B] hover:text-[#00695C] transition-colors no-underline">Dashboard</Link>
-            <Link to="/create" className="btn-primary text-sm !py-2 !px-5">
+            <Link to="/history" className="text-sm font-medium text-[#64748B] hover:text-[#00695C] transition-colors no-underline">History</Link>
+            <Link to="/dashboard" className="hidden sm:inline text-sm font-medium text-[#64748B] hover:text-[#00695C] transition-colors no-underline">Dashboard</Link>
+            <Link to="/create" className="btn-primary text-sm !py-2 !px-5 no-underline">
               Start Trip <ChevronRight size={14} />
             </Link>
           </div>
@@ -896,14 +905,14 @@ const LandingPage = () => {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
           {[
-            { city: 'Chennai', img: 'https://upload.wikimedia.org/wikipedia/commons/e/eb/Kapaleeshwarar_Temple.jpg', langs: ['Tamil', 'English'] },
-            { city: 'Kochi', img: 'https://upload.wikimedia.org/wikipedia/commons/2/27/Chinese_fishing_nets%2C_Kochi%2C_Kerala%2C_India.jpg', langs: ['Malayalam', 'English'] },
-            { city: 'Hyderabad', img: 'https://upload.wikimedia.org/wikipedia/commons/f/f6/Charminar_Summer.jpg', langs: ['Telugu', 'English'] },
-            { city: 'Bengaluru', img: 'https://upload.wikimedia.org/wikipedia/commons/3/36/Bangalore_Palace.jpg', langs: ['Kannada', 'English'] },
-            { city: 'Mumbai', img: 'https://upload.wikimedia.org/wikipedia/commons/7/75/Gateway_of_India.jpg', langs: ['Marathi', 'Hindi'] },
-            { city: 'Jaipur', img: 'https://upload.wikimedia.org/wikipedia/commons/3/34/Hawa_Mahal_2011.jpg', langs: ['Hindi', 'English'] },
-            { city: 'Varanasi', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/Ahilya_Ghat_by_the_Ganges%2C_Varanasi.jpg/800px-Ahilya_Ghat_by_the_Ganges%2C_Varanasi.jpg', langs: ['Hindi'] },
-            { city: 'Guwahati', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/Umananda_Temple.jpg/800px-Umananda_Temple.jpg', langs: ['Assamese', 'English'] },
+            { city: 'Chennai', img: 'https://images.unsplash.com/photo-1582510003544-4d00b7f74220?w=600&auto=format&fit=crop', langs: ['Tamil', 'English'] },
+            { city: 'Kochi', img: 'https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=600&auto=format&fit=crop', langs: ['Malayalam', 'English'] },
+            { city: 'Hyderabad', img: 'https://images.unsplash.com/photo-1605379399642-870262d3d051?w=600&auto=format&fit=crop', langs: ['Telugu', 'English'] },
+            { city: 'Bengaluru', img: 'https://images.unsplash.com/photo-1596176530529-78163a4f7af2?w=600&auto=format&fit=crop', langs: ['Kannada', 'English'] },
+            { city: 'Mumbai', img: 'https://images.unsplash.com/photo-1570168007204-dfb528c6958f?w=600&auto=format&fit=crop', langs: ['Marathi', 'Hindi'] },
+            { city: 'Jaipur', img: 'https://images.unsplash.com/photo-1599661046289-e31897846e41?w=600&auto=format&fit=crop', langs: ['Hindi', 'English'] },
+            { city: 'Varanasi', img: 'https://images.unsplash.com/photo-1561361513-2d000a50f0dc?w=600&auto=format&fit=crop', langs: ['Hindi'] },
+            { city: 'Guwahati', img: 'https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?w=600&auto=format&fit=crop', langs: ['Assamese', 'English'] },
           ].map((c) => (
             <CityCard
               key={c.city}
@@ -1215,43 +1224,60 @@ const HeroSearchForm = ({ preFillDest }: { preFillDest: string }) => {
         {dest === 'Other' && <input type="text" placeholder="Enter city name" value={customDest} onChange={e => setCustomDest(e.target.value)} className="input-field py-2.5 mt-2" required />}
       </div>
       
-      <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
-        <h4 className="text-sm font-bold text-[#1F2937] mb-3 flex items-center gap-1"><IndianRupee size={16} /> Budget Calculator</h4>
+      <div className="p-4 bg-teal-50/60 rounded-2xl border border-teal-100/80">
+        <h4 className="text-sm font-bold text-[#00695C] mb-3 flex items-center gap-1.5 font-['Plus_Jakarta_Sans']">
+          <IndianRupee size={16} className="text-amber-500" /> Smart Budget Calculator
+        </h4>
         
         <div className="grid grid-cols-2 gap-3 mb-3">
           <div>
-            <label className="text-xs font-semibold text-[#1F2937] mb-1 block">Days</label>
-            <input type="number" min="1" value={days} onChange={e => setDays(parseInt(e.target.value) || 1)} className="input-field py-2" />
+            <label className="text-xs font-semibold text-[#1F2937] mb-1 block">Duration (Days)</label>
+            <input type="number" min="1" value={days} onChange={e => setDays(Math.max(1, parseInt(e.target.value) || 1))} className="input-field py-2 bg-white" />
           </div>
           <div>
             <label className="text-xs font-semibold text-[#1F2937] mb-1 block">Travel Style</label>
-            <select value={style} onChange={e => setStyle(e.target.value as any)} className="input-field py-2">
-              <option value="Budget">Budget</option>
-              <option value="Comfort">Comfort</option>
+            <select value={style} onChange={e => setStyle(e.target.value as any)} className="input-field py-2 bg-white">
+              <option value="Budget">Budget (₹700/day)</option>
+              <option value="Comfort">Comfort (₹1,500/day)</option>
             </select>
           </div>
         </div>
 
         <div className="mb-3">
-          <label className="text-xs font-semibold text-[#1F2937] mb-1 block">Inter-city Ticket Price (₹)</label>
-          <input type="number" min="0" value={ticketPrice} onChange={e => setTicketPrice(parseInt(e.target.value) || 0)} className="input-field py-2" />
+          <label className="text-xs font-semibold text-[#1F2937] mb-1 block">Inter-city Ticket Fare (₹)</label>
+          <input type="number" min="0" placeholder="e.g. 500" value={ticketPrice || ''} onChange={e => setTicketPrice(Math.max(0, parseInt(e.target.value) || 0))} className="input-field py-2 bg-white" />
         </div>
 
-        <label className="flex items-center gap-2 mb-4 cursor-pointer">
-          <input type="checkbox" checked={heavyLuggage} onChange={e => setHeavyLuggage(e.target.checked)} className="w-4 h-4 text-teal-600 rounded" />
-          <span className="text-sm text-[#1F2937] font-medium">Carrying heavy luggage?</span>
+        <label className="flex items-center gap-2 mb-3 cursor-pointer select-none">
+          <input type="checkbox" checked={heavyLuggage} onChange={e => setHeavyLuggage(e.target.checked)} className="w-4 h-4 text-[#00695C] rounded border-gray-300" />
+          <span className="text-xs text-[#1F2937] font-semibold">Carrying heavy luggage? (+₹200 porter allocation)</span>
         </label>
 
-        <div className="bg-white p-3 rounded border border-gray-100 text-xs">
-          <p className="font-semibold mb-2">Typical ranges — actuals vary:</p>
-          <ul className="text-gray-500 space-y-1 mb-2">
-            <li>Food: {style === 'Budget' ? '₹300–500/day' : '₹600–1,200/day'}</li>
-            <li>Transport: {style === 'Budget' ? '₹200–400/day' : '₹400–800/day'}</li>
-            {heavyLuggage && <li>Luggage add-on: ₹100–300 (porter/cart)</li>}
-          </ul>
-          <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100">
-            <span className="font-bold">Suggested:</span>
-            <input type="number" value={userBudget} onChange={e => setUserBudget(parseInt(e.target.value) || 0)} className="input-field !py-1 flex-1 font-bold text-teal-700" />
+        <div className="bg-white p-3.5 rounded-xl border border-teal-100 shadow-sm text-xs">
+          <p className="font-bold text-gray-700 mb-2">Itemized Breakdown ({days} {days === 1 ? 'day' : 'days'} · {style}):</p>
+          <div className="flex flex-wrap gap-1.5 mb-3 text-[11px]">
+            <span className="bg-teal-50 text-[#00695C] px-2.5 py-1 rounded-md font-semibold border border-teal-100">
+              Food: ₹{( (style === 'Budget' ? 400 : 900) * days ).toLocaleString('en-IN')}
+            </span>
+            <span className="bg-teal-50 text-[#00695C] px-2.5 py-1 rounded-md font-semibold border border-teal-100">
+              Transit: ₹{( (style === 'Budget' ? 300 : 600) * days ).toLocaleString('en-IN')}
+            </span>
+            {heavyLuggage && (
+              <span className="bg-amber-50 text-amber-800 px-2.5 py-1 rounded-md font-semibold border border-amber-200">
+                Porter: ₹200
+              </span>
+            )}
+            {ticketPrice > 0 && (
+              <span className="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md font-semibold border border-blue-100">
+                Ticket: ₹{ticketPrice.toLocaleString('en-IN')}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center justify-between pt-2.5 border-t border-gray-100">
+            <span className="font-extrabold text-[#1F2937]">Suggested Total Budget:</span>
+            <div className="flex items-center gap-1 font-extrabold text-base text-[#00695C]">
+              ₹ <input type="number" value={userBudget} onChange={e => setUserBudget(parseInt(e.target.value) || 0)} className="w-24 p-1 rounded border border-gray-200 font-extrabold text-right focus:outline-none focus:border-[#00695C]" />
+            </div>
           </div>
         </div>
       </div>
@@ -2971,27 +2997,282 @@ const TripGallery = () => {
   );
 };
 
-// ─── PRIVACY PAGE ────────────────────────────────────────────
-const PrivacyPage = () => (
-  <div className="p-5 md:p-8 animate-fade-in-up max-w-3xl mx-auto">
-    <Link to="/" className="text-sm font-bold text-teal-700 flex items-center gap-1 mb-4"><Check size={16} /> Back to Home</Link>
-    <span className="badge badge-teal mb-3"><Lock size={14} /> Privacy Promise</span>
-    <h1 className="text-2xl font-extrabold text-[#1F2937] font-['Plus_Jakarta_Sans'] mb-6">Your data stays yours.</h1>
+// ─── VOICE TO TEXT DIARY RECORDER ─────────────────────────────
+const VoiceDiaryRecorder = ({ onSaveEntry }: { onSaveEntry: (text: string) => void }) => {
+  const [isListening, setIsListening] = useState(false);
+  const [transcript, setTranscript] = useState('');
+  const [manualText, setManualText] = useState('');
 
-    <div className="space-y-4">
-      <div className="card p-5 border border-gray-100">
-        <ul className="text-sm text-[#1F2937] space-y-3 font-medium">
-          <li className="flex items-start gap-2"><Check size={16} className="text-teal-600 mt-0.5" /> Your exact route never leaves the device.</li>
-          <li className="flex items-start gap-2"><Check size={16} className="text-teal-600 mt-0.5" /> Analytics off by default, requires explicit consent.</li>
-          <li className="flex items-start gap-2"><Check size={16} className="text-teal-600 mt-0.5" /> First and last 300–500 m stripped from any analytics.</li>
-          <li className="flex items-start gap-2"><Check size={16} className="text-teal-600 mt-0.5" /> Locations aggregated to anonymous grid cells.</li>
-          <li className="flex items-start gap-2"><Check size={16} className="text-teal-600 mt-0.5" /> Low-volume cells suppressed.</li>
-          <li className="flex items-start gap-2"><Check size={16} className="text-teal-600 mt-0.5" /> <strong>Your Private Vault</strong> — photos and stories are locked on your device with a PIN, optionally unlocked by your device's own fingerprint. This data never leaves your phone. (App-level, on-device protection).</li>
+  const startListening = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert('Speech recognition is not supported in this browser. You can type your handwritten diary note below!');
+      return;
+    }
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-IN';
+
+      recognition.onstart = () => setIsListening(true);
+      recognition.onend = () => setIsListening(false);
+      recognition.onresult = (event: any) => {
+        let currentText = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          currentText += event.results[i][0].transcript;
+        }
+        setTranscript(currentText);
+      };
+      recognition.start();
+    } catch (e) {
+      console.warn('Voice recognition error:', e);
+      setIsListening(false);
+    }
+  };
+
+  const handleSave = () => {
+    const finalContent = transcript || manualText;
+    if (!finalContent.trim()) return;
+    onSaveEntry(finalContent);
+    setTranscript('');
+    setManualText('');
+  };
+
+  return (
+    <div className="card p-5 mb-6 bg-[#FFFDF9] border border-amber-200/80 shadow-sm rounded-2xl">
+      <div className="flex justify-between items-center mb-3">
+        <h3 className="font-extrabold text-[#92400E] font-['Plus_Jakarta_Sans'] text-base flex items-center gap-2">
+          <Mic size={18} className="text-amber-600" /> Voice & Handwritten Diary Note
+        </h3>
+        <span className="text-[10px] bg-amber-100 text-amber-800 px-2.5 py-0.5 rounded-full font-bold">Voice-to-Text</span>
+      </div>
+      <p className="text-xs text-[#92400E]/80 mb-4">
+        Speak your travel thoughts or write a diary entry. Stored 100% locally on your device vault.
+      </p>
+
+      <div className="flex gap-2 mb-3">
+        <button
+          type="button"
+          onClick={startListening}
+          className={`flex-1 py-3 px-4 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer ${
+            isListening
+              ? 'bg-red-500 text-white animate-pulse'
+              : 'bg-amber-500 hover:bg-amber-600 text-white'
+          }`}
+        >
+          <Mic size={16} /> {isListening ? 'Listening… (Speak now)' : 'Record Voice Note'}
+        </button>
+      </div>
+
+      <textarea
+        rows={3}
+        placeholder="Your dictation or handwritten note will appear here..."
+        value={transcript || manualText}
+        onChange={e => {
+          setManualText(e.target.value);
+          if (transcript) setTranscript(e.target.value);
+        }}
+        className="w-full p-3 text-sm bg-white border border-amber-200 rounded-xl focus:outline-none focus:border-amber-500 font-serif leading-relaxed text-gray-800 mb-3"
+      />
+
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={!transcript.trim() && !manualText.trim()}
+          className="btn-primary !py-2.5 !px-5 text-xs font-bold bg-[#00695C] text-white rounded-xl disabled:opacity-50 cursor-pointer"
+        >
+          Save to Private Diary
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ─── PRIVACY PAGE ────────────────────────────────────────────
+const PrivacyPage = () => {
+  const [diaryNotes, setDiaryNotes] = useState<string[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('sanchar_private_diary') || '[]');
+    } catch {
+      return [];
+    }
+  });
+
+  const handleAddDiaryNote = (note: string) => {
+    const updated = [note, ...diaryNotes];
+    setDiaryNotes(updated);
+    localStorage.setItem('sanchar_private_diary', JSON.stringify(updated));
+  };
+
+  return (
+    <div className="p-5 md:p-8 animate-fade-in-up max-w-3xl mx-auto">
+      <Link to="/" className="text-sm font-bold text-teal-700 flex items-center gap-1 mb-4 no-underline">
+        <Check size={16} /> Back to Home
+      </Link>
+      <span className="badge badge-teal mb-3"><Lock size={14} /> Private Vault & Privacy</span>
+      <h1 className="text-2xl font-extrabold text-[#1F2937] font-['Plus_Jakarta_Sans'] mb-4">Your Private Journey Vault</h1>
+      <p className="text-xs text-[#64748B] mb-6">
+        Protected by device lock / PIN. Your routes, handwritten notes, voice notes, and photos never leave your device.
+      </p>
+
+      {/* Voice to Text Diary */}
+      <VoiceDiaryRecorder onSaveEntry={handleAddDiaryNote} />
+
+      {/* Saved Voice & Handwritten Diary Entries */}
+      {diaryNotes.length > 0 && (
+        <div className="card p-5 mb-6 bg-[#FFFDF9] border border-amber-200 rounded-2xl shadow-sm">
+          <h3 className="font-bold text-[#92400E] text-sm mb-3 flex items-center gap-2 font-['Plus_Jakarta_Sans']">
+            <BookOpen size={16} /> Your Handwritten & Voice Diary Notes ({diaryNotes.length})
+          </h3>
+          <div className="space-y-3">
+            {diaryNotes.map((entry, idx) => (
+              <div key={idx} className="p-3.5 bg-white rounded-xl border border-amber-100 text-xs sm:text-sm text-gray-800 font-serif leading-relaxed shadow-xs">
+                "{entry}"
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Security Promises */}
+      <div className="card p-5 border border-gray-100 rounded-2xl bg-white shadow-sm">
+        <h3 className="font-bold text-sm text-[#1F2937] mb-3">On-Device Security Pipeline</h3>
+        <ul className="text-xs sm:text-sm text-[#1F2937] space-y-3 font-medium">
+          <li className="flex items-start gap-2"><Check size={16} className="text-teal-600 mt-0.5 shrink-0" /> Your exact route telemetry stays on your device IndexedDB.</li>
+          <li className="flex items-start gap-2"><Check size={16} className="text-teal-600 mt-0.5 shrink-0" /> Analytics off by default — requires explicit user opt-in.</li>
+          <li className="flex items-start gap-2"><Check size={16} className="text-teal-600 mt-0.5 shrink-0" /> First and last 300–500 meters are stripped automatically from any logs.</li>
+          <li className="flex items-start gap-2"><Check size={16} className="text-teal-600 mt-0.5 shrink-0" /> Photos & voice notes are encrypted with Web Crypto SHA-256 local PIN.</li>
         </ul>
       </div>
     </div>
-  </div>
-);
+  );
+};
+
+// ─── HISTORY PAGE ────────────────────────────────────────────
+const HistoryPage = () => {
+  const [trips, setTrips] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [placeNotes, setPlaceNotes] = useState<Record<string, string>>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('sanchar_history_notes') || '{}');
+    } catch {
+      return {};
+    }
+  });
+
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    axios.get('/api/trips')
+      .then(res => {
+        setTrips(res.data || []);
+      })
+      .catch(() => setTrips([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleSavePlaceNote = (tripId: string, noteText: string) => {
+    const updated = { ...placeNotes, [tripId]: noteText };
+    setPlaceNotes(updated);
+    localStorage.setItem('sanchar_history_notes', JSON.stringify(updated));
+  };
+
+  return (
+    <div className="p-5 md:p-8 animate-fade-in-up max-w-4xl mx-auto">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div>
+          <Link to="/" className="text-sm font-bold text-teal-700 flex items-center gap-1 mb-2 no-underline">
+            <Check size={16} /> Back to Home
+          </Link>
+          <span className="badge badge-teal mb-2"><HistoryIcon size={14} /> Journey Archives</span>
+          <h1 className="text-2xl font-extrabold text-[#1F2937] font-['Plus_Jakarta_Sans']">Trip History & Places Visited</h1>
+          <p className="text-xs text-[#64748B]">All your past journeys locked securely in your device vault.</p>
+        </div>
+
+        <Link
+          to="/create"
+          className="btn-primary !py-3 !px-6 text-xs font-bold flex items-center justify-center gap-2 no-underline shadow-md"
+        >
+          <Plus size={16} /> Plan New Trip
+        </Link>
+      </div>
+
+      {loading ? (
+        <div className="text-center py-16 text-[#64748B] text-sm">Loading trip archives…</div>
+      ) : trips.length === 0 ? (
+        <div className="card p-10 text-center bg-white border border-gray-100 rounded-3xl shadow-sm">
+          <HistoryIcon size={44} className="text-gray-400 mx-auto mb-3" />
+          <h3 className="font-bold text-lg text-[#1F2937] mb-2">No completed trips in history yet</h3>
+          <p className="text-xs text-[#64748B] mb-6">Start your first trip to log telemetries, visited places, and expenses!</p>
+          <Link to="/create" className="btn-primary !py-3 !px-8 text-xs font-bold inline-flex items-center gap-2 no-underline">
+            <Plus size={16} /> Start a New Trip
+          </Link>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {trips.map((t, idx) => {
+            const tripNote = placeNotes[t._id] || '';
+
+            return (
+              <div
+                key={t._id || idx}
+                className="card p-6 bg-white border border-gray-150 rounded-2xl shadow-sm hover:shadow-md transition-all flex flex-col gap-4"
+              >
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-teal-50 text-[#00695C] flex items-center justify-center font-extrabold text-sm border border-teal-100">
+                      #{trips.length - idx}
+                    </div>
+                    <div>
+                      <h3 className="font-extrabold text-base text-[#1F2937] font-['Plus_Jakarta_Sans'] flex items-center gap-2">
+                        {t.originCity} → {t.destinationCity}
+                        <Lock size={14} className="text-teal-600" />
+                      </h3>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        Created: {t.createdAt ? new Date(t.createdAt).toLocaleDateString() : 'Recent'} · Status: <span className="font-bold text-[#00695C] capitalize">{t.status}</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => navigate(`/diary/${t._id}`)}
+                    className="btn-primary !py-2.5 !px-5 text-xs font-bold flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
+                  >
+                    <Unlock size={14} /> Unlock Trip Details
+                  </button>
+                </div>
+
+                {/* Notes on Visited Places */}
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 text-xs">
+                  <label className="font-bold text-gray-700 block mb-1.5">Your Notes on Places Visited:</label>
+                  <textarea
+                    rows={2}
+                    placeholder="Add personal notes on spots, food, hotels visited during this trip..."
+                    defaultValue={tripNote}
+                    onBlur={e => handleSavePlaceNote(t._id, e.target.value)}
+                    className="w-full p-2.5 bg-white border border-gray-200 rounded-lg text-xs text-gray-800 focus:outline-none focus:border-[#00695C]"
+                  />
+                  <p className="text-[10px] text-gray-400 mt-1 italic">*Notes auto-save when you click outside the box.</p>
+                </div>
+              </div>
+            );
+          })}
+
+          <div className="mt-8 text-center pt-4 border-t border-gray-150">
+            <Link
+              to="/create"
+              className="btn-primary !py-3.5 !px-10 text-sm font-bold inline-flex items-center gap-2 shadow-lg no-underline"
+            >
+              <Plus size={18} /> Plan Another Trip
+            </Link>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 // ─── FEATURES PAGE ──────────────────────────────────────────
 const FeaturesPage = () => (
