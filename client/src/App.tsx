@@ -1359,102 +1359,43 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* ── 5. CITY PACKS (Remade to match dark-theme Featured Retreats) ── */}
-      <section id="city-packs" className="section-rhythm bg-[#0A1616] py-24 text-white border-y border-teal-950 reveal-element">
-        <div className="max-w-[1200px] mx-auto px-5 md:px-8">
+      {/* ── 5. COMBINE SANCHAR (Remade to match Image 2 full-bleed layout) ── */}
+      <section id="city-packs" className="relative min-h-[650px] py-24 bg-cover bg-center text-white overflow-hidden reveal-element" style={{ backgroundImage: "url('/images/india/hero.jpg')" }}>
+        {/* Warm mist overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/50 to-black/30" />
+
+        <div className="relative z-10 max-w-[1200px] mx-auto px-5 md:px-8 flex flex-col justify-between min-h-[500px]">
           
-          {/* Header Row */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-16 border-b border-teal-900/60 pb-8">
-            <h2 className="font-display text-4xl md:text-5xl font-bold tracking-tight text-white">
-              Featured <span className="italic text-[#F59E0B]">Retreats</span>
+          {/* Top Section */}
+          <div className="max-w-2xl">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-[#F59E0B] block mb-3 font-['Plus_Jakarta_Sans'] bg-[#F59E0B]/10 px-3 py-1 rounded-full border border-[#F59E0B]/20 w-fit">
+              Verified Destinations
+            </span>
+            <h2 className="font-['Plus_Jakarta_Sans'] text-4xl md:text-6xl font-extrabold text-white tracking-tight leading-tight mb-8">
+              Combine Sanchar
             </h2>
-            <p className="text-gray-400 text-sm max-w-md md:text-right leading-relaxed">
-              Pre-download verified local safety directories, emergency coordinates, translation packs, and offline-ready navigation routes.
-            </p>
-          </div>
 
-          {/* Cards Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 reveal-stagger">
-            {[
-              { city: 'Chennai', img: '/images/india/chennai.jpg', langs: 'Tamil & English', loc: 'Tamil Nadu, South India', places: '25 Curated Places', rate: 'High' },
-              { city: 'Kochi', img: '/images/india/kochi.jpg', langs: 'Malayalam & English', loc: 'Kerala, Coastal India', places: '22 Curated Places', rate: 'High' },
-              { city: 'Hyderabad', img: '/images/india/hyderabad.jpg', langs: 'Telugu & English', loc: 'Telangana, Deccan India', places: '24 Curated Places', rate: 'High' },
-              { city: 'Bengaluru', img: '/images/india/bengaluru.jpg', langs: 'Kannada & English', loc: 'Karnataka, South India', places: '25 Curated Places', rate: 'High' },
-              { city: 'Mumbai', img: '/images/india/mumbai.jpg', langs: 'Marathi & Hindi', loc: 'Maharashtra, West Coast', places: '25 Curated Places', rate: 'High' },
-              { city: 'Jaipur', img: '/images/india/jaipur.jpg', langs: 'Hindi & English', loc: 'Rajasthan, Desert Region', places: '25 Curated Places', rate: 'High' },
-              { city: 'Varanasi', img: '/images/india/kashi_vishwanath.jpg', langs: 'Hindi & Sanskrit', loc: 'Uttar Pradesh, Ganges', places: '21 Curated Places', rate: 'High' },
-              { city: 'Guwahati', img: '/images/india/guwahati_river.jpg', langs: 'Assamese & English', loc: 'Assam, North-East India', places: '20 Curated Places', rate: 'High' },
-              { city: 'Delhi', img: '/images/india/delhi.jpg', langs: 'Hindi & Punjabi', loc: 'National Capital Territory', places: '25 Curated Places', rate: 'High' },
-              { city: 'Kolkata', img: '/images/india/kolkata.jpg', langs: 'Bengali & English', loc: 'West Bengal, East India', places: '24 Curated Places', rate: 'High' },
-              { city: 'Goa', img: '/images/india/kochi_nets.jpg', langs: 'Konkani & English', loc: 'Goa State, West Coast', places: '18 Curated Places', rate: 'High' },
-              { city: 'Kerala', img: '/images/india/kochi.jpg', langs: 'Malayalam & English', loc: 'Malabar Coast, South India', places: '22 Curated Places', rate: 'High' },
-              { city: 'Uttarakhand', img: '/images/india/hero.jpg', langs: 'Hindi & Garhwali', loc: 'Himalayan Ridge, North India', places: '19 Curated Places', rate: 'High' },
-              { city: 'Himachal Pradesh', img: '/images/india/bg_section1.jpg', langs: 'Hindi & Pahari', loc: 'Western Himalayas, North', places: '17 Curated Places', rate: 'High' },
-              { city: 'Sikkim', img: '/images/india/stat_temple.jpg', langs: 'Nepali & Sikkimese', loc: 'Eastern Himalayas Region', places: '15 Curated Places', rate: 'High' },
-              { city: 'Punjab', img: '/images/india/hero.jpg', langs: 'Punjabi & Hindi', loc: 'Punjab Plains, North India', places: '16 Curated Places', rate: 'High' },
-            ].map((c) => (
-              <div 
-                key={c.city} 
-                className="bg-[#0D1A1A] rounded-[24px] overflow-hidden border border-teal-900/50 p-6 flex flex-col md:flex-row gap-6 hover:shadow-2xl hover:border-[#F59E0B]/30 transition-all duration-300 group cursor-pointer"
-                onClick={() => handleOpenCity(c.city)}
-              >
-                {/* Content Left */}
-                <div className="flex-1 flex flex-col justify-between py-1">
-                  <div>
-                    <h3 className="font-display font-bold text-2xl md:text-3xl text-white tracking-tight leading-tight group-hover:text-[#F59E0B] transition-colors">
-                      {c.city} Offline Directory Pack
-                    </h3>
-                    <div className="text-[13px] font-bold text-emerald-400 mt-2">
-                      Free with Sanchar AI
-                    </div>
-
-                    <div className="mt-6 space-y-2 text-xs text-gray-400 font-['Plus_Jakarta_Sans']">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[#F59E0B]">📍</span> {c.loc}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[#F59E0B]">🗣️</span> {c.langs}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[#F59E0B]">🏛️</span> {c.places}
-                      </div>
-                      <div className="flex items-center gap-2 text-emerald-500 font-semibold">
-                        ★★★★★ <span className="text-[10px] text-gray-500 font-normal">Offline Availability {c.rate}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mt-8">
-                    <div className="w-full md:w-auto inline-flex bg-[#142A2A] hover:bg-[#1E3E3E] text-white text-xs font-bold px-6 py-3.5 rounded-full items-center justify-between gap-3 border border-teal-800/80 transition-all group-hover:border-[#F59E0B]/40">
-                      <span>Explore Pack</span>
-                      <span className="text-[#F59E0B] font-display text-sm group-hover:translate-x-1 transition-transform">→</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Image Right */}
-                <div className="w-full md:w-56 h-48 md:h-auto rounded-[20px] overflow-hidden shrink-0 relative">
-                  <img 
-                    src={c.img} 
-                    alt={c.city} 
-                    className="w-full h-full object-cover group-hover:scale-105 transition-all duration-700" 
-                    loading="lazy" 
-                    onError={(e) => { e.currentTarget.src = '/images/india/hero.jpg'; }} 
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#0A1616]/40 to-transparent" />
-                </div>
-
+            {/* Plus Sub-Items matching Image 2 */}
+            <div className="space-y-4 font-['Plus_Jakarta_Sans']">
+              <div className="flex items-center gap-3 text-2xl md:text-3xl font-extrabold text-white/95">
+                <span className="text-gray-400 font-normal">+</span> Heritage & Forts
               </div>
-            ))}
+              <div className="flex items-center gap-3 text-2xl md:text-3xl font-extrabold text-white/95">
+                <span className="text-gray-400 font-normal">+</span> Coastal & Backwaters
+              </div>
+              <div className="flex items-center gap-3 text-2xl md:text-3xl font-extrabold text-white/95">
+                <span className="text-gray-400 font-normal">+</span> Sacred Shrines & Temples
+              </div>
+            </div>
           </div>
 
-          {/* Search bar below */}
-          <div className="mt-16 max-w-md mx-auto relative">
-            <div className="bg-[#0D1A1A] p-3 rounded-full border border-teal-900/80 shadow-md flex items-center gap-2">
-              <Search className="text-teal-600 shrink-0 ml-2" size={16} />
+          {/* Search bar & quick cities */}
+          <div className="mt-8 max-w-md">
+            <div className="bg-black/50 backdrop-blur-md p-2.5 rounded-full border border-white/20 shadow-xl flex items-center gap-2">
+              <Search className="text-amber-400 shrink-0 ml-2" size={16} />
               <input
                 type="text"
-                placeholder="Explore other cities (e.g. Pune, Nagpur…)"
+                placeholder="Explore any Indian city (e.g. Jaipur, Kochi…)"
                 value={searchCityInput}
                 onChange={(e) => {
                   setSearchCityInput(e.target.value);
@@ -1466,21 +1407,55 @@ const LandingPage = () => {
                     handleOpenCity(searchCityInput);
                   }
                 }}
-                className="flex-1 text-xs text-white focus:outline-hidden placeholder-teal-800 bg-transparent w-full px-1"
+                className="flex-1 text-xs text-white focus:outline-hidden placeholder-gray-300 bg-transparent w-full px-1"
               />
               <button
                 onClick={() => handleOpenCity(searchCityInput)}
-                className="btn-primary !py-2 !px-5 text-[11px] font-bold whitespace-nowrap cursor-pointer !rounded-full bg-[#00695C] hover:bg-[#004D40] text-white"
+                className="btn-primary !py-2 !px-5 text-[11px] font-bold whitespace-nowrap cursor-pointer !rounded-full bg-[#F59E0B] hover:bg-[#D97706] text-[#1F2937]"
               >
-                Search Spots
+                Explore Pack
               </button>
             </div>
             {searchError && (
-              <div className="absolute -bottom-6 left-0 right-0 text-center text-red-500 text-xs font-bold animate-fade-in-up">
+              <div className="text-center text-red-400 text-xs font-bold mt-2">
                 {searchError}
               </div>
             )}
           </div>
+
+          {/* Bottom Bar Row matching Image 2 */}
+          <div className="mt-16 pt-8 border-t border-white/20 grid grid-cols-1 md:grid-cols-5 gap-8 items-end">
+            <div className="md:col-span-1">
+              <p className="text-xs text-gray-300 leading-relaxed font-['Plus_Jakarta_Sans']">
+                Combine verified local directories, offline maps, and safety telemetry into one seamless journey.
+              </p>
+            </div>
+
+            <div className="md:col-span-1 border-l border-white/20 pl-6 cursor-pointer group" onClick={() => handleOpenCity('Jaipur')}>
+              <div className="font-['Plus_Jakarta_Sans'] text-3xl md:text-4xl font-extrabold text-white mb-1 group-hover:text-[#F59E0B] transition-colors">01</div>
+              <p className="text-xs font-bold text-gray-200">Heritage</p>
+              <p className="text-[10px] text-gray-400 mt-0.5">Jaipur · Amber Fort</p>
+            </div>
+
+            <div className="md:col-span-1 border-l border-white/20 pl-6 cursor-pointer group" onClick={() => handleOpenCity('Kochi')}>
+              <div className="font-['Plus_Jakarta_Sans'] text-3xl md:text-4xl font-extrabold text-white mb-1 group-hover:text-[#F59E0B] transition-colors">02</div>
+              <p className="text-xs font-bold text-gray-200">Coastal</p>
+              <p className="text-[10px] text-gray-400 mt-0.5">Kochi · Fort Kochi</p>
+            </div>
+
+            <div className="md:col-span-1 border-l border-white/20 pl-6 cursor-pointer group" onClick={() => handleOpenCity('Varanasi')}>
+              <div className="font-['Plus_Jakarta_Sans'] text-3xl md:text-4xl font-extrabold text-white mb-1 group-hover:text-[#F59E0B] transition-colors">03</div>
+              <p className="text-xs font-bold text-gray-200">Sacred</p>
+              <p className="text-[10px] text-gray-400 mt-0.5">Varanasi · Kashi Vishwanath</p>
+            </div>
+
+            <div className="md:col-span-1 border-l border-white/20 pl-6 cursor-pointer group" onClick={() => handleOpenCity('Chennai')}>
+              <div className="font-['Plus_Jakarta_Sans'] text-3xl md:text-4xl font-extrabold text-white mb-1 group-hover:text-[#F59E0B] transition-colors">04</div>
+              <p className="text-xs font-bold text-gray-200">Metropolis</p>
+              <p className="text-[10px] text-gray-400 mt-0.5">Chennai · Marina Beach</p>
+            </div>
+          </div>
+
         </div>
       </section>
 
