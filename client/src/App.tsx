@@ -1433,6 +1433,14 @@ const LandingPage = () => {
               { city: 'Jaipur', img: '/images/india/jaipur.jpg', langs: 'Hindi & English', loc: 'Rajasthan, Desert Region', places: '25 Curated Places', rate: 'High' },
               { city: 'Varanasi', img: '/images/india/kashi_vishwanath.jpg', langs: 'Hindi & Sanskrit', loc: 'Uttar Pradesh, Ganges', places: '21 Curated Places', rate: 'High' },
               { city: 'Guwahati', img: '/images/india/guwahati_river.jpg', langs: 'Assamese & English', loc: 'Assam, North-East India', places: '20 Curated Places', rate: 'High' },
+              { city: 'Delhi', img: '/images/india/delhi.jpg', langs: 'Hindi & Punjabi', loc: 'National Capital Territory', places: '25 Curated Places', rate: 'High' },
+              { city: 'Kolkata', img: '/images/india/kolkata.jpg', langs: 'Bengali & English', loc: 'West Bengal, East India', places: '24 Curated Places', rate: 'High' },
+              { city: 'Goa', img: '/images/india/kochi_nets.jpg', langs: 'Konkani & English', loc: 'Goa State, West Coast', places: '18 Curated Places', rate: 'High' },
+              { city: 'Kerala', img: '/images/india/kochi.jpg', langs: 'Malayalam & English', loc: 'Malabar Coast, South India', places: '22 Curated Places', rate: 'High' },
+              { city: 'Uttarakhand', img: '/images/india/hero.jpg', langs: 'Hindi & Garhwali', loc: 'Himalayan Ridge, North India', places: '19 Curated Places', rate: 'High' },
+              { city: 'Himachal Pradesh', img: '/images/india/bg_section1.jpg', langs: 'Hindi & Pahari', loc: 'Western Himalayas, North', places: '17 Curated Places', rate: 'High' },
+              { city: 'Sikkim', img: '/images/india/stat_temple.jpg', langs: 'Nepali & Sikkimese', loc: 'Eastern Himalayas Region', places: '15 Curated Places', rate: 'High' },
+              { city: 'Punjab', img: '/images/india/hero.jpg', langs: 'Punjabi & Hindi', loc: 'Punjab Plains, North India', places: '16 Curated Places', rate: 'High' },
             ].map((c) => (
               <div 
                 key={c.city} 
