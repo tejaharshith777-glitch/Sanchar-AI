@@ -28,6 +28,25 @@ interface SancharDB extends DBSchema {
     };
     indexes: { 'by-trip': string };
   };
+  settings: {
+    key: string;
+    value: {
+      id: string;
+      [key: string]: any;
+    };
+  };
+  moments: {
+    key: string;
+    value: {
+      id: string;
+      tripId: string;
+      type: string;
+      note: string;
+      data: any;
+      timestamp: number;
+    };
+    indexes: { 'by-trip': string };
+  };
 }
 
 const DB_NAME = 'sanchar-ai-db';

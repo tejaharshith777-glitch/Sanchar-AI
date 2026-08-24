@@ -12,7 +12,7 @@ import { ocrProvider } from './ocr/OcrProvider';
 import PocketMap from './components/PocketMap';
 
 // ─── Constants ───────────────────────────────────────────────
-const SITE_URL = window.location.origin; // Dynamically gets the active deploy URL
+const _SITE_URL = window.location.origin; // Dynamically gets the active deploy URL
 const CITIES = [
   'Chennai', 'Coimbatore', 'Madurai', 'Kochi', 'Bengaluru',
   'Mumbai', 'Pune', 'Delhi', 'Jaipur', 'Kolkata',
@@ -1142,9 +1142,10 @@ const HeroSearchForm = ({ preFillDest }: { preFillDest: string }) => {
         setCustomHome(lastCompletedTrip.destinationCity);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lastCompletedTrip]);
 
-  // Recalculate suggested budget
+  // Recalculate suggested budget (derived value, kept as effect for simplicity)
   useEffect(() => {
     // Food: Budget 300-500 (avg 400), Comfort 600-1200 (avg 900)
     const foodPerDay = style === 'Budget' ? 400 : 900;
@@ -1155,6 +1156,7 @@ const HeroSearchForm = ({ preFillDest }: { preFillDest: string }) => {
     
     const suggested = (foodPerDay + transportPerDay) * days + luggageCost + ticketPrice;
     setUserBudget(suggested);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [days, style, heavyLuggage, ticketPrice]);
 
   const origin = home === 'Other' ? customHome : home;
@@ -1268,15 +1270,16 @@ const HeroSearchForm = ({ preFillDest }: { preFillDest: string }) => {
   );
 };
 
+const SHOWCASE_CITIES = ['Chennai', 'Kochi', 'Bengaluru', 'Mumbai', 'Delhi', 'Kolkata', 'Hyderabad', 'Jaipur'];
+
 // ─── S4: CITY PACK REAL STATS ────────────────────────────────
 const CityPacksRealStats = () => {
   const [packData, setPackData] = useState<Record<string, any>>({});
-  const showcaseCities = ['Chennai', 'Kochi', 'Bengaluru', 'Mumbai', 'Delhi', 'Kolkata', 'Hyderabad', 'Jaipur'];
 
   useEffect(() => {
     const fetchStats = async () => {
       const results: Record<string, any> = {};
-      for (const city of showcaseCities) {
+      for (const city of SHOWCASE_CITIES) {
         try {
           const res = await axios.get(`/api/city-packs/${city}`);
           results[city] = res.data;
@@ -1291,7 +1294,7 @@ const CityPacksRealStats = () => {
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-      {showcaseCities.map(city => {
+      {SHOWCASE_CITIES.map(city => {
         const data = packData[city];
         return (
           <Link to={`/city/${city}`} key={city} className="card p-4 border border-gray-100 flex flex-col justify-between h-40 bg-white hover:shadow-lg transition-shadow no-underline">
