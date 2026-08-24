@@ -1408,53 +1408,91 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* ── 5. CITY PACKS ── */}
-      <section id="city-packs" className="section-rhythm bg-white border-y border-gray-100 reveal-element">
+      {/* ── 5. CITY PACKS (Remade to match dark-theme Featured Retreats) ── */}
+      <section id="city-packs" className="section-rhythm bg-[#0A1616] py-24 text-white border-y border-teal-950 reveal-element">
         <div className="max-w-[1200px] mx-auto px-5 md:px-8">
-          <div className="text-center mb-12">
-            <span className="badge badge-teal mb-3"><MapPin size={14} /> Popular Destinations</span>
-            <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight text-ink">City packs ready for you</h2>
-            <p className="text-muted text-sm mt-2">Verified local safety directories and translation packs.</p>
+          
+          {/* Header Row */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-16 border-b border-teal-900/60 pb-8">
+            <h2 className="font-display text-4xl md:text-5xl font-bold tracking-tight text-white">
+              Featured <span className="italic text-[#F59E0B]">Retreats</span>
+            </h2>
+            <p className="text-gray-400 text-sm max-w-md md:text-right leading-relaxed">
+              Pre-download verified local safety directories, emergency coordinates, translation packs, and offline-ready navigation routes.
+            </p>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 reveal-stagger">
+          {/* Cards Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 reveal-stagger">
             {[
-              { city: 'Chennai', img: '/images/india/chennai.jpg', langs: ['Tamil', 'English'] },
-              { city: 'Kochi', img: '/images/india/kochi.jpg', langs: ['Malayalam', 'English'] },
-              { city: 'Hyderabad', img: '/images/india/hyderabad.jpg', langs: ['Telugu', 'English'] },
-              { city: 'Bengaluru', img: '/images/india/bengaluru.jpg', langs: ['Kannada', 'English'] },
-              { city: 'Mumbai', img: '/images/india/mumbai.jpg', langs: ['Marathi', 'Hindi'] },
-              { city: 'Jaipur', img: '/images/india/jaipur.jpg', langs: ['Hindi', 'English'] },
-              { city: 'Varanasi', img: '/images/india/kashi_vishwanath.jpg', langs: ['Hindi'] },
-              { city: 'Guwahati', img: '/images/india/guwahati_river.jpg', langs: ['Assamese', 'English'] },
+              { city: 'Chennai', img: '/images/india/chennai.jpg', langs: 'Tamil & English', loc: 'Tamil Nadu, South India', places: '25 Curated Places', rate: 'High' },
+              { city: 'Kochi', img: '/images/india/kochi.jpg', langs: 'Malayalam & English', loc: 'Kerala, Coastal India', places: '22 Curated Places', rate: 'High' },
+              { city: 'Hyderabad', img: '/images/india/hyderabad.jpg', langs: 'Telugu & English', loc: 'Telangana, Deccan India', places: '24 Curated Places', rate: 'High' },
+              { city: 'Bengaluru', img: '/images/india/bengaluru.jpg', langs: 'Kannada & English', loc: 'Karnataka, South India', places: '25 Curated Places', rate: 'High' },
+              { city: 'Mumbai', img: '/images/india/mumbai.jpg', langs: 'Marathi & Hindi', loc: 'Maharashtra, West Coast', places: '25 Curated Places', rate: 'High' },
+              { city: 'Jaipur', img: '/images/india/jaipur.jpg', langs: 'Hindi & English', loc: 'Rajasthan, Desert Region', places: '25 Curated Places', rate: 'High' },
+              { city: 'Varanasi', img: '/images/india/kashi_vishwanath.jpg', langs: 'Hindi & Sanskrit', loc: 'Uttar Pradesh, Ganges', places: '21 Curated Places', rate: 'High' },
+              { city: 'Guwahati', img: '/images/india/guwahati_river.jpg', langs: 'Assamese & English', loc: 'Assam, North-East India', places: '20 Curated Places', rate: 'High' },
             ].map((c) => (
-              <div key={c.city} className="card-retreat flex flex-col no-underline cursor-pointer" onClick={() => handleOpenCity(c.city)}>
-                <div className="relative h-40 overflow-hidden">
-                  <img src={c.img} alt={c.city} className="w-full h-full object-cover img-hover-zoom" loading="lazy" onError={(e) => { e.currentTarget.src = '/images/india/hero.jpg'; }} />
-                  <span className="absolute top-3 right-3 bg-[#00695C] text-white text-[9px] font-bold px-2 py-0.5 rounded-full">
-                    Free with Sanchar AI
-                  </span>
-                </div>
-                <div className="p-4 flex-1 flex flex-col justify-between">
+              <div 
+                key={c.city} 
+                className="bg-[#0D1A1A] rounded-[24px] overflow-hidden border border-teal-900/50 p-6 flex flex-col md:flex-row gap-6 hover:shadow-2xl hover:border-[#F59E0B]/30 transition-all duration-300 group cursor-pointer"
+                onClick={() => handleOpenCity(c.city)}
+              >
+                {/* Content Left */}
+                <div className="flex-1 flex flex-col justify-between py-1">
                   <div>
-                    <h3 className="font-display font-bold text-base text-ink">📍 {c.city}</h3>
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      {c.langs.map(l => (
-                        <span key={l} className="bg-teal-50 text-teal-700 text-[9px] font-bold px-2 py-0.5 rounded">
-                          {l}
-                        </span>
-                      ))}
+                    <h3 className="font-display font-bold text-2xl md:text-3xl text-white tracking-tight leading-tight group-hover:text-[#F59E0B] transition-colors">
+                      {c.city} Offline Directory Pack
+                    </h3>
+                    <div className="text-[13px] font-bold text-emerald-400 mt-2">
+                      Free with Sanchar AI
+                    </div>
+
+                    <div className="mt-6 space-y-2 text-xs text-gray-400 font-['Plus_Jakarta_Sans']">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[#F59E0B]">📍</span> {c.loc}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[#F59E0B]">🗣️</span> {c.langs}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[#F59E0B]">🏛️</span> {c.places}
+                      </div>
+                      <div className="flex items-center gap-2 text-emerald-500 font-semibold">
+                        ★★★★★ <span className="text-[10px] text-gray-500 font-normal">Offline Availability {c.rate}</span>
+                      </div>
                     </div>
                   </div>
-                  <span className="text-[11px] font-bold text-teal-700 mt-4 block">Explore City Pack →</span>
+
+                  <div className="mt-8">
+                    <div className="w-full md:w-auto inline-flex bg-[#142A2A] hover:bg-[#1E3E3E] text-white text-xs font-bold px-6 py-3.5 rounded-full items-center justify-between gap-3 border border-teal-800/80 transition-all group-hover:border-[#F59E0B]/40">
+                      <span>Explore Pack</span>
+                      <span className="text-[#F59E0B] font-display text-sm group-hover:translate-x-1 transition-transform">→</span>
+                    </div>
+                  </div>
                 </div>
+
+                {/* Image Right */}
+                <div className="w-full md:w-56 h-48 md:h-auto rounded-[20px] overflow-hidden shrink-0 relative">
+                  <img 
+                    src={c.img} 
+                    alt={c.city} 
+                    className="w-full h-full object-cover group-hover:scale-105 transition-all duration-700" 
+                    loading="lazy" 
+                    onError={(e) => { e.currentTarget.src = '/images/india/hero.jpg'; }} 
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#0A1616]/40 to-transparent" />
+                </div>
+
               </div>
             ))}
           </div>
 
-          <div className="mt-12 max-w-md mx-auto relative">
-            <div className="bg-cream p-3 rounded-full border border-gray-250/50 shadow-xs flex items-center gap-2">
-              <Search className="text-gray-400 shrink-0 ml-2" size={16} />
+          {/* Search bar below */}
+          <div className="mt-16 max-w-md mx-auto relative">
+            <div className="bg-[#0D1A1A] p-3 rounded-full border border-teal-900/80 shadow-md flex items-center gap-2">
+              <Search className="text-teal-600 shrink-0 ml-2" size={16} />
               <input
                 type="text"
                 placeholder="Explore other cities (e.g. Pune, Nagpur…)"
@@ -1469,7 +1507,7 @@ const LandingPage = () => {
                     handleOpenCity(searchCityInput);
                   }
                 }}
-                className="flex-1 text-xs text-[#1F2937] focus:outline-none placeholder-gray-400 bg-transparent"
+                className="flex-1 text-xs text-white focus:outline-hidden placeholder-teal-800 bg-transparent w-full px-1"
               />
               <button
                 onClick={() => handleOpenCity(searchCityInput)}
