@@ -481,3 +481,13 @@ h1, h2, h3, h4, h5, h6 {
   animation-play-state: paused;
 }
 
+@keyframes pulseHalo {
+  0% { transform: scale(0.6); opacity: 0.8; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+
+.animate-pulse-halo {
+  transform-origin: center;
+  animation: pulseHalo 2s ease-out infinite;
+}
+

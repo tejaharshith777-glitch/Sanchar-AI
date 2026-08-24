@@ -1,8 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { MapContainer, TileLayer, Marker, Popup, Polyline, CircleMarker } from 'react-leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import SancharMap from '../components/SancharMap';
 import { 
   Compass, MapPin, Navigation, Info, Clock, AlertTriangle, ShieldCheck, 
   ChevronLeft, Check, Save, Share2, Sparkles
@@ -10,24 +8,7 @@ import {
 import axios from 'axios';
 import { getCachedCityPack } from '../store/db';
 
-// Leaflet default icon fix
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-});
 
-// Custom icons using Emojis
-const createEmojiIcon = (emoji: string) => {
-  return L.divIcon({
-    html: `<div style="font-size: 26px; line-height: 1; text-align: center; text-shadow: 0 2px 4px rgba(0,0,0,0.2);">${emoji}</div>`,
-    className: 'poi-emoji-icon',
-    iconSize: [32, 32],
-    iconAnchor: [16, 16],
-    popupAnchor: [0, -16],
-  });
-};
 
 const CITY_CENTERS: Record<string, [number, number]> = {
   Chennai: [13.0827, 80.2707],
@@ -367,36 +348,32 @@ export const PlaceDetailPage = () => {
           </div>
 
           <div className="flex-1 relative z-10">
-            <MapContainer
+            <SancharMap
               center={centerCoords}
               zoom={15}
-              scrollWheelZoom={true}
-              style={{ width: '100%', height: '100%' }}
-            >
-              <TileLayer
-                attribution='&copy; OpenStreetMap contributors'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
-              {/* Place spot marker */}
-              <Marker position={centerCoords} icon={createEmojiIcon(isCurated ? '🏛️' : '📍')}>
-                <Popup>
-                  <div className="text-center p-1">
-                    <h4 className="font-bold text-xs">{spot.name}</h4>
-                    <p className="text-[10px] text-gray-500">{spot.category}</p>
-                  </div>
-                </Popup>
-              </Marker>
-
-              {/* User live position marker */}
-              {userPos && (
-                <>
-                  <CircleMarker center={userPos} radius={7} fillColor="#FF6F00" fillOpacity={0.9} color="#white" weight={2}>
-                    <Popup>Your live location</Popup>
-                  </CircleMarker>
-                  <Polyline positions={[userPos, centerCoords]} pathOptions={{ color: '#F59E0B', dashArray: '5, 8', weight: 3 }} />
-                </>
-              )}
-            </MapContainer>
+              userPos={userPos}
+              showOfflineBanner={true}
+              heightClass="h-full"
+              markers={[
+                {
+                  position: centerCoords,
+                  popupContent: (
+                    <div className="text-center p-1">
+                      <h4 className="font-bold text-xs">{spot.name}</h4>
+                      <p className="text-[10px] text-gray-500">{spot.category}</p>
+                    </div>
+                  ),
+                  iconEmoji: isCurated ? '🏛️' : '📍'
+                }
+              ]}
+              polylines={userPos ? [
+                {
+                  positions: [userPos, centerCoords],
+                  color: '#F59E0B',
+                  dashArray: '5, 8'
+                }
+              ] : []}
+            />
 
             {/* Floating directions info card */}
             {directionsActive && (
@@ -661,32 +638,22 @@ export const LuggageRadarPage = () => {
 
           {/* Map panel */}
           <div className="h-full relative z-10">
-            <MapContainer
+            <SancharMap
               center={center}
               zoom={13}
-              scrollWheelZoom={true}
-              style={{ width: '100%', height: '100%' }}
-            >
-              <TileLayer
-                attribution='&copy; OpenStreetMap contributors'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
-              
-              {spots.map(spot => (
-                <Marker 
-                  key={spot._id}
-                  position={[spot.lat, spot.lng]}
-                  icon={createEmojiIcon('🧳')}
-                >
-                  <Popup>
-                    <div className="text-center p-1">
-                      <h4 className="font-bold text-xs">{spot.name}</h4>
-                      <p className="text-[10px] text-gray-500">{spot.hours}</p>
-                    </div>
-                  </Popup>
-                </Marker>
-              ))}
-            </MapContainer>
+              showOfflineBanner={true}
+              heightClass="h-full"
+              markers={spots.map(spot => ({
+                position: [spot.lat, spot.lng],
+                popupContent: (
+                  <div className="text-center p-1">
+                    <h4 className="font-bold text-xs">{spot.name}</h4>
+                    <p className="text-[10px] text-gray-500">{spot.hours}</p>
+                  </div>
+                ),
+                iconEmoji: '🧳'
+              }))}
+            />
           </div>
         </div>
       )}

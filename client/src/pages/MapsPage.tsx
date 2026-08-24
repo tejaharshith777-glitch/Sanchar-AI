@@ -1,18 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Polyline, CircleMarker, useMap } from 'react-leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
 import { getCachedCityPack } from '../store/db';
 import { Link } from 'react-router-dom';
-import { Map as MapIcon, Download, Check, WifiOff, Compass, ChevronDown } from 'lucide-react';
-
-// Fix Leaflet default marker icons
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-});
+import { Map as MapIcon, Download, Check, Compass, ChevronDown } from 'lucide-react';
+import SancharMap from '../components/SancharMap';
 
 // ─── POI TYPE ICONS (emoji-based divIcons) ───
 const POI_ICONS: Record<string, string> = {
@@ -26,17 +16,6 @@ const POI_ICONS: Record<string, string> = {
   luggageStorage: '🧳',
   station: '🚉',
 };
-
-function createPoiIcon(type: string) {
-  const emoji = POI_ICONS[type] || '📍';
-  return L.divIcon({
-    html: `<span style="font-size:24px;line-height:1;display:block;text-align:center;">${emoji}</span>`,
-    className: 'poi-emoji-icon',
-    iconSize: [30, 30],
-    iconAnchor: [15, 15],
-    popupAnchor: [0, -15],
-  });
-}
 
 // ─── CITY CENTERS ───
 const CITY_CENTERS: Record<string, [number, number]> = {
@@ -74,14 +53,7 @@ function bearingToDir(b: number) {
   return dirs[Math.round(b / 45)];
 }
 
-// ─── MAP RECENTER COMPONENT ───
-function RecenterMap({ center, zoom }: { center: [number, number]; zoom: number }) {
-  const map = useMap();
-  useEffect(() => {
-    map.setView(center, zoom);
-  }, [center, zoom, map]);
-  return null;
-}
+
 
 // ─── POI INTERFACE ───
 interface POI {
@@ -295,81 +267,39 @@ export default function MapsPage() {
 
       {/* Map */}
       <div className="flex-1 relative" style={{ minHeight: '400px' }}>
-        <MapContainer
+        <SancharMap
           center={mapCenter}
           zoom={13}
-          style={{ width: '100%', height: '100%', minHeight: '400px' }}
-          scrollWheelZoom={true}
-        >
-          <RecenterMap center={mapCenter} zoom={13} />
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-            errorTileUrl=""
-          />
-
-          {/* POIs with type icons */}
-          {pois.map((poi, i) => (
-            <Marker
-              key={`poi-${i}`}
-              position={[poi.lat, poi.lng]}
-              icon={createPoiIcon(poi.type)}
-            >
-              <Popup>
-                <div className="text-sm">
-                  <p className="font-bold mb-1">{POI_ICONS[poi.type] || '📍'} {poi.name}</p>
-                  <p className="text-xs text-gray-500 capitalize mb-2">{poi.type}</p>
-                  {currentPos && (
-                    <button
-                      onClick={() => setNavTarget(poi)}
-                      className="text-xs font-bold text-white bg-[#00695C] hover:bg-[#004D40] px-3 py-1.5 rounded-lg transition-colors w-full cursor-pointer"
-                    >
-                      Get approximate directions
-                    </button>
-                  )}
-                </div>
-              </Popup>
-            </Marker>
-          ))}
-
-          {/* User track polyline (teal) */}
-          {trackPoints.length > 1 && (
-            <Polyline positions={trackPoints} color="#00695C" weight={3} opacity={0.7} />
-          )}
-
-          {/* Current position dot */}
-          {currentPos && (
-            <CircleMarker
-              center={currentPos}
-              radius={8}
-              pathOptions={{ color: '#00695C', fillColor: '#00695C', fillOpacity: 1, weight: 3 }}
-            >
-              <Popup>Your current location</Popup>
-            </CircleMarker>
-          )}
-
-          {/* Nav bearing line (dashed) */}
-          {navTarget && currentPos && (
-            <Polyline
-              positions={[currentPos, [navTarget.lat, navTarget.lng]]}
-              color="#FF6F00"
-              weight={2}
-              opacity={0.8}
-              dashArray="8 6"
-            />
-          )}
-        </MapContainer>
-
-        {/* Offline overlay for no tiles */}
-        {!isOnline && !tileStatus.cached && (
-          <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-[1000] pointer-events-none">
-            <div className="text-center p-6">
-              <WifiOff size={40} className="text-gray-400 mx-auto mb-3" />
-              <p className="text-sm font-bold text-[#1F2937] mb-1">No offline data here</p>
-              <p className="text-xs text-[#64748B]">Online needed for this area. Download map tiles while connected.</p>
-            </div>
-          </div>
-        )}
+          userPos={currentPos}
+          trackPoints={trackPoints}
+          showOfflineBanner={true}
+          heightClass="h-full min-h-[400px]"
+          markers={pois.map(poi => ({
+            position: [poi.lat, poi.lng],
+            popupContent: (
+              <div className="text-sm">
+                <p className="font-bold mb-1">{POI_ICONS[poi.type] || '📍'} {poi.name}</p>
+                <p className="text-xs text-gray-500 capitalize mb-2">{poi.type}</p>
+                {currentPos && (
+                  <button
+                    onClick={() => setNavTarget(poi)}
+                    className="text-xs font-bold text-white bg-[#00695C] hover:bg-[#004D40] px-3 py-1.5 rounded-lg transition-colors w-full cursor-pointer"
+                  >
+                    Get approximate directions
+                  </button>
+                )}
+              </div>
+            ),
+            iconEmoji: POI_ICONS[poi.type] || '📍'
+          }))}
+          polylines={navTarget && currentPos ? [
+            {
+              positions: [currentPos, [navTarget.lat, navTarget.lng]],
+              color: '#FF6F00',
+              dashArray: '8 6'
+            }
+          ] : []}
+        />
       </div>
 
       {/* Privacy note */}
