@@ -1767,6 +1767,16 @@ const LandingPage = () => {
             <JoinPilotForm />
           </div>
 
+          {/* Animated Big App Name Display */}
+          <div className="w-full py-12 text-center select-none overflow-hidden my-6">
+            <h1 className="font-display font-black text-6xl sm:text-8xl md:text-[130px] lg:text-[160px] leading-none tracking-tight bg-gradient-to-r from-[#00695C] via-[#F59E0B] to-[#004D40] bg-clip-text text-transparent animate-shimmer-text hover:scale-[1.02] transition-transform duration-500 cursor-default">
+              SANCHAR AI
+            </h1>
+            <p className="font-serif italic text-sm sm:text-lg text-[#00695C] mt-2 tracking-widest uppercase">
+              ✦ Travel confidently, even offline ✦
+            </p>
+          </div>
+
           {/* Footer links */}
           <footer className="w-full border-t border-gray-150 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-center">
             <div className="flex gap-4 text-xs font-semibold text-muted">
