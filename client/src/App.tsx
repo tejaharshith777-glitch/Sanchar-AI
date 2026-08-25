@@ -1767,41 +1767,39 @@ const LandingPage = () => {
       </section>
 
       {/* ── 13. PRIVACY GUARANTEES ── */}
-      <section className="section-rhythm bg-white border-y border-gray-100 reveal-element">
-        <div className="max-w-[1200px] mx-auto px-5 md:px-8">
-          <div className="max-w-xl mx-auto text-center mb-12">
-            <span className="badge badge-teal mb-3">Compliance</span>
-            <h2 className="font-display text-3xl md:text-4xl font-bold text-ink">Your journey stays yours</h2>
-            <p className="text-muted text-sm mt-2">We build strictly private on-device pipelines.</p>
-          </div>
-          <div className="card-retreat p-6 md:p-8 bg-cream max-w-2xl mx-auto border border-gray-100">
-            <h3 className="font-display font-bold text-lg text-ink mb-4">On-Device Privacy Standard</h3>
-            <ul className="text-xs sm:text-sm text-ink space-y-3 font-semibold">
-              <li className="flex items-start gap-2.5">
-                <Check size={16} className="text-teal-700 mt-0.5 shrink-0" />
-                <span>Your exact route coordinate log never leaves the local IndexedDB.</span>
-              </li>
-              <li className="flex items-start gap-2.5">
-                <Check size={16} className="text-teal-700 mt-0.5 shrink-0" />
-                <span>Telemetry is off by default — requires active user configuration.</span>
-              </li>
-              <li className="flex items-start gap-2.5">
-                <Check size={16} className="text-teal-700 mt-0.5 shrink-0" />
-                <span>The first and last 500 meters of your journey are stripped instantly.</span>
-              </li>
-              <li className="flex items-start gap-2.5">
-                <Check size={16} className="text-teal-700 mt-0.5 shrink-0" />
-                <span>Locations are aggregated to anonymous grid cells to suppress identification.</span>
-              </li>
-              <li className="flex items-start gap-2.5">
-                <Check size={16} className="text-teal-700 mt-0.5 shrink-0" />
-                <span>Low-volume locations are suppressed automatically.</span>
-              </li>
-              <li className="flex items-start gap-2.5">
-                <Check size={16} className="text-teal-700 mt-0.5 shrink-0" />
-                <span>AI assistant chats are processed live and never stored on our servers.</span>
-              </li>
-            </ul>
+      <section className="section-rhythm reveal-element relative bg-[#0B1320] text-white overflow-hidden border-y border-[#1E293B]">
+        {/* Abstract India Map Background */}
+        <div 
+          className="absolute inset-0 z-0 opacity-50 bg-no-repeat bg-right-bottom md:bg-center bg-contain md:bg-cover mix-blend-screen"
+          style={{ backgroundImage: "url('/images/india_map_glowing.png')", backgroundPosition: 'calc(50% + 150px) center' }}
+        />
+        
+        {/* Glow overlay */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0B1320] via-[#0B1320]/80 to-transparent z-0" />
+
+        <div className="max-w-[1200px] mx-auto px-5 md:px-8 relative z-10 py-16 md:py-24">
+          <div className="max-w-2xl">
+            <span className="inline-block badge bg-white/10 text-teal-300 border border-white/20 mb-4 backdrop-blur-md">On-Device Privacy Standard</span>
+            <h2 className="font-display text-4xl md:text-6xl font-extrabold text-white mb-6 tracking-tight">Your journey<br/>stays yours</h2>
+            <p className="text-teal-200 text-lg md:text-xl mb-6 font-semibold">We build strictly private on-device pipelines.</p>
+            <p className="text-gray-300 text-sm sm:text-base leading-relaxed mb-10 max-w-lg">
+              Explore freely across 28 States and 8 Union Territories in India. Your exact route coordinate log never leaves the local IndexedDB, telemetry is strictly opt-in, and the first and last 500 meters of your journey are stripped instantly.
+            </p>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-4 flex items-start gap-3 hover:bg-white/10 transition">
+                <Check size={20} className="text-teal-400 mt-0.5 shrink-0" />
+                <span className="text-sm text-gray-200 font-medium leading-snug">Locations aggregated to anonymous grid cells</span>
+              </div>
+              <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-4 flex items-start gap-3 hover:bg-white/10 transition">
+                <Check size={20} className="text-teal-400 mt-0.5 shrink-0" />
+                <span className="text-sm text-gray-200 font-medium leading-snug">Low-volume locations suppressed automatically</span>
+              </div>
+              <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-4 flex items-start gap-3 sm:col-span-2 hover:bg-white/10 transition">
+                <Check size={20} className="text-teal-400 mt-0.5 shrink-0" />
+                <span className="text-sm text-gray-200 font-medium leading-snug">AI assistant chats processed live and never stored on our servers</span>
+              </div>
+            </div>
           </div>
         </div>
       </section>
