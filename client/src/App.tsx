@@ -1767,15 +1767,20 @@ const LandingPage = () => {
       </section>
 
       {/* ── 13. PRIVACY GUARANTEES ── */}
-      <section className="section-rhythm reveal-element relative bg-[#0B1320] text-white overflow-hidden border-y border-[#1E293B]">
+      <section className="section-rhythm reveal-element relative bg-[#0B1320] text-white overflow-hidden border-y border-[#1E293B] min-h-[600px]">
         {/* Abstract India Map Background */}
         <div 
-          className="absolute inset-0 z-0 opacity-50 bg-no-repeat bg-right-bottom md:bg-center bg-contain md:bg-cover mix-blend-screen"
-          style={{ backgroundImage: "url('/images/india_map_glowing.png')", backgroundPosition: 'calc(50% + 150px) center' }}
-        />
+          className="absolute inset-0 z-0 opacity-60 bg-no-repeat bg-right-bottom md:bg-center bg-contain md:bg-cover mix-blend-screen"
+          style={{ backgroundImage: "url('/images/india_map_glowing.svg')", backgroundPosition: 'calc(50% + 200px) center' }}
+        >
+          {/* Glowing spots plotted approximately on the map (Delhi, Mumbai, Bengaluru) */}
+          <div className="absolute top-[35%] left-[62%] md:left-[55%] md:top-[30%] w-3 h-3 bg-amber-400 rounded-full shadow-[0_0_15px_4px_rgba(251,191,36,0.6)] animate-pulse" />
+          <div className="absolute top-[60%] left-[53%] md:left-[50%] md:top-[50%] w-3 h-3 bg-teal-400 rounded-full shadow-[0_0_15px_4px_rgba(45,212,191,0.6)] animate-pulse" style={{ animationDelay: '1s' }} />
+          <div className="absolute top-[75%] left-[58%] md:left-[54%] md:top-[68%] w-3 h-3 bg-amber-400 rounded-full shadow-[0_0_15px_4px_rgba(251,191,36,0.6)] animate-pulse" style={{ animationDelay: '0.5s' }} />
+        </div>
         
         {/* Glow overlay */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0B1320] via-[#0B1320]/80 to-transparent z-0" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0B1320] via-[#0B1320]/90 to-transparent z-0" />
 
         <div className="max-w-[1200px] mx-auto px-5 md:px-8 relative z-10 py-16 md:py-24">
           <div className="max-w-2xl">
