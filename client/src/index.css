@@ -16,6 +16,7 @@
 
 html {
   scroll-behavior: smooth;
+  scroll-padding-top: 64px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -451,6 +452,75 @@ h1, h2, h3, h4, h5, h6 {
   max-height: 200px;
 }
 
+/* Hero Letter Reveal */
+@keyframes heroLetterReveal {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+    filter: blur(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+.hero-letter {
+  display: inline-block;
+  will-change: transform, opacity, filter;
+  animation: heroLetterReveal 500ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Card Hover Polish for Desktop */
+.card-retreat,
+.spot-card,
+.city-card {
+  transition: transform 400ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 400ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card-retreat img,
+.spot-card img,
+.city-card img,
+.card-img-zoom {
+  transition: transform 400ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.arrow-slide,
+.explore-arrow {
+  display: inline-block;
+  transition: transform 400ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .card-retreat:hover,
+  .spot-card:hover,
+  .city-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.15);
+  }
+
+  .card-retreat:hover img,
+  .spot-card:hover img,
+  .city-card:hover img,
+  .card-retreat:hover .card-img-zoom,
+  .spot-card:hover .card-img-zoom,
+  .city-card:hover .card-img-zoom,
+  .group:hover .card-img-zoom,
+  .group:hover img.group-hover\:scale-105,
+  .group:hover img.group-hover\:scale-\[1\.04\] {
+    transform: scale(1.04);
+  }
+
+  .group:hover .arrow-slide,
+  .group:hover .explore-arrow,
+  .card-retreat:hover .arrow-slide,
+  .spot-card:hover .arrow-slide,
+  .city-card:hover .arrow-slide {
+    transform: translateX(4px);
+  }
+}
+
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
   *, ::before, ::after {
@@ -462,6 +532,20 @@ h1, h2, h3, h4, h5, h6 {
     transition-duration: 0s !important;
     transition-delay: 0s !important;
     transform: none !important;
+  }
+
+  .reveal-element,
+  .reveal-stagger > * {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: opacity 200ms ease-out !important;
+  }
+
+  .hero-letter {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
   }
 }
 

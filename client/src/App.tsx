@@ -5,7 +5,7 @@ import {
   Zap, Globe, Lock, IndianRupee, Phone,
   ChevronRight, Check, AlertTriangle, Share2,
   BookOpen, BarChart3, Search, Compass, HelpCircle,
-  Mic, History as HistoryIcon, Plus, Unlock, Bot, Send
+  Mic, History as HistoryIcon, Plus, Unlock, Bot, Send, Loader2
 } from 'lucide-react';
 import axios from 'axios';
 import { queueOfflineMutation, getOfflineQueue, removeQueueItem } from './store/db';
@@ -913,9 +913,10 @@ const useScrollReveal = () => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
           entry.target.classList.add('reveal-active');
+          observer.unobserve(entry.target);
         }
       });
-    }, { threshold: 0.1 });
+    }, { threshold: 0.15 });
 
     const elements = document.querySelectorAll('.reveal-element, .reveal-stagger');
     elements.forEach(el => observer.observe(el));
@@ -929,44 +930,120 @@ const useScrollReveal = () => {
 const AnimatedCounter = ({ value, duration = 1000 }: { value: number; duration?: number }) => {
   const [count, setCount] = useState(0);
   const elementRef = useRef<HTMLSpanElement>(null);
-  
+  const hasAnimatedRef = useRef(false);
+
   useEffect(() => {
-    let active = true;
-    const observer = new IntersectionObserver((entries) => {
-      const entry = entries[0];
-      if (entry.isIntersecting && active) {
-        let start = 0;
-        const end = value;
-        if (start === end) return;
-        
-        const totalMs = duration;
-        const incrementTime = Math.max(Math.floor(totalMs / end), 20);
-        
-        const timer = setInterval(() => {
-          start += Math.ceil(end / (totalMs / incrementTime));
-          if (start >= end) {
-            clearInterval(timer);
-            setCount(end);
-          } else {
-            setCount(start);
-          }
-        }, incrementTime);
-        
-        return () => clearInterval(timer);
-      }
-    }, { threshold: 0.1 });
-    
-    if (elementRef.current) {
+    if (value <= 0) {
+      setCount(value);
+      return;
+    }
+
+    const prefersReducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion) {
+      setCount(value);
+      return;
+    }
+
+    let animationFrameId: number;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (entry.isIntersecting && !hasAnimatedRef.current) {
+          hasAnimatedRef.current = true;
+          if (elementRef.current) observer.unobserve(elementRef.current);
+
+          const startTime = performance.now();
+          const animate = (currentTime: number) => {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const easeOutProgress = 1 - Math.pow(1 - progress, 3);
+            const currentCount = Math.round(easeOutProgress * value);
+
+            setCount(currentCount);
+
+            if (progress < 1) {
+              animationFrameId = requestAnimationFrame(animate);
+            } else {
+              setCount(value);
+            }
+          };
+
+          animationFrameId = requestAnimationFrame(animate);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (elementRef.current && !hasAnimatedRef.current) {
       observer.observe(elementRef.current);
     }
-    
+
     return () => {
-      active = false;
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
       if (elementRef.current) observer.unobserve(elementRef.current);
     };
   }, [value, duration]);
-  
+
   return <span ref={elementRef}>{count.toLocaleString('en-IN')}</span>;
+};
+
+const HeroHeadline = () => {
+  const [complete, setComplete] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setComplete(true);
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (complete) {
+    return (
+      <h1 className="font-display text-4xl md:text-6xl lg:text-7xl font-bold leading-tight tracking-tight mb-6 max-w-4xl mx-auto">
+        Travel <span className="text-[#F59E0B] italic">confidently</span>, even <span className="text-[#F59E0B] italic">offline.</span>
+      </h1>
+    );
+  }
+
+  const segments = [
+    { text: "Travel", isSaffron: false },
+    { text: " ", isSpace: true },
+    { text: "confidently", isSaffron: true },
+    { text: ",", isSaffron: false },
+    { text: " ", isSpace: true },
+    { text: "even", isSaffron: false },
+    { text: " ", isSpace: true },
+    { text: "offline.", isSaffron: true },
+  ];
+
+  let charIndexCounter = 0;
+
+  return (
+    <h1 className="font-display text-4xl md:text-6xl lg:text-7xl font-bold leading-tight tracking-tight mb-6 max-w-4xl mx-auto">
+      {segments.map((seg, sIdx) => {
+        if (seg.isSpace) {
+          return <span key={sIdx} className="inline-block">&nbsp;</span>;
+        }
+        return (
+          <span key={sIdx} className={`inline-block ${seg.isSaffron ? 'text-[#F59E0B] italic' : ''}`}>
+            {Array.from(seg.text).map((char, cIdx) => {
+              const globalIndex = charIndexCounter++;
+              return (
+                <span
+                  key={cIdx}
+                  className="hero-letter inline-block"
+                  style={{ animationDelay: `${globalIndex * 40}ms` }}
+                >
+                  {char}
+                </span>
+              );
+            })}
+          </span>
+        );
+      })}
+    </h1>
+  );
 };
 
 const FaqAccordionItem = ({ question, answer }: { question: string; answer: string }) => {
@@ -1145,7 +1222,15 @@ const LandingPage = () => {
 
   const handleExplorePacksScroll = () => {
     const el = document.getElementById('city-packs');
-    el?.scrollIntoView({ behavior: 'smooth' });
+    if (el) {
+      const headerOffset = 64;
+      const elementPosition = el.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+    }
   };
 
   const totalHeight = typeof document !== 'undefined' ? document.documentElement.scrollHeight - window.innerHeight : 1;
@@ -1270,9 +1355,7 @@ const LandingPage = () => {
           <span className="badge bg-white/10 text-white border border-white/20 mb-6 inline-flex items-center gap-1.5 py-1 px-4 text-xs font-semibold rounded-full">
             <Zap size={13} className="text-[#F59E0B]" /> Offline AI Travel Companion
           </span>
-          <h1 className="font-display text-4xl md:text-6xl lg:text-7xl font-bold leading-tight tracking-tight mb-6 max-w-4xl mx-auto">
-            Travel <span className="text-[#F59E0B] italic">confidently</span>, even <span className="text-[#F59E0B] italic">offline.</span>
-          </h1>
+          <HeroHeadline />
           <p className="text-teal-100 text-base sm:text-lg md:text-xl mb-10 max-w-xl mx-auto font-medium">
             One companion. Any city in India. Even offline.
           </p>
