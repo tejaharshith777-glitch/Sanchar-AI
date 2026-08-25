@@ -8,6 +8,6 @@ https.get('https://en.wikipedia.org/w/api.php?action=parse&page=List_of_tourist_
   res.on('data', chunk => data += chunk);
   res.on('end', () => {
     const json = JSON.parse(data);
-    fs.writeFileSync('vijayawada-list.json', json.parse.wikitext['*']);
+    fs.writeFileSync('vijayawada-list.txt', json.parse.wikitext['*']);
   });
 });

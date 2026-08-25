@@ -9,7 +9,7 @@ const isInvalidSpot = (name) => {
 };
 
 const processNagpur = async () => {
-  const wikitext = fs.readFileSync('nagpur.json', 'utf8');
+  const wikitext = fs.readFileSync('nagpur.txt', 'utf8');
   let inTourism = false;
   const spots = [];
   const lines = wikitext.split('\n');

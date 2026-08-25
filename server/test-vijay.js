@@ -9,7 +9,7 @@ const isInvalidSpot = (name) => {
 };
 
 const processVijay = () => {
-  const wikitext = fs.readFileSync('vijayawada-list.json', 'utf8');
+  const wikitext = fs.readFileSync('vijayawada-list.txt', 'utf8');
   const spots = [];
   const lines = wikitext.split('\n');
   

@@ -8,6 +8,6 @@ https.get('https://en.wikipedia.org/w/api.php?action=parse&page=Nagpur&prop=wiki
   res.on('data', chunk => data += chunk);
   res.on('end', () => {
     const json = JSON.parse(data);
-    fs.writeFileSync('nagpur.json', json.parse.wikitext['*']);
+    fs.writeFileSync('nagpur.txt', json.parse.wikitext['*']);
   });
 });
