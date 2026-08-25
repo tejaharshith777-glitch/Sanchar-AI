@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
-import { Trip, LocationPoint, JourneySegment, Expense, CityPack, SafetyEvent, MobilityAggregate, PilotSignup, CitySpot, IdempotencyKey, LuggageSpot, LuggageCheckIn } from '../models';
+import { Trip, LocationPoint, JourneySegment, Expense, CityPack, SafetyEvent, MobilityAggregate, PilotSignup, CitySpot, IdempotencyKey, LuggageSpot, LuggageCheckIn, User } from '../models';
 import { isMemoryFallback, memoryStore } from '../services/db';
 import { processTripPrivacySync } from '../services/privacy';
 
@@ -899,6 +899,30 @@ router.post('/trips/:id/points', async (req, res) => {
     res.status(400).json({ error: 'Invalid points' });
   }
 });
+// ---------------------------
+// SAFETY EVENTS
+// ---------------------------
+router.post('/trips/:id/safety-events', async (req, res) => {
+  try {
+    const id = req.params.id;
+    if (isMemoryFallback) {
+      const event = {
+        _id: generateId(),
+        ...req.body,
+        tripId: id,
+        triggeredAt: new Date()
+      };
+      memoryStore.safetyEvents.push(event);
+      return res.status(201).json(event);
+    }
+
+    const event = new SafetyEvent({ ...req.body, tripId: id, triggeredAt: new Date() });
+    await event.save();
+    res.status(201).json(event);
+  } catch (error) {
+    res.status(400).json({ error: 'Invalid safety event' });
+  }
+});
 
 // ---------------------------
 // SEGMENTS
@@ -1442,6 +1466,101 @@ router.post('/ai/chat', aiLimiter, async (req, res) => {
     }
     console.warn(`[AI-CHAT] [${new Date().toISOString()}] Server Error:`, err.message || err);
     return res.status(503).json({ error: 'AI is busy — try again in a moment' });
+  }
+});
+// ---------------------------
+// AUTH & VAULT
+// ---------------------------
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-jwt-key-for-sanchar-ai';
+
+router.post('/auth/signup', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
+    
+    if (isMemoryFallback) return res.status(400).json({ error: 'Auth disabled in memory mode' });
+
+    const existingUser = await User.findOne({ email });
+    if (existingUser) return res.status(400).json({ error: 'User already exists' });
+
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(password, salt);
+
+    const user = new User({ email, passwordHash });
+    await user.save();
+
+    const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '7d' });
+    res.json({ token, user: { email: user.email, hasVault: !!user.vaultPin } });
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.post('/auth/signin', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
+    
+    if (isMemoryFallback) return res.status(400).json({ error: 'Auth disabled in memory mode' });
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(400).json({ error: 'Invalid credentials' });
+
+    const isMatch = await bcrypt.compare(password, user.passwordHash);
+    if (!isMatch) return res.status(400).json({ error: 'Invalid credentials' });
+
+    const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '7d' });
+    res.json({ token, user: { email: user.email, hasVault: !!user.vaultPin } });
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.post('/user/vault-pin', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
+    
+    const token = authHeader.split(' ')[1];
+    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
+    
+    const { pin } = req.body;
+    if (!pin || pin.length !== 4) return res.status(400).json({ error: '4-digit PIN required' });
+
+    const user = await User.findById(decoded.userId);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    user.vaultPin = pin;
+    await user.save();
+    
+    res.json({ success: true, hasVault: true });
+  } catch (error) {
+    res.status(401).json({ error: 'Unauthorized' });
+  }
+});
+
+router.post('/user/verify-pin', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
+    
+    const token = authHeader.split(' ')[1];
+    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
+    
+    const { pin } = req.body;
+    if (!pin) return res.status(400).json({ error: 'PIN required' });
+
+    const user = await User.findById(decoded.userId);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    if (user.vaultPin !== pin) return res.status(401).json({ error: 'Invalid PIN' });
+    
+    res.json({ success: true });
+  } catch (error) {
+    res.status(401).json({ error: 'Unauthorized' });
   }
 });
 

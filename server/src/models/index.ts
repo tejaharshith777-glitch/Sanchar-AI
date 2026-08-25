@@ -307,4 +307,19 @@ const idempotencyKeySchema = new Schema<IIdempotencyKey>({
 });
 
 export const IdempotencyKey = mongoose.model<IIdempotencyKey>('IdempotencyKey', idempotencyKeySchema);
+// --- USERS ---
+export interface IUser extends Document {
+  email: string;
+  passwordHash: string;
+  vaultPin?: string;
+  createdAt: Date;
+}
 
+const userSchema = new Schema<IUser>({
+  email: { type: String, required: true, unique: true },
+  passwordHash: { type: String, required: true },
+  vaultPin: { type: String },
+  createdAt: { type: Date, default: Date.now }
+});
+
+export const User = mongoose.model<IUser>('User', userSchema);

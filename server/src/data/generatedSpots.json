@@ -1,0 +1,317 @@
+{
+  "Chennai": [
+    {
+      "name": "Marina Beach",
+      "slug": "marina-beach",
+      "category": "beach",
+      "blurb": "Marina Beach, or simply the Marina, is a natural urban beach in Chennai, Tamil Nadu, India, along the Bay of Bengal.",
+      "bestThing": "Exploring the historic beauty of Marina Beach.",
+      "bestTime": "9:00 AM - 5:00 PM",
+      "timeToSpend": "2 Hours",
+      "entryCost": "₹50 (verify locally)",
+      "nearTransport": "Central Station",
+      "tips": [
+        "Carry water.",
+        "Wear comfortable shoes.",
+        "Photography may be restricted."
+      ],
+      "lat": 13.05418,
+      "lng": 80.28368,
+      "image": "/images/spots/marina-beach.jpg"
+    },
+    {
+      "name": "Kapaleeshwarar Temple",
+      "slug": "kapaleeshwarar-temple",
+      "category": "temple",
+      "blurb": "The Kapaleeshwarar Temple is a Hindu temple dedicated to the god Shiva.",
+      "bestThing": "Exploring the historic beauty of Kapaleeshwarar Temple.",
+      "bestTime": "9:00 AM - 5:00 PM",
+      "timeToSpend": "2 Hours",
+      "entryCost": "₹50 (verify locally)",
+      "nearTransport": "Central Station",
+      "tips": [
+        "Carry water.",
+        "Wear comfortable shoes.",
+        "Photography may be restricted."
+      ],
+      "lat": 13.0337,
+      "lng": 80.2699,
+      "image": "/images/spots/kapaleeshwarar-temple.jpg"
+    },
+    {
+      "name": "Fort St. George",
+      "slug": "fort-st-george",
+      "category": "fort",
+      "blurb": "Fort St.",
+      "bestThing": "Exploring the historic beauty of Fort St. George.",
+      "bestTime": "9:00 AM - 5:00 PM",
+      "timeToSpend": "2 Hours",
+      "entryCost": "₹50 (verify locally)",
+      "nearTransport": "Central Station",
+      "tips": [
+        "Carry water.",
+        "Wear comfortable shoes.",
+        "Photography may be restricted."
+      ],
+      "lat": 13.079722,
+      "lng": 80.286944,
+      "image": "/images/spots/fort-st-george.jpg"
+    },
+    {
+      "name": "St. Thomas Cathedral Basilica, Chennai",
+      "slug": "st-thomas-cathedral-basilica-chennai",
+      "category": "heritage",
+      "blurb": "San Thome Church, officially known as the National Shrine of St.",
+      "bestThing": "Exploring the historic beauty of St. Thomas Cathedral Basilica, Chennai.",
+      "bestTime": "9:00 AM - 5:00 PM",
+      "timeToSpend": "2 Hours",
+      "entryCost": "₹50 (verify locally)",
+      "nearTransport": "Central Station",
+      "tips": [
+        "Carry water.",
+        "Wear comfortable shoes.",
+        "Photography may be restricted."
+      ],
+      "lat": 13.03361111,
+      "lng": 80.27777778,
+      "image": "/images/spots/st-thomas-cathedral-basilica-chennai.jpg"
+    },
+    {
+      "name": "Government Museum, Chennai",
+      "slug": "government-museum-chennai",
+      "category": "museum",
+      "blurb": "The Government Museum, Chennai, or the Madras Museum, is a museum of human history and culture located in the Government Museum Complex in the neighbourhood of Egmore in Chennai, India.",
+      "bestThing": "Exploring the historic beauty of Government Museum, Chennai.",
+      "bestTime": "9:00 AM - 5:00 PM",
+      "timeToSpend": "2 Hours",
+      "entryCost": "₹50 (verify locally)",
+      "nearTransport": "Central Station",
+      "tips": [
+        "Carry water.",
+        "Wear comfortable shoes.",
+        "Photography may be restricted."
+      ],
+      "lat": 13.0711,
+      "lng": 80.2569,
+      "image": "/images/spots/government-museum-chennai.jpg"
+    },
+    {
+      "name": "Valluvar Kottam",
+      "slug": "valluvar-kottam",
+      "category": "heritage",
+      "blurb": "Valluvar Kottam (Tamil: வள்ளுவர் கோட்டம்) is a monument in Chennai, dedicated to the classical Tamil poet philosopher Valluvar.",
+      "bestThing": "Exploring the historic beauty of Valluvar Kottam.",
+      "bestTime": "9:00 AM - 5:00 PM",
+      "timeToSpend": "2 Hours",
+      "entryCost": "₹50 (verify locally)",
+      "nearTransport": "Central Station",
+      "tips": [
+        "Carry water.",
+        "Wear comfortable shoes.",
+        "Photography may be restricted."
+      ],
+      "lat": 13.05441111,
+      "lng": 80.24175,
+      "image": "/images/spots/valluvar-kottam.jpg"
+    },
+    {
+      "name": "Guindy National Park",
+      "slug": "guindy-national-park",
+      "category": "heritage",
+      "blurb": "Guindy National Park is a protected area, located in Chennai, India.",
+      "bestThing": "Exploring the historic beauty of Guindy National Park.",
+      "bestTime": "9:00 AM - 5:00 PM",
+      "timeToSpend": "2 Hours",
+      "entryCost": "₹50 (verify locally)",
+      "nearTransport": "Central Station",
+      "tips": [
+        "Carry water.",
+        "Wear comfortable shoes.",
+        "Photography may be restricted."
+      ],
+      "lat": 13.0036,
+      "lng": 80.2293,
+      "image": "/images/spots/guindy-national-park.jpg"
+    },
+    {
+      "name": "Edward Elliot's Beach",
+      "slug": "edward-elliot-s-beach",
+      "category": "beach",
+      "blurb": "Edward Elliot's Beach, simply called as Elliot's Beach and popularly known as Besant Nagar Beach or the Bessie, is a natural urban beach located in the Besant Nagar neighbourhood of Chennai, Tamil ...",
+      "bestThing": "Exploring the historic beauty of Edward Elliot's Beach.",
+      "bestTime": "9:00 AM - 5:00 PM",
+      "timeToSpend": "2 Hours",
+      "entryCost": "₹50 (verify locally)",
+      "nearTransport": "Central Station",
+      "tips": [
+        "Carry water.",
+        "Wear comfortable shoes.",
+        "Photography may be restricted."
+      ],
+      "lat": 12.999529,
+      "lng": 80.272411,
+      "image": "/images/spots/edward-elliot-s-beach.jpg"
+    },
+    {
+      "name": "DakshinaChitra",
+      "slug": "dakshinachitra",
+      "category": "heritage",
+      "blurb": "DakshinaChitra (\"a picture of the south\") is a living-history museum in the Indian state of Tamil Nadu, dedicated to South Indian heritage and culture.",
+      "bestThing": "Exploring the historic beauty of DakshinaChitra.",
+      "bestTime": "9:00 AM - 5:00 PM",
+      "timeToSpend": "2 Hours",
+      "entryCost": "₹50 (verify locally)",
+      "nearTransport": "Central Station",
+      "tips": [
+        "Carry water.",
+        "Wear comfortable shoes.",
+        "Photography may be restricted."
+      ],
+      "lat": 0,
+      "lng": 0,
+      "image": "/images/spots/dakshinachitra.jpg"
+    },
+    {
+      "name": "Arignar Anna Zoological Park",
+      "slug": "arignar-anna-zoological-park",
+      "category": "heritage",
+      "blurb": "Arignar Anna Zoological Park also known as the Vandalur Zoo, is a zoological garden in Chennai, India.",
+      "bestThing": "Exploring the historic beauty of Arignar Anna Zoological Park.",
+      "bestTime": "9:00 AM - 5:00 PM",
+      "timeToSpend": "2 Hours",
+      "entryCost": "₹50 (verify locally)",
+      "nearTransport": "Central Station",
+      "tips": [
+        "Carry water.",
+        "Wear comfortable shoes.",
+        "Photography may be restricted."
+      ],
+      "lat": 12.87917,
+      "lng": 80.08167,
+      "image": "/images/spots/arignar-anna-zoological-park.jpg"
+    }
+  ],
+  "Kochi": [
+    {
+      "name": "Veeranpuzha",
+      "slug": "veeranpuzha",
+      "category": "heritage",
+      "blurb": "Veeranpuzha is a lake in Kochi, Kerala, India.",
+      "bestThing": "Exploring the historic beauty of Veeranpuzha.",
+      "bestTime": "9:00 AM - 5:00 PM",
+      "timeToSpend": "2 Hours",
+      "entryCost": "₹50 (verify locally)",
+      "nearTransport": "Central Station",
+      "tips": [
+        "Carry water.",
+        "Wear comfortable shoes.",
+        "Photography may be restricted."
+      ],
+      "lat": 10.07,
+      "lng": 76.24,
+      "image": "/images/spots/veeranpuzha.jpg"
+    },
+    {
+      "name": "Indo-Portuguese Museum",
+      "slug": "indo-portuguese-museum",
+      "category": "museum",
+      "blurb": "The Indo-Portuguese Museum is a museum in Fort Kochi, Kerala, India.\n\n.",
+      "bestThing": "Exploring the historic beauty of Indo-Portuguese Museum.",
+      "bestTime": "9:00 AM - 5:00 PM",
+      "timeToSpend": "2 Hours",
+      "entryCost": "₹50 (verify locally)",
+      "nearTransport": "Central Station",
+      "tips": [
+        "Carry water.",
+        "Wear comfortable shoes.",
+        "Photography may be restricted."
+      ],
+      "lat": 9.96288056,
+      "lng": 76.24005278,
+      "image": "/images/spots/indo-portuguese-museum.jpg"
+    },
+    {
+      "name": "Kerala Museum",
+      "slug": "kerala-museum",
+      "category": "museum",
+      "blurb": "Kerala Museum (also known as the Museum of Kerala History) at Edapally, Kochi, India, is one of the oldest art and history museums in Kochi.",
+      "bestThing": "Exploring the historic beauty of Kerala Museum.",
+      "bestTime": "9:00 AM - 5:00 PM",
+      "timeToSpend": "2 Hours",
+      "entryCost": "₹50 (verify locally)",
+      "nearTransport": "Central Station",
+      "tips": [
+        "Carry water.",
+        "Wear comfortable shoes.",
+        "Photography may be restricted."
+      ],
+      "lat": 10.03814,
+      "lng": 76.31434,
+      "image": "/images/spots/kerala-museum.jpg"
+    },
+    {
+      "name": "Kochi-Muziris Biennale",
+      "slug": "kochi-muziris-biennale",
+      "category": "heritage",
+      "blurb": "The Kochi-Muziris Biennale is an international exhibition of contemporary art held in the city of Kochi in Kerala, India.",
+      "bestThing": "Exploring the historic beauty of Kochi-Muziris Biennale.",
+      "bestTime": "9:00 AM - 5:00 PM",
+      "timeToSpend": "2 Hours",
+      "entryCost": "₹50 (verify locally)",
+      "nearTransport": "Central Station",
+      "tips": [
+        "Carry water.",
+        "Wear comfortable shoes.",
+        "Photography may be restricted."
+      ],
+      "lat": 0,
+      "lng": 0,
+      "image": "/images/spots/kochi-muziris-biennale.jpg"
+    },
+    {
+      "name": "Thrikkakara Temple",
+      "slug": "thrikkakara-temple",
+      "category": "temple",
+      "blurb": "Thrikkakara Vamanamoorthy Temple is one of the major Hindu temples in India dedicated to  Vamana, a form of the god Vishnu.",
+      "bestThing": "Exploring the historic beauty of Thrikkakara Temple.",
+      "bestTime": "9:00 AM - 5:00 PM",
+      "timeToSpend": "2 Hours",
+      "entryCost": "₹50 (verify locally)",
+      "nearTransport": "Central Station",
+      "tips": [
+        "Carry water.",
+        "Wear comfortable shoes.",
+        "Photography may be restricted."
+      ],
+      "lat": 10.0355,
+      "lng": 76.3295,
+      "image": "/images/spots/thrikkakara-temple.jpg"
+    }
+  ],
+  "Bengaluru": [
+    {
+      "name": "Lal Bagh",
+      "slug": "lal-bagh",
+      "category": "heritage",
+      "blurb": "Lalbagh Botanical Garden or simply Lalbagh (lit. 'red garden'), is a botanical garden in Bengaluru, India.",
+      "bestThing": "Exploring the historic beauty of Lal Bagh.",
+      "bestTime": "9:00 AM - 5:00 PM",
+      "timeToSpend": "2 Hours",
+      "entryCost": "₹50 (verify locally)",
+      "nearTransport": "Central Station",
+      "tips": [
+        "Carry water.",
+        "Wear comfortable shoes.",
+        "Photography may be restricted."
+      ],
+      "lat": 12.95,
+      "lng": 77.59,
+      "image": "/images/spots/lal-bagh.jpg"
+    }
+  ],
+  "Mumbai": [],
+  "Delhi": [],
+  "Kolkata": [],
+  "Hyderabad": [],
+  "Jaipur": []
+}

@@ -282,7 +282,7 @@ const App = () => {
           <Route path="/expenses/:id" element={<AppShell><ExpensesList /></AppShell>} />
           <Route path="/diary/:id" element={<AppShell><VaultGuard><Diary /></VaultGuard></AppShell>} />
           <Route path="/gallery/:id" element={<AppShell><VaultGuard><TripGallery /></VaultGuard></AppShell>} />
-          <Route path="/privacy" element={<AppShell><VaultGuard><PrivacyPage /></VaultGuard></AppShell>} />
+          <Route path="/privacy" element={<AppShell><PrivacyPage /></AppShell>} />
           <Route path="/history" element={<AppShell><VaultGuard><HistoryPage /></VaultGuard></AppShell>} />
           <Route path="/features" element={<AppShell><FeaturesPage /></AppShell>} />
           <Route path="/faq" element={<AppShell><FaqPage /></AppShell>} />
@@ -327,114 +327,168 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
 
 // ─── VAULT GUARD ───────────────────────────────────────────
 const VaultGuard = ({ children }: { children: React.ReactNode }) => {
-  const [setupMode, setSetupMode] = useState(false);
-  const [isLocked, setIsLocked] = useState(false);
+  const [authState, setAuthState] = useState<'checking' | 'unauthorized' | 'auth_modal' | 'pin_setup' | 'pin_verify' | 'unlocked'>('checking');
+  const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [pinInput, setPinInput] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
-  const [attempts, setAttempts] = useState(0);
-  const [cooldown, setCooldown] = useState(0);
-  const [hasFingerprint, setHasFingerprint] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    import('./store/db').then(async ({ hasVaultPin, isWebAuthnAvailable }) => {
-      const hasPin = await hasVaultPin();
-      if (!hasPin) setSetupMode(true);
-      else {
-        setIsLocked(true);
-        const authnAvail = await isWebAuthnAvailable();
-        setHasFingerprint(authnAvail);
-        
-        const handleVis = () => {
-          if (document.hidden) setIsLocked(true);
-        };
-        document.addEventListener('visibilitychange', handleVis);
-        return () => document.removeEventListener('visibilitychange', handleVis);
+    const token = localStorage.getItem('token');
+    const user = JSON.parse(localStorage.getItem('user') || 'null');
+    
+    if (!token || !user) {
+      setAuthState('auth_modal');
+    } else {
+      if (!user.hasVault) {
+        setAuthState('pin_setup');
+      } else {
+        setAuthState('pin_verify');
       }
-    });
+    }
   }, []);
 
-  useEffect(() => {
-    if (cooldown > 0) {
-      const timer = setTimeout(() => setCooldown(cooldown - 1), 1000);
-      return () => clearTimeout(timer);
+  const handleAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setErrorMsg('');
+    try {
+      const endpoint = authMode === 'signin' ? '/api/auth/signin' : '/api/auth/signup';
+      const res = await axios.post(endpoint, { email, password });
+      localStorage.setItem('token', res.data.token);
+      localStorage.setItem('user', JSON.stringify(res.data.user));
+      
+      if (res.data.user.hasVault) {
+        setAuthState('pin_verify');
+      } else {
+        setAuthState('pin_setup');
+      }
+    } catch (err: any) {
+      setErrorMsg(err.response?.data?.error || 'Authentication failed');
+    } finally {
+      setIsLoading(false);
     }
-  }, [cooldown]);
+  };
 
-  const handleSetup = async () => {
-    if (pinInput.length < 4 || pinInput.length > 6) {
-      setErrorMsg('PIN must be 4 to 6 digits.');
+  const handlePinSetup = async () => {
+    if (pinInput.length !== 4) {
+      setErrorMsg('PIN must be exactly 4 digits');
       return;
     }
-    const { setVaultPin, registerVaultFingerprint, isWebAuthnAvailable } = await import('./store/db');
-    await setVaultPin(pinInput);
-    
-    if (await isWebAuthnAvailable()) {
-      if (confirm('Would you like to unlock with fingerprint in the future?')) {
-        await registerVaultFingerprint();
-      }
+    setIsLoading(true);
+    setErrorMsg('');
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post('/api/user/vault-pin', { pin: pinInput }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      user.hasVault = true;
+      localStorage.setItem('user', JSON.stringify(user));
+      
+      // Update local encryption too
+      const { setVaultPin } = await import('./store/db');
+      await setVaultPin(pinInput);
+
+      setAuthState('unlocked');
+    } catch (err: any) {
+      setErrorMsg(err.response?.data?.error || 'Failed to set PIN');
+    } finally {
+      setIsLoading(false);
     }
-    setSetupMode(false);
-    setIsLocked(false);
   };
 
-  const handleUnlock = async () => {
-    if (cooldown > 0) return;
-    const { verifyVaultPin } = await import('./store/db');
-    const isValid = await verifyVaultPin(pinInput);
-    if (isValid) {
-      setIsLocked(false);
-      setAttempts(0);
-      setErrorMsg('');
+  const handlePinVerify = async () => {
+    if (pinInput.length !== 4) return;
+    setIsLoading(true);
+    setErrorMsg('');
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post('/api/user/verify-pin', { pin: pinInput }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setAuthState('unlocked');
       setPinInput('');
-    } else {
-      const newAtt = attempts + 1;
-      setAttempts(newAtt);
+    } catch (err: any) {
+      setErrorMsg('Invalid PIN. Please try again.');
       setPinInput('');
-      if (newAtt >= 5) {
-        setCooldown(30);
-        setErrorMsg('Too many attempts. Wait 30 seconds.');
-      } else {
-        setErrorMsg(`Wrong PIN. ${5 - newAtt} attempts left.`);
-      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleFingerprintUnlock = async () => {
-    if (cooldown > 0) return;
-    const { verifyVaultFingerprint } = await import('./store/db');
-    const isValid = await verifyVaultFingerprint();
-    if (isValid) {
-      setIsLocked(false);
-      setAttempts(0);
-      setErrorMsg('');
-    } else {
-      setErrorMsg('Fingerprint not recognized.');
-    }
-  };
+  if (authState === 'checking') {
+    return <div className="flex-1 flex items-center justify-center"><Loader2 className="animate-spin text-teal-600" /></div>;
+  }
 
-  if (setupMode) {
+  if (authState === 'auth_modal') {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center p-5 relative overflow-hidden bg-gradient-to-br from-[#004D40] to-[#00695C]">
+        <div className="absolute inset-0 bg-black/20 backdrop-blur-sm z-0"></div>
+        <div className="z-10 w-full max-w-sm bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 p-8 shadow-2xl flex flex-col items-center text-white">
+          <Lock size={48} className="text-teal-200 mb-6 drop-shadow-md" />
+          <h2 className="text-2xl font-bold mb-2">{authMode === 'signin' ? 'Welcome Back' : 'Create Account'}</h2>
+          <p className="text-sm text-teal-100/70 text-center mb-6">Secure access to your private history</p>
+          
+          <form onSubmit={handleAuth} className="w-full flex flex-col gap-4">
+            <input 
+              type="email" 
+              placeholder="Email address"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              className="w-full p-3 bg-black/20 border border-white/10 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-teal-400"
+              required
+            />
+            <input 
+              type="password" 
+              placeholder="Password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              className="w-full p-3 bg-black/20 border border-white/10 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-teal-400"
+              required
+            />
+            {errorMsg && <p className="text-red-300 text-xs font-bold">{errorMsg}</p>}
+            
+            <button disabled={isLoading} type="submit" className="w-full mt-2 bg-gradient-to-r from-teal-400 to-teal-500 hover:from-teal-300 hover:to-teal-400 text-teal-950 font-bold py-3 rounded-xl transition shadow-lg disabled:opacity-50 flex justify-center">
+              {isLoading ? <Loader2 size={20} className="animate-spin" /> : (authMode === 'signin' ? 'Sign In' : 'Sign Up')}
+            </button>
+          </form>
+          
+          <button onClick={() => setAuthMode(authMode === 'signin' ? 'signup' : 'signin')} className="mt-6 text-sm text-teal-200 hover:text-white transition">
+            {authMode === 'signin' ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (authState === 'pin_setup') {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-5 animate-fade-in-up">
         <Lock size={48} className="text-[#00695C] mb-4" />
         <h2 className="text-xl font-bold text-[#1F2937] mb-2">Set up your Private Vault</h2>
         <p className="text-sm text-[#64748B] text-center mb-6 max-w-sm">
-          Protect your photos and stories. They never leave your phone.
+          Protect your photos and stories with a 4-digit PIN.
         </p>
         <input 
           type="password" 
-          maxLength={6} 
-          placeholder="4–6 digit PIN"
+          maxLength={4} 
+          placeholder="4-digit PIN"
           value={pinInput}
           onChange={e => setPinInput(e.target.value.replace(/\D/g, ''))}
           className="w-full max-w-xs p-3 text-center text-xl tracking-widest border border-gray-300 rounded-xl mb-4 font-bold"
         />
         {errorMsg && <p className="text-red-500 text-xs mb-4 font-bold">{errorMsg}</p>}
-        <button onClick={handleSetup} className="btn-primary w-full max-w-xs py-3">Save PIN</button>
+        <button onClick={handlePinSetup} disabled={isLoading} className="btn-primary w-full max-w-xs py-3 flex justify-center items-center">
+          {isLoading ? <Loader2 size={20} className="animate-spin" /> : 'Save PIN'}
+        </button>
       </div>
     );
   }
 
-  if (isLocked) {
+  if (authState === 'pin_verify') {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-5 bg-[#004D40] text-white animate-fade-in-up">
         <Lock size={48} className="mb-4 text-teal-200" />
@@ -442,28 +496,17 @@ const VaultGuard = ({ children }: { children: React.ReactNode }) => {
         
         <input 
           type="password" 
-          maxLength={6} 
-          placeholder="Enter PIN"
+          maxLength={4} 
+          placeholder="Enter 4-digit PIN"
           value={pinInput}
           onChange={e => setPinInput(e.target.value.replace(/\D/g, ''))}
-          disabled={cooldown > 0}
-          className="w-full max-w-xs p-3 text-center text-xl tracking-widest text-gray-900 border border-gray-300 rounded-xl mb-4 font-bold disabled:opacity-50"
+          className="w-full max-w-xs p-3 text-center text-xl tracking-widest text-gray-900 border border-gray-300 rounded-xl mb-4 font-bold"
         />
         {errorMsg && <p className="text-red-300 text-xs mb-4 font-bold">{errorMsg}</p>}
-        {cooldown > 0 && <p className="text-amber-300 text-sm mb-4 font-bold">Cooldown: {cooldown}s</p>}
         
-        <button onClick={handleUnlock} disabled={cooldown > 0} className="w-full max-w-xs bg-teal-500 hover:bg-teal-400 text-white font-bold py-3 rounded-xl mb-4 transition disabled:opacity-50">
-          Unlock
+        <button onClick={handlePinVerify} disabled={isLoading} className="w-full max-w-xs bg-teal-500 hover:bg-teal-400 text-white font-bold py-3 rounded-xl mb-4 transition disabled:opacity-50 flex justify-center">
+          {isLoading ? <Loader2 size={20} className="animate-spin" /> : 'Unlock'}
         </button>
-        
-        {hasFingerprint ? (
-          <button onClick={handleFingerprintUnlock} disabled={cooldown > 0} className="w-full max-w-xs bg-transparent border-2 border-teal-500 text-teal-100 font-bold py-3 rounded-xl transition hover:bg-teal-700/50 flex items-center justify-center gap-2 disabled:opacity-50">
-            Unlock with fingerprint
-          </button>
-        ) : (
-          <p className="text-xs text-teal-200 mt-4 italic opacity-80">PIN unlock available on this device.</p>
-        )}
-        <p className="text-[10px] text-teal-300 mt-8 opacity-60">Fingerprint unlock available over secure connections.</p>
       </div>
     );
   }
@@ -471,7 +514,7 @@ const VaultGuard = ({ children }: { children: React.ReactNode }) => {
   return (
     <div className="relative flex-1 flex flex-col w-full h-full">
       <div className="absolute top-2 right-5 md:right-8 z-10">
-        <button onClick={() => setIsLocked(true)} className="bg-gray-800 text-white text-[10px] font-bold py-1.5 px-3 rounded-full flex items-center gap-1 opacity-60 hover:opacity-100 transition shadow-sm">
+        <button onClick={() => setAuthState('pin_verify')} className="bg-gray-800 text-white text-[10px] font-bold py-1.5 px-3 rounded-full flex items-center gap-1 opacity-60 hover:opacity-100 transition shadow-sm">
           <Lock size={10} /> Lock now
         </button>
       </div>
@@ -479,6 +522,7 @@ const VaultGuard = ({ children }: { children: React.ReactNode }) => {
     </div>
   );
 };
+
 
 const InnerNav = () => {
   const { isOnline, syncState, activeTrip } = useContext(HealthContext);
@@ -789,8 +833,8 @@ const CitySpotlightPage = () => {
                           : 'bg-blue-50 text-blue-700 border-blue-100'
                       }`}>
                         {data.source === 'curated-sample'
-                          ? 'Curated verified pack · verify before visiting'
-                          : 'Live data from Wikipedia · verify before visiting'}
+                          ? 'Curated verified pack'
+                          : 'Live open-data pack · verify before visiting'}
                       </span>
                     </div>
                     <p className="text-[#64748B] text-sm flex items-center gap-2 font-medium">
@@ -1096,8 +1140,7 @@ const LandingPage = () => {
   };
 
   const handleStartSafeTripScroll = () => {
-    const el = document.getElementById('plan-journey');
-    el?.scrollIntoView({ behavior: 'smooth' });
+    navigate('/create');
   };
 
   const handleExplorePacksScroll = () => {
@@ -1279,12 +1322,12 @@ const LandingPage = () => {
             </div>
             <div className="card-retreat bg-white p-8 rounded-3xl border border-gray-150 shadow-xs flex flex-col justify-between h-48 hover:shadow-md transition">
               <div>
-                <span className="text-3xl mb-4 block">🏢</span>
-                <h4 className="font-bold text-[#1F2937] text-base mb-1">Urban Centres</h4>
-                <p className="text-xs text-[#64748B]">Real coordinate and attraction indexes covering Indian cities.</p>
+                <span className="text-3xl mb-4 block">🗺️</span>
+                <h4 className="font-bold text-[#1F2937] text-base mb-1">Trips Recorded</h4>
+                <p className="text-xs text-[#64748B]">Real user journeys actively logged via the offline engine.</p>
               </div>
               <span className="text-xs font-bold text-[#00695C] mt-2 inline-flex items-center gap-1">
-                <AnimatedCounter value={7935} /> Cities Indexed
+                {isConnecting && !stats ? '—' : <AnimatedCounter value={stats ? stats.tripsRecorded : 0} />} Trips Logged
               </span>
             </div>
           </div>
