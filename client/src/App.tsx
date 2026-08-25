@@ -503,7 +503,6 @@ const VaultGuard = ({ children }: { children: React.ReactNode }) => {
           className="w-full max-w-xs p-3 text-center text-xl tracking-widest text-gray-900 border border-gray-300 rounded-xl mb-4 font-bold"
         />
         {errorMsg && <p className="text-red-300 text-xs mb-4 font-bold">{errorMsg}</p>}
-        
         <button onClick={handlePinVerify} disabled={isLoading} className="w-full max-w-xs bg-teal-500 hover:bg-teal-400 text-white font-bold py-3 rounded-xl mb-4 transition disabled:opacity-50 flex justify-center">
           {isLoading ? <Loader2 size={20} className="animate-spin" /> : 'Unlock'}
         </button>
@@ -524,8 +523,53 @@ const VaultGuard = ({ children }: { children: React.ReactNode }) => {
 };
 
 
+const ConnectivityHeaderChip = () => {
+  const { isOnline, syncState } = useContext(HealthContext);
+  const [lastSyncedText, setLastSyncedText] = useState('just now');
+
+  useEffect(() => {
+    const update = () => {
+      const ts = localStorage.getItem('sanchar_last_sync_timestamp');
+      if (!ts) {
+        setLastSyncedText('just now');
+      } else {
+        const mins = Math.max(0, Math.floor((Date.now() - parseInt(ts, 10)) / 60000));
+        setLastSyncedText(mins === 0 ? 'just now' : `${mins}m ago`);
+      }
+    };
+    update();
+    const timer = setInterval(update, 30000);
+    return () => clearInterval(timer);
+  }, [isOnline]);
+
+  const isSyncing = (syncState as any) === 'syncing' || Boolean((syncState as any)?.syncing);
+  const qCount = typeof syncState === 'object' && syncState ? (syncState as any).queueCount || 1 : 1;
+
+  if (isSyncing) {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-full border border-blue-200">
+        <span className="animate-spin text-blue-600">⟳</span> Syncing… ({qCount} {qCount === 1 ? 'item' : 'items'})
+      </span>
+    );
+  }
+
+  if (isOnline) {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> ● Online · live data
+      </span>
+    );
+  }
+
+  return (
+    <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold text-amber-900 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-300">
+      <span className="w-2 h-2 rounded-full bg-amber-500" /> ● Offline · cached data · last synced {lastSyncedText}
+    </span>
+  );
+};
+
 const InnerNav = () => {
-  const { isOnline, syncState, activeTrip } = useContext(HealthContext);
+  const { activeTrip } = useContext(HealthContext);
   return (
     <nav className="sticky top-0 z-50 glass-nav border-b border-gray-150">
       <div className="max-w-4xl mx-auto px-4 md:px-6 flex justify-between h-16 items-center">
@@ -535,9 +579,10 @@ const InnerNav = () => {
           </div>
           <span className="font-['Plus_Jakarta_Sans'] font-bold text-[#1F2937] text-lg tracking-tight">Sanchar AI</span>
         </Link>
-        <div className="flex items-center gap-3 sm:gap-4">
-          <Link to="/features" className="text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline hidden sm:inline">Features</Link>
-          <Link to="/privacy" className="text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline hidden sm:inline">Privacy</Link>
+        <div className="flex items-center gap-2 sm:gap-4">
+          <ConnectivityHeaderChip />
+          <Link to="/features" className="text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline hidden md:inline">Features</Link>
+          <Link to="/privacy" className="text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline hidden md:inline">Privacy</Link>
           <Link to="/history" className="text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline">History</Link>
           <Link to="/maps" className="text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline hidden sm:inline">Maps</Link>
           <Link to="/dashboard" className="text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline hidden sm:inline">Dashboard</Link>
@@ -551,9 +596,6 @@ const InnerNav = () => {
               ● Active Trip ({activeTrip.originCity} → {activeTrip.destinationCity})
             </Link>
           )}
-          {syncState === 'syncing' && <span className="badge badge-teal animate-pulse text-xs">Syncing…</span>}
-          {syncState === 'offline' && <span className="badge badge-amber text-xs"><WifiOff size={12} /> Offline</span>}
-          {syncState === 'synced' && isOnline && !activeTrip && <span className="badge badge-green text-xs"><Check size={12} /> Synced</span>}
         </div>
       </div>
     </nav>
@@ -1291,6 +1333,7 @@ const LandingPage = () => {
             <span className="font-display font-bold text-[#1F2937] text-xl tracking-tight">Sanchar AI</span>
           </Link>
           <div className="flex items-center gap-3 sm:gap-6">
+            <ConnectivityHeaderChip />
             <Link to="/features" className="hidden md:inline text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline">Features</Link>
             <Link to="/privacy" className="hidden md:inline text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline">Privacy</Link>
             <Link to="/history" className="text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline">History</Link>
@@ -1945,36 +1988,44 @@ const LandingPage = () => {
           </div>
           <div className="max-w-2xl mx-auto">
             <FaqAccordionItem 
-              question="Is the AI real?" 
-              answer="Yes. When online, Sanchar AI calls a live gemini-2.0-flash model via our API. Offline, it falls back to an exact local matcher using the downloaded city pack knowledge base."
+              question="How does Sanchar AI actually work offline?" 
+              answer="Three reasons: (1) your city pack — phrases, emergency numbers, transport tips and spot data — is downloaded to your device before you travel; (2) GPS is a radio signal, not internet — tracking works with zero network; (3) the OCR scanner and the offline AI helper run entirely on your device. When you're back online, anything saved locally syncs automatically with no duplicates."
             />
             <FaqAccordionItem 
-              question="Does it really work offline?" 
-              answer="Yes. The client app is a Progressive Web App (PWA) that caches all static assets, scripts, map tiles, translation databases, and emergency numbers in your browser's local cache and IndexedDB."
+              question="How does the AI know about my city?" 
+              answer="Two layers. Launch cities get curated, verified packs we maintain. Every other Indian city gets real place data generated on first visit from open data (Wikipedia/Wikidata) and cached permanently. If a place genuinely has no data, we say so honestly and offer the General India pack (112 · 139 · basic guidance) — we never invent places or reviews."
             />
             <FaqAccordionItem 
-              question="Is this a government tracking app?" 
-              answer="No. Sanchar AI is built with privacy by design. We strip the first and last 500m of your tracks, bin coordinates locally, and only sync anonymous density cells if you explicitly opt-in."
+              question="Is my location data safe?" 
+              answer="Your exact route never leaves your device. Analytics are off by default and fully opt-in. When you opt in, we strip the first and last 500 m of your journey, bin the rest into anonymous grid cells, and suppress low-volume areas. No individual route is ever stored, sold, or shown. You can see exactly what would be shared in the Privacy section."
             />
             <FaqAccordionItem 
-              question="How accurate is travel detection?" 
-              answer="We classify vehicular speeds, train journeys, and walking segments using probabilistic rule sets based on raw GPS telemetry. Detections are best-effort; you can manually correct them anytime."
+              question="What does the AI see when I ask a question?" 
+              answer="Online: it uses the city context (pack + spot data) and our Gemini API — your chat is processed live and never stored on our servers. Offline: it answers only from your local city-pack knowledge base and clearly labels itself 'Local KB · offline'. It never sees your trip data or location."
             />
             <FaqAccordionItem 
-              question="Where does city data come from?" 
-              answer="Curated and verified for launch cities + live open data (Wikipedia/Wikidata) for other cities. Verify before visiting."
+              question="Why are there no star ratings or 'trusted by' numbers?" 
+              answer="Because we don't fake social proof. Every count on this site is live from our own database — real trips recorded, real packs, real traveller reports. A hackathon product that shows invented ratings would be lying to you; we'd rather show real numbers, even if they're small."
             />
             <FaqAccordionItem 
-              question="How do the 7,935 cities work?" 
-              answer="A General India pack (112 · 139 · basic guidance) works everywhere; real place data is generated from open data for cities that have it."
+              question="What happens to my data while I'm offline?" 
+              answer="Everything you do offline — scans, check-ins, trip events — is saved on your device with a unique idempotency key. When connectivity returns, it syncs once and is de-duplicated server-side. Nothing is lost, nothing is duplicated, and you always see the state: 'Saved on device' → 'Syncing' → 'Synced'."
             />
             <FaqAccordionItem 
-              question="What about heavy luggage?" 
-              answer="Enable the Luggage Buddy setting in the calculator to add standard porter (coolie) allocation charges to your travel budget and view platform cloakroom locations."
+              question="What if my city has no data yet?" 
+              answer="You get an honest answer, not a fake one: 'No verified spot list for {city} yet.' The General India pack still works everywhere — 112 emergency, 139 rail enquiry, basic guidance. City coverage grows as real data is added, and we say clearly which data is curated vs live-generated."
             />
             <FaqAccordionItem 
-              question="Any cost / API fees?" 
-              answer="Sanchar AI is an open-source, hackathon prototype deployment. There are no fees or subscriptions. Local resources are free."
+              question="How is this different from Google Maps or Google Translate?" 
+              answer="They're single-feature tools — navigation, or translation. Sanchar AI is a journey companion: it connects safety, language, tickets, budget and your travel story into one offline-first flow that follows you from home to hotel. You're not switching between five apps mid-journey."
+            />
+            <FaqAccordionItem 
+              question="Do I need an account to use it?" 
+              answer="No — the full journey works without an account. An account (email + password) lets your trips sync to 'My Trips' across devices. No phone number, no OTP, no marketing list."
+            />
+            <FaqAccordionItem 
+              question="Is this a real product or a demo?" 
+              answer="A working live prototype: real on-device OCR, real GPS tracking, real offline sync, real database, real AI. The numbers you see are live from our own system. What's ahead is the Android native layer for background tracking — and we're honest about exactly what's live vs what's next."
             />
           </div>
         </div>
@@ -3689,10 +3740,16 @@ const FaqPage = () => {
   const [openIdx, setOpenIdx] = useState<number | null>(null);
   
   const faqs = [
-    { q: "Does tracking work without network?", a: "Yes! Sanchar AI uses your device's built-in GPS to track points. They are stored locally in IndexedDB and sync automatically when you regain connectivity." },
-    { q: "Where are my gallery photos stored?", a: "To respect your privacy and save your data plan, photos are stored securely on your local device (IndexedDB) and NEVER uploaded to our servers. They have zero network footprint." },
-    { q: "How does the Budget Calculator work?", a: "It suggests a budget based on your travel style (Budget/Comfort) and days. If you carry heavy luggage, it automatically provisions a luggage add-on for porters/carts." },
-    { q: "Can I navigate offline?", a: "Yes. Once you select a POI on the Pocket Map, you get an offline 'as-the-crow-flies' bearing and ETA based on walking speed. We intentionally do not download 100MB+ routing graphs to keep the app lightweight." }
+    { q: "How does Sanchar AI actually work offline?", a: "Three reasons: (1) your city pack — phrases, emergency numbers, transport tips and spot data — is downloaded to your device before you travel; (2) GPS is a radio signal, not internet — tracking works with zero network; (3) the OCR scanner and the offline AI helper run entirely on your device. When you're back online, anything saved locally syncs automatically with no duplicates." },
+    { q: "How does the AI know about my city?", a: "Two layers. Launch cities get curated, verified packs we maintain. Every other Indian city gets real place data generated on first visit from open data (Wikipedia/Wikidata) and cached permanently. If a place genuinely has no data, we say so honestly and offer the General India pack (112 · 139 · basic guidance) — we never invent places or reviews." },
+    { q: "Is my location data safe?", a: "Your exact route never leaves your device. Analytics are off by default and fully opt-in. When you opt in, we strip the first and last 500 m of your journey, bin the rest into anonymous grid cells, and suppress low-volume areas. No individual route is ever stored, sold, or shown. You can see exactly what would be shared in the Privacy section." },
+    { q: "What does the AI see when I ask a question?", a: "Online: it uses the city context (pack + spot data) and our Gemini API — your chat is processed live and never stored on our servers. Offline: it answers only from your local city-pack knowledge base and clearly labels itself 'Local KB · offline'. It never sees your trip data or location." },
+    { q: "Why are there no star ratings or 'trusted by' numbers?", a: "Because we don't fake social proof. Every count on this site is live from our own database — real trips recorded, real packs, real traveller reports. A hackathon product that shows invented ratings would be lying to you; we'd rather show real numbers, even if they're small." },
+    { q: "What happens to my data while I'm offline?", a: "Everything you do offline — scans, check-ins, trip events — is saved on your device with a unique idempotency key. When connectivity returns, it syncs once and is de-duplicated server-side. Nothing is lost, nothing is duplicated, and you always see the state: 'Saved on device' → 'Syncing' → 'Synced'." },
+    { q: "What if my city has no data yet?", a: "You get an honest answer, not a fake one: 'No verified spot list for {city} yet.' The General India pack still works everywhere — 112 emergency, 139 rail enquiry, basic guidance. City coverage grows as real data is added, and we say clearly which data is curated vs live-generated." },
+    { q: "How is this different from Google Maps or Google Translate?", a: "They're single-feature tools — navigation, or translation. Sanchar AI is a journey companion: it connects safety, language, tickets, budget and your travel story into one offline-first flow that follows you from home to hotel. You're not switching between five apps mid-journey." },
+    { q: "Do I need an account to use it?", a: "No — the full journey works without an account. An account (email + password) lets your trips sync to 'My Trips' across devices. No phone number, no OTP, no marketing list." },
+    { q: "Is this a real product or a demo?", a: "A working live prototype: real on-device OCR, real GPS tracking, real offline sync, real database, real AI. The numbers you see are live from our own system. What's ahead is the Android native layer for background tracking — and we're honest about exactly what's live vs what's next." }
   ];
 
   return (

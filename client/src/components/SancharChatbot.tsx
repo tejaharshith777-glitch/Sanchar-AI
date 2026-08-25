@@ -230,9 +230,10 @@ export default function SancharChatbot({ activeTrip }: SancharChatbotProps) {
         }
       }
 
-      // Absolute fallback: honest "I don't have offline data"
+      // Absolute fallback: honest "I only have local knowledge offline"
       if (!aiText) {
-        aiText = "I don't have offline data for that question. General India: 112 emergency · 139 rail enquiry · 108 ambulance. Try asking about emergency, fares, food, safety, phrases, or attractions.";
+        const destName = activeTrip?.destinationCity || 'this city';
+        aiText = `I only have local ${destName} knowledge offline — try again when you're online. (General India Emergency: 112 · Rail: 139 · Ambulance: 108)`;
       }
     }
 
@@ -272,8 +273,8 @@ export default function SancharChatbot({ activeTrip }: SancharChatbotProps) {
 
   // ─── MODE CHIP ───
   const modeChip = isOnline
-    ? <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200"><Wifi size={10} /> Online — full AI (Gemini)</span>
-    : <span className="flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200"><WifiOff size={10} /> Offline — local helper</span>;
+    ? <span className="flex items-center gap-1 text-[10px] font-extrabold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200 shadow-xs"><Wifi size={11} className="text-emerald-600 animate-pulse" /> ● Gemini · online</span>
+    : <span className="flex items-center gap-1 text-[10px] font-extrabold text-amber-900 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-300 shadow-xs"><WifiOff size={11} className="text-amber-700" /> ● Local KB · offline</span>;
 
   // ─── TRIP CONTEXT CHIP ───
   const tripChip = activeTrip ? (() => {
@@ -396,12 +397,12 @@ export default function SancharChatbot({ activeTrip }: SancharChatbotProps) {
                 <div className="flex items-center gap-2 mt-1 px-1">
                   <span className="text-[10px] text-gray-400">{formatTime(msg.timestamp)}</span>
                   {msg.sender === 'ai' && (
-                    <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded ${
+                    <span className={`text-[9px] font-extrabold px-2 py-0.5 rounded-full border ${
                       msg.mode === 'online'
-                        ? 'text-emerald-600 bg-emerald-50'
-                        : 'text-amber-600 bg-amber-50'
+                        ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
+                        : 'text-amber-800 bg-amber-50 border-amber-200'
                     }`}>
-                      {msg.mode === 'online' ? 'AI answer — verify important details' : 'Offline Helper — local data only'}
+                      {msg.mode === 'online' ? '● Gemini · online' : '● Local KB · offline'}
                     </span>
                   )}
                 </div>
