@@ -1340,10 +1340,34 @@ const LandingPage = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  const [statsLoadingText, setStatsLoadingText] = useState<string | null>(null);
+
   useEffect(() => {
-    axios.get('/api/site-stats')
-      .then(res => setStats(res.data))
-      .catch(() => setStats(null));
+    let isCancelled = false;
+    const fetchStats = async () => {
+      const backoffs = [0, 5000, 10000, 20000, 30000];
+      for (let i = 0; i < backoffs.length; i++) {
+        if (i > 0) {
+          setStatsLoadingText('Connecting to live data…');
+          await new Promise(r => setTimeout(r, backoffs[i]));
+          if (isCancelled) return;
+        }
+        try {
+          const res = await axios.get('/api/site-stats');
+          if (isCancelled) return;
+          setStats(res.data);
+          setStatsLoadingText(null);
+          return;
+        } catch (e) {
+          if (i === backoffs.length - 1 && !isCancelled) {
+            setStats(null);
+            setStatsLoadingText(null);
+          }
+        }
+      }
+    };
+    fetchStats();
+    return () => { isCancelled = true; };
   }, []);
 
   // Hide sticky mobile bottom bar when virtual keyboard is active (focused on inputs)
@@ -1672,7 +1696,7 @@ const LandingPage = () => {
             </div>
           </div>
           <p className="text-center text-[10px] text-muted italic mt-8">
-            {isConnecting && !stats ? 'Connecting to live data…' : 'Live prototype — every number comes from real recorded trips.'}
+            {statsLoadingText ? statsLoadingText : 'Live prototype — every number comes from real recorded trips.'}
           </p>
         </div>
       </section>
@@ -1840,7 +1864,7 @@ const LandingPage = () => {
                     alt={spot.name} 
                     className="w-full h-full object-cover group-hover:scale-105 transition-all duration-700" 
                     loading="lazy" 
-                    onError={(e) => { e.currentTarget.src = '/images/india/hero.jpg'; }} 
+                    onError={(e) => { e.currentTarget.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" fill="%231E293B"><rect width="100%25" height="100%25"/><text x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="20px" fill="%2394A3B8">Image Unavailable</text></svg>'; }} 
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#0A1616]/40 to-transparent" />
                 </div>
@@ -4371,16 +4395,41 @@ const CHART_COLORS = ['#00695C', '#F59E0B', '#8B5CF6', '#008080', '#D32F2F', '#1
 
 const Dashboard = () => {
   const [summary, setSummary] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [loadingText, setLoadingText] = useState<string | null>('Connecting to live data…');
+  const [emptyState, setEmptyState] = useState(false);
 
   useEffect(() => {
-    axios.get('/api/mobility/summary')
-      .then(r => setSummary(r.data))
-      .catch(() => setSummary(null))
-      .finally(() => setLoading(false));
+    let isCancelled = false;
+    const fetchMobility = async () => {
+      const backoffs = [0, 5000, 10000, 20000, 30000];
+      for (let i = 0; i < backoffs.length; i++) {
+        if (i > 0) {
+          setLoadingText('Connecting to live data…');
+          await new Promise(r => setTimeout(r, backoffs[i]));
+          if (isCancelled) return;
+        }
+        try {
+          const r = await axios.get('/api/mobility/summary');
+          if (isCancelled) return;
+          setSummary(r.data);
+          setLoadingText(null);
+          if (r.data.totalTrips === 0) setEmptyState(true);
+          return;
+        } catch (e) {
+          if (i === backoffs.length - 1 && !isCancelled) {
+            setSummary(null);
+            setLoadingText(null);
+            setEmptyState(true);
+          }
+        }
+      }
+    };
+    fetchMobility();
+    return () => { isCancelled = true; };
   }, []);
 
-  if (loading) return <div className="p-8 text-center text-[#64748B] font-['Plus_Jakarta_Sans'] font-medium">Loading live mobility analytics…</div>;
+  if (loadingText) return <div className="p-8 text-center text-[#64748B] font-['Plus_Jakarta_Sans'] font-medium">{loadingText}</div>;
+  if (emptyState) return <div className="p-8 text-center text-[#64748B] font-['Plus_Jakarta_Sans'] font-medium">No anonymous mobility data yet — consent-ON trips only.</div>;
 
   const totalTrips = summary?.totalTrips || 0;
   const totalCities = summary?.totalCities || 0;

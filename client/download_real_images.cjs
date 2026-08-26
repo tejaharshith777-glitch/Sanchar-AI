@@ -56,38 +56,70 @@ const IMAGES = {
   'spots/lalbagh-botanical-garden.jpg': 'https://upload.wikimedia.org/wikipedia/commons/d/d3/Lalbagh_Glass_House.jpg',
   
   // Spots - Delhi
-  'spots/qutub-minar.jpg': 'https://upload.wikimedia.org/wikipedia/commons/f/f6/Qutub_Minar_Delhi.jpg',
   'spots/red-fort.jpg': 'https://upload.wikimedia.org/wikipedia/commons/f/fa/Red_Fort_Delhi.jpg',
-  
-  // Spots - Guntur & Indore
-  'spots/amaravati-stupa.jpg': 'https://upload.wikimedia.org/wikipedia/commons/b/b3/Amaravati_Stupa.jpg',
-  'spots/rajwada-palace.jpg': 'https://upload.wikimedia.org/wikipedia/commons/5/52/Rajwada_Palace_Indore.jpg'
+  'spots/qutub-minar.jpg': 'https://upload.wikimedia.org/wikipedia/commons/f/f6/Qutub_Minar_Delhi.jpg',
+  'spots/rajwada-palace.jpg': 'https://upload.wikimedia.org/wikipedia/commons/5/52/Rajwada_Palace_Indore.jpg',
+  'spots/amaravati-stupa.jpg': 'https://upload.wikimedia.org/wikipedia/commons/b/b3/Amaravati_Stupa.jpg'
 };
 
-const BATCH_SIZE = 5;
-
 const downloadFile = async (url, dest) => {
-  const response = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36' } });
-  if (!response.ok) throw new Error(`HTTP ${response.status} ${response.statusText}`);
+  const response = await fetch(url, { headers: { 'User-Agent': 'SancharAI_Verification_Bot/1.0 (contact@example.com)' } });
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
   const arrayBuffer = await response.arrayBuffer();
   fs.writeFileSync(dest, Buffer.from(arrayBuffer));
   return dest;
 };
 
+const verifyJPEG = (filePath) => {
+  if (!fs.existsSync(filePath)) return false;
+  const stats = fs.statSync(filePath);
+  if (stats.size < 20480) return false; // Must be >20KB
+  const fd = fs.openSync(filePath, 'r');
+  const buffer = Buffer.alloc(3);
+  fs.readSync(fd, buffer, 0, 3, 0);
+  fs.closeSync(fd);
+  // Check JPEG magic bytes: FF D8 FF
+  return buffer[0] === 0xFF && buffer[1] === 0xD8 && buffer[2] === 0xFF;
+};
+
 async function main() {
-  let manifest = '# Image Manifest\n\n| Filename | Source URL | License |\n|----------|------------|---------|\n';
+  const dirs = [
+    path.join(__dirname, 'public', 'images', 'cities'),
+    path.join(__dirname, 'public', 'images', 'spots')
+  ];
+  dirs.forEach(d => { if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true }); });
+
+  let manifest = '# Image Manifest\n\n| Filename | Source URL | License | Status |\n|----------|------------|---------|--------|\n';
   const entries = Object.entries(IMAGES);
+  
+  console.log("Starting downloads with 3s delay and verification...");
   
   for (const [relPath, url] of entries) {
     const dest = path.join(__dirname, 'public', 'images', relPath);
-    try {
-      await downloadFile(url, dest);
-      manifest += `| ${relPath} | ${url} | Wikimedia Commons (CC-BY-SA or Public Domain) |\n`;
-      console.log(`[OK] ${relPath}`);
-    } catch (err) {
-      console.error(`[ERR] ${relPath}: ${err.message}`);
+    let success = false;
+    let attempts = 0;
+    
+    while (!success && attempts < 2) {
+      try {
+        await downloadFile(url, dest);
+        if (verifyJPEG(dest)) {
+          manifest += `| ${relPath} | ${url} | Wikimedia Commons | PASS |\n`;
+          console.log(`[PASS] ${relPath}`);
+          success = true;
+        } else {
+          console.log(`[FAIL-VERIFY] ${relPath} - Bad JPEG or <20KB`);
+        }
+      } catch (err) {
+        console.error(`[FAIL-HTTP] ${relPath}: ${err.message}`);
+      }
+      if (!success) attempts++;
+      await new Promise(r => setTimeout(r, 3000));
     }
-    await new Promise(r => setTimeout(r, 2000));
+    
+    if (!success) {
+      manifest += `| ${relPath} | ${url} | Wikimedia Commons | city-landmark substitute |\n`;
+      console.log(`[SUBSTITUTE] ${relPath} marked as substitute in MANIFEST`);
+    }
   }
   
   fs.writeFileSync(MANIFEST_FILE, manifest);

@@ -408,10 +408,57 @@ export const LuggageRadarPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [mapCenter, setMapCenter] = useState<[number, number]>([22.4, 79.2]);
+  const [mapZoom, setMapZoom] = useState(5);
+  const [geocodeError, setGeocodeError] = useState<string | null>(null);
+  const [wakingUp, setWakingUp] = useState(false);
+
   // Check-in rates
   const [rateLimitErr, setRateLimitErr] = useState<string | null>(null);
 
   const navigate = useNavigate();
+
+  const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
+
+  const geocodeCity = async (city: string) => {
+    const cacheKey = `geo_${city.toLowerCase()}`;
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      const { lat, lng } = JSON.parse(cached);
+      setMapCenter([lat, lng]);
+      setMapZoom(11);
+      return { lat, lng };
+    }
+
+    try {
+      let res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(city + ", India")}`);
+      let data = await res.json();
+
+      if (data.length === 0) {
+        await delay(1000);
+        res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(city + " railway station, India")}`);
+        data = await res.json();
+      }
+
+      if (data.length > 0) {
+        const lat = parseFloat(data[0].lat);
+        const lng = parseFloat(data[0].lon);
+        localStorage.setItem(cacheKey, JSON.stringify({ lat, lng }));
+        setMapCenter([lat, lng]);
+        setMapZoom(11);
+        return { lat, lng };
+      } else {
+        setMapCenter([22.4, 79.2]);
+        setMapZoom(5);
+        setGeocodeError(`Could not locate ${city} — try a city name in India.`);
+        return null;
+      }
+    } catch (e) {
+      setMapCenter([22.4, 79.2]);
+      setMapZoom(5);
+      return null;
+    }
+  };
 
   // Prefill city if active trip exists
   useEffect(() => {
@@ -425,50 +472,80 @@ export const LuggageRadarPage = () => {
       .catch(console.warn);
   }, []);
 
-  // Fetch luggage spots
+  // Fetch luggage spots with retry
   useEffect(() => {
     if (!selectedCity) return;
     
+    let isCancelled = false;
+
     const fetchLuggage = async () => {
       setLoading(true);
       setError(null);
-      try {
-        if (navigator.onLine) {
-          const res = await axios.get(`/api/luggage-spots?city=${encodeURIComponent(selectedCity)}`);
-          setSpots(res.data);
-        } else {
-          // offline cache mock
-          const pack = await getCachedCityPack(selectedCity);
-          if (pack) {
-            // filter mock railway cloakrooms
-            const localCloakrooms = [
-              {
-                _id: 'local_cloakroom_1',
-                city: selectedCity,
-                name: `${selectedCity} Railway Cloakroom`,
-                type: 'railway_cloakroom',
-                lat: CITY_CENTERS[selectedCity]?.[0] || 20.5937,
-                lng: CITY_CENTERS[selectedCity]?.[1] || 78.9629,
-                hours: '24 Hours',
-                pricingPerBagHour: '₹15/day',
-                requiredDocs: 'Original Train ticket & ID card',
-                rules: 'Bags must be locked',
-                verified: true,
-                status: 'No recent reports (offline)',
-                reportCount: 0
-              }
-            ];
-            setSpots(localCloakrooms);
+      setGeocodeError(null);
+      setWakingUp(false);
+
+      if (navigator.onLine) {
+        await geocodeCity(selectedCity);
+      }
+
+      if (isCancelled) return;
+
+      const backoffs = [0, 5000, 10000, 20000, 30000];
+      
+      for (let attempt = 0; attempt < backoffs.length; attempt++) {
+        try {
+          if (attempt > 0) {
+            setWakingUp(true);
+            await delay(backoffs[attempt]);
+            if (isCancelled) return;
+          }
+
+          if (navigator.onLine) {
+            const res = await axios.get(`/api/luggage-spots?city=${encodeURIComponent(selectedCity)}`);
+            if (isCancelled) return;
+            setSpots(res.data);
+            setWakingUp(false);
+            return; // Success
+          } else {
+            // offline cache mock
+            const pack = await getCachedCityPack(selectedCity);
+            if (isCancelled) return;
+            if (pack) {
+              const localCloakrooms = [
+                {
+                  _id: 'local_cloakroom_1',
+                  city: selectedCity,
+                  name: `${selectedCity} Railway Cloakroom`,
+                  type: 'railway_cloakroom',
+                  lat: CITY_CENTERS[selectedCity]?.[0] || 20.5937,
+                  lng: CITY_CENTERS[selectedCity]?.[1] || 78.9629,
+                  hours: '24 Hours',
+                  pricingPerBagHour: '₹15/day',
+                  requiredDocs: 'Original Train ticket & ID card',
+                  rules: 'Bags must be locked',
+                  verified: true,
+                  status: 'No recent reports (offline)',
+                  reportCount: 0
+                }
+              ];
+              setSpots(localCloakrooms);
+              setWakingUp(false);
+              return;
+            }
+          }
+        } catch (err: any) {
+          if (attempt === backoffs.length - 1) {
+            if (isCancelled) return;
+            setError('Could not load luggage storage cloakrooms.');
+            setWakingUp(false);
           }
         }
-      } catch (err) {
-        setError('Could not load luggage storage cloakrooms.');
-      } finally {
-        setLoading(false);
       }
+      if (!isCancelled) setLoading(false);
     };
 
     fetchLuggage();
+    return () => { isCancelled = true; };
   }, [selectedCity]);
 
   // Report status check-in
@@ -489,7 +566,6 @@ export const LuggageRadarPage = () => {
     }
   };
 
-  const center: [number, number] = CITY_CENTERS[selectedCity] || [20.5937, 78.9629];
 
   return (
     <div className="min-h-screen bg-[#FAF7F2] flex flex-col">
@@ -548,6 +624,18 @@ export const LuggageRadarPage = () => {
             {error && (
               <div className="bg-red-50 text-red-850 text-xs p-4 rounded-2xl border border-red-200 shadow-sm">
                 {error}
+              </div>
+            )}
+
+            {wakingUp && (
+              <div className="bg-blue-50 text-blue-800 text-xs p-4 rounded-2xl border border-blue-200 shadow-sm">
+                Server waking up — results will appear automatically…
+              </div>
+            )}
+
+            {geocodeError && (
+              <div className="bg-amber-50 text-amber-800 text-xs p-4 rounded-2xl border border-amber-200 shadow-sm">
+                {geocodeError}
               </div>
             )}
 
@@ -639,8 +727,8 @@ export const LuggageRadarPage = () => {
           {/* Map panel */}
           <div className="h-full relative z-10">
             <SancharMap
-              center={center}
-              zoom={13}
+              center={mapCenter}
+              zoom={mapZoom}
               showOfflineBanner={true}
               heightClass="h-full"
               markers={spots.map(spot => ({

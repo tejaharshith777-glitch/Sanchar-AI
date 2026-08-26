@@ -121,5 +121,18 @@ export const seedLuggageSpots = [
     requiredDocs: "Confirmed Ticket & ID",
     rules: "Lockable bags only.",
     verified: true
+  },
+  {
+    _id: "luggage-pune-junction",
+    city: "Pune",
+    name: "Pune Junction Cloakroom",
+    type: "railway_cloakroom",
+    lat: 18.5284,
+    lng: 73.8739,
+    hours: "24 Hours",
+    pricingPerBagHour: "₹15/day",
+    requiredDocs: "Confirmed Ticket & ID",
+    rules: "Bags must be locked securely.",
+    verified: true
   }
 ];
