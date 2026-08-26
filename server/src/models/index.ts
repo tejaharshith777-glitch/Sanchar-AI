@@ -250,7 +250,8 @@ const citySpotSchema = new Schema<ICitySpot>({
 export const CitySpot = mongoose.model<ICitySpot>('CitySpot', citySpotSchema);
 
 // --- LUGGAGE SPOTS ---
-export interface ILuggageSpot extends Document {
+export interface ILuggageSpot extends Document<string> {
+  _id: string;
   city: string;
   name: string;
   type: 'railway_cloakroom' | 'airport_counter' | 'metro_locker' | 'partner';
@@ -264,7 +265,7 @@ export interface ILuggageSpot extends Document {
 }
 
 const luggageSpotSchema = new Schema<ILuggageSpot>({
-  _id: { type: String },
+  _id: { type: String, required: true },
   city: { type: String, required: true },
   name: { type: String, required: true },
   type: { type: String, enum: ['railway_cloakroom', 'airport_counter', 'metro_locker', 'partner'], required: true },
