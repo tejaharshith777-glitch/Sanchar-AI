@@ -119,13 +119,12 @@ export const connectDB = async () => {
       console.log('Curated CitySpots seeded successfully.');
     }
 
-    // Idempotent auto-seed LuggageSpot if empty
-    const luggageCount = await LuggageSpot.countDocuments();
-    if (luggageCount === 0) {
-      console.log('LuggageSpot collection is empty. Auto-seeding luggage spots...');
-      await LuggageSpot.insertMany(seedLuggageSpots);
-      console.log('LuggageSpots seeded successfully.');
+    // Idempotent auto-seed/update LuggageSpot
+    console.log('Syncing luggage spots...');
+    for (const spot of seedLuggageSpots) {
+      await LuggageSpot.updateOne({ _id: spot._id }, { $set: spot }, { upsert: true });
     }
+    console.log('LuggageSpots synced successfully.');
 
     // Idempotent auto-seed Trip if empty
     const tripCount = await Trip.countDocuments();

@@ -1,36 +1,36 @@
 # Image Manifest
 
-| Filename | Source URL | License | Status |
-|----------|------------|---------|--------|
-| cities/chennai.jpg | https://upload.wikimedia.org/wikipedia/commons/3/32/Chennai_Central_Railway_Station_from_top.jpg | Wikimedia Commons | city-landmark substitute |
-| cities/kochi.jpg | https://upload.wikimedia.org/wikipedia/commons/1/14/Kochi_skyline_from_marine_drive.jpg | Wikimedia Commons | city-landmark substitute |
-| cities/bengaluru.jpg | https://upload.wikimedia.org/wikipedia/commons/e/e5/UB_City_aerial_view.jpg | Wikimedia Commons | city-landmark substitute |
-| cities/mumbai.jpg | https://upload.wikimedia.org/wikipedia/commons/4/4c/Bandra_Worli_Sea_Link.jpg | Wikimedia Commons | city-landmark substitute |
-| cities/delhi.jpg | https://upload.wikimedia.org/wikipedia/commons/6/66/India_Gate_600x400.jpg | Wikimedia Commons | city-landmark substitute |
-| cities/kolkata.jpg | https://upload.wikimedia.org/wikipedia/commons/7/7b/Victoria_Memorial_Kolkata_Night_View.jpg | Wikimedia Commons | city-landmark substitute |
-| cities/hyderabad.jpg | https://upload.wikimedia.org/wikipedia/commons/5/5e/Golconda_Fort_Hyderabad.jpg | Wikimedia Commons | city-landmark substitute |
-| cities/jaipur.jpg | https://upload.wikimedia.org/wikipedia/commons/4/41/Hawa_Mahal_Jaipur.jpg | Wikimedia Commons | city-landmark substitute |
-| spots/marina-beach.jpg | https://upload.wikimedia.org/wikipedia/commons/8/87/Marina_Beach%2C_Chennai.jpg | Wikimedia Commons | city-landmark substitute |
-| spots/kapaleeshwarar-temple.jpg | https://upload.wikimedia.org/wikipedia/commons/b/b3/Kapaleeshwarar_Temple.jpg | Wikimedia Commons | city-landmark substitute |
-| spots/san-thome-basilica.jpg | https://upload.wikimedia.org/wikipedia/commons/f/f9/Santhome_Basilica.jpg | Wikimedia Commons | city-landmark substitute |
-| spots/chinese-fishing-nets.jpg | https://upload.wikimedia.org/wikipedia/commons/3/3a/Chinese_fishing_nets_Kochi.jpg | Wikimedia Commons | city-landmark substitute |
-| spots/mattancherry-palace.jpg | https://upload.wikimedia.org/wikipedia/commons/d/d4/Mattancherry_Palace.jpg | Wikimedia Commons | city-landmark substitute |
-| spots/fort-kochi-beach.jpg | https://upload.wikimedia.org/wikipedia/commons/b/bf/Fort_Kochi_Beach.jpg | Wikimedia Commons | city-landmark substitute |
-| spots/charminar.jpg | https://upload.wikimedia.org/wikipedia/commons/7/7b/Charminar_Hyderabad_India.jpg | Wikimedia Commons | city-landmark substitute |
-| spots/golconda-fort.jpg | https://upload.wikimedia.org/wikipedia/commons/5/5a/Golconda_Fort_Entry.jpg | Wikimedia Commons | city-landmark substitute |
-| spots/hussain-sagar-lake.jpg | https://upload.wikimedia.org/wikipedia/commons/2/27/Hussain_Sagar_Buddha_Statue.jpg | Wikimedia Commons | city-landmark substitute |
-| spots/amber-fort.jpg | https://upload.wikimedia.org/wikipedia/commons/4/4c/Amber_Fort_Jaipur.jpg | Wikimedia Commons | city-landmark substitute |
-| spots/hawa-mahal.jpg | https://upload.wikimedia.org/wikipedia/commons/9/90/Hawa_Mahal_Jaipur_India.jpg | Wikimedia Commons | city-landmark substitute |
-| spots/city-palace-jaipur.jpg | https://upload.wikimedia.org/wikipedia/commons/5/52/City_Palace%2C_Jaipur.jpg | Wikimedia Commons | city-landmark substitute |
-| spots/gateway-of-india.jpg | https://upload.wikimedia.org/wikipedia/commons/3/3e/Gateway_of_India_Mumbai.jpg | Wikimedia Commons | city-landmark substitute |
-| spots/marine-drive.jpg | https://upload.wikimedia.org/wikipedia/commons/9/93/Marine_Drive_Mumbai.jpg | Wikimedia Commons | city-landmark substitute |
-| spots/chhatrapati-shivaji-terminus.jpg | https://upload.wikimedia.org/wikipedia/commons/3/36/Chhatrapati_Shivaji_Terminus.jpg | Wikimedia Commons | city-landmark substitute |
-| spots/dashashwamedh-ghat.jpg | https://upload.wikimedia.org/wikipedia/commons/6/6f/Dashashwamedh_Ghat_Varanasi.jpg | Wikimedia Commons | city-landmark substitute |
-| spots/kashi-vishwanath-temple.jpg | https://upload.wikimedia.org/wikipedia/commons/6/69/Kashi_Vishwanath_Temple.jpg | Wikimedia Commons | city-landmark substitute |
-| spots/sarnath-sacred-site.jpg | https://upload.wikimedia.org/wikipedia/commons/0/05/Dhamek_Stupa_Sarnath.jpg | Wikimedia Commons | city-landmark substitute |
-| spots/cubbon-park.jpg | https://upload.wikimedia.org/wikipedia/commons/0/0e/Cubbon_Park_Bengaluru.jpg | Wikimedia Commons | city-landmark substitute |
-| spots/lalbagh-botanical-garden.jpg | https://upload.wikimedia.org/wikipedia/commons/d/d3/Lalbagh_Glass_House.jpg | Wikimedia Commons | city-landmark substitute |
-| spots/red-fort.jpg | https://upload.wikimedia.org/wikipedia/commons/f/fa/Red_Fort_Delhi.jpg | Wikimedia Commons | city-landmark substitute |
-| spots/qutub-minar.jpg | https://upload.wikimedia.org/wikipedia/commons/f/f6/Qutub_Minar_Delhi.jpg | Wikimedia Commons | city-landmark substitute |
-| spots/rajwada-palace.jpg | https://upload.wikimedia.org/wikipedia/commons/5/52/Rajwada_Palace_Indore.jpg | Wikimedia Commons | city-landmark substitute |
-| spots/amaravati-stupa.jpg | https://upload.wikimedia.org/wikipedia/commons/b/b3/Amaravati_Stupa.jpg | Wikimedia Commons | city-landmark substitute |
+| Filename | Wikipedia Article | Image URL | License | Status |
+|----------|-------------------|-----------|---------|--------|
+| cities/delhi.jpg | Delhi | https://upload.wikimedia.org/wikipedia/commons/thumb/4/40/Jama_Masjid_2011.jpg/330px-Jama_Masjid_2011.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail | Unknown | PASS |
+| cities/mumbai.jpg | Mumbai | https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/Mumbai_Bandra-Worli_Sea_Link.jpg/330px-Mumbai_Bandra-Worli_Sea_Link.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail | Unknown | PASS |
+| cities/bengaluru.jpg | Bangalore | https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/View_from_Visvesvaraya_Industrial_and_Technological_Museum_%282025%29_02.jpg/330px-View_from_Visvesvaraya_Industrial_and_Technological_Museum_%282025%29_02.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail | Unknown | PASS |
+| cities/kolkata.jpg | Kolkata | https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/Kolkata_maidan.jpg/330px-Kolkata_maidan.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail | Unknown | PASS |
+| cities/chennai.jpg | Chennai | https://upload.wikimedia.org/wikipedia/commons/thumb/3/32/Chennai_Central.jpg/330px-Chennai_Central.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail | Unknown | PASS |
+| cities/hyderabad.jpg | Hyderabad | https://upload.wikimedia.org/wikipedia/commons/thumb/5/57/Aerial_view_of_Durgam_cheruvu_and_Hitech_CIty.jpg/330px-Aerial_view_of_Durgam_cheruvu_and_Hitech_CIty.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail | Unknown | PASS |
+| cities/jaipur.jpg | Jaipur | https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/East_facade_Hawa_Mahal_Jaipur_from_ground_level_%28July_2022%29_-_img_01.jpg/330px-East_facade_Hawa_Mahal_Jaipur_from_ground_level_%28July_2022%29_-_img_01.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail | Unknown | PASS |
+| cities/kochi.jpg | Kochi | None | None | city-landmark substitute - no standalone photo found |
+| spots/marina-beach.jpg | Marina_Beach | https://upload.wikimedia.org/wikipedia/commons/thumb/d/d9/Chennai_-_bird%27s-eye_view.jpg/330px-Chennai_-_bird%27s-eye_view.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail | Unknown | PASS |
+| spots/kapaleeshwarar-temple.jpg | Kapaleeshwarar_Temple | https://upload.wikimedia.org/wikipedia/commons/thumb/9/99/Kapaleeswarar1.jpg/330px-Kapaleeswarar1.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail | Unknown | PASS |
+| spots/san-thome-basilica.jpg | San_Thome_Basilica | https://upload.wikimedia.org/wikipedia/commons/thumb/a/aa/Santhome_Basilica.jpg/330px-Santhome_Basilica.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail | Unknown | PASS |
+| spots/fort-kochi-beach.jpg | Fort_Kochi | None | None | city-landmark substitute - no standalone photo found |
+| spots/chinese-fishing-nets.jpg | Chinese_fishing_nets | None | None | city-landmark substitute - no standalone photo found |
+| spots/mattancherry-palace.jpg | Mattancherry_Palace | https://upload.wikimedia.org/wikipedia/commons/thumb/1/12/Mattancherry_Palace_DSC_0899.JPG/330px-Mattancherry_Palace_DSC_0899.JPG?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail | Unknown | PASS |
+| spots/charminar.jpg | Charminar | https://upload.wikimedia.org/wikipedia/commons/thumb/7/71/Charminar_Hyderabad_1.jpg/330px-Charminar_Hyderabad_1.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail | Unknown | PASS |
+| spots/golconda-fort.jpg | Golconda_Fort | https://upload.wikimedia.org/wikipedia/commons/thumb/5/56/Golconda_Fort_005.jpg/330px-Golconda_Fort_005.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail | Unknown | PASS |
+| spots/hussain-sagar-lake.jpg | Hussain_Sagar | https://upload.wikimedia.org/wikipedia/commons/thumb/2/2d/Hussain_sagar_sunset.jpg/330px-Hussain_sagar_sunset.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail | Unknown | PASS |
+| spots/amber-fort.jpg | Amer_Fort | https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/20191219_Fort_Amber%2C_Amer%2C_Jaipur_0955_9481.jpg/330px-20191219_Fort_Amber%2C_Amer%2C_Jaipur_0955_9481.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail | Unknown | PASS |
+| spots/hawa-mahal.jpg | Hawa_Mahal | https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/East_facade_Hawa_Mahal_Jaipur_from_ground_level_%28July_2022%29_-_img_01.jpg/330px-East_facade_Hawa_Mahal_Jaipur_from_ground_level_%28July_2022%29_-_img_01.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail | Unknown | PASS |
+| spots/city-palace-jaipur.jpg | City_Palace,_Jaipur | https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Chandra_Mahal%2C_City_Palace%2C_Jaipur%2C_20191218_0951_9043.jpg/330px-Chandra_Mahal%2C_City_Palace%2C_Jaipur%2C_20191218_0951_9043.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail | Unknown | PASS |
+| spots/gateway-of-india.jpg | Gateway_of_India | https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Mumbai_03-2016_30_Gateway_of_India.jpg/330px-Mumbai_03-2016_30_Gateway_of_India.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail | Unknown | PASS |
+| spots/marine-drive.jpg | Marine_Drive,_Mumbai | None | None | city-landmark substitute - no standalone photo found |
+| spots/chhatrapati-shivaji-terminus.jpg | Chhatrapati_Shivaji_Terminus | https://upload.wikimedia.org/wikipedia/commons/thumb/4/4d/Chhatrapati_shivaji_terminus%2C_esterno_01.jpg/330px-Chhatrapati_shivaji_terminus%2C_esterno_01.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail | Unknown | PASS |
+| spots/dashashwamedh-ghat.jpg | Dashashwamedh_Ghat | https://upload.wikimedia.org/wikipedia/commons/thumb/a/ad/Dasaswamedh_ghat-varanasi_india-andres_larin.jpg/330px-Dasaswamedh_ghat-varanasi_india-andres_larin.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail | Unknown | PASS |
+| spots/kashi-vishwanath-temple.jpg | Kashi_Vishwanath_Temple | https://upload.wikimedia.org/wikipedia/commons/thumb/f/ff/Kashi_Vishwanath.jpg/330px-Kashi_Vishwanath.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail | Unknown | PASS |
+| spots/sarnath-sacred-site.jpg | Sarnath | https://upload.wikimedia.org/wikipedia/commons/thumb/d/d9/Ancient_Buddhist_monasteries_near_Dhamekh_Stupa_Monument_Site%2C_Sarnath.jpg/330px-Ancient_Buddhist_monasteries_near_Dhamekh_Stupa_Monument_Site%2C_Sarnath.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail | Unknown | PASS |
+| spots/cubbon-park.jpg | Cubbon_Park | https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/Cubbon_Park_W.jpg/330px-Cubbon_Park_W.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail | Unknown | PASS |
+| spots/lalbagh-botanical-garden.jpg | Lal_Bagh | https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/Glasshouse_and_fountain_at_lalbagh.jpg/330px-Glasshouse_and_fountain_at_lalbagh.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail | Unknown | PASS |
+| spots/red-fort.jpg | Red_Fort | None | None | city-landmark substitute - no standalone photo found |
+| spots/qutub-minar.jpg | Qutb_Minar | https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Qutb_Minar_2022.jpg/330px-Qutb_Minar_2022.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail | Unknown | PASS |
+| spots/rajwada-palace.jpg | Rajwada | https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/Indore_Rajwada01.jpg/330px-Indore_Rajwada01.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail | Unknown | PASS |
+| spots/amaravati-stupa.jpg | Amaravati_Stupa | https://upload.wikimedia.org/wikipedia/commons/thumb/d/de/British_Museum_Asia_14.jpg/330px-British_Museum_Asia_14.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail | Unknown | PASS |
