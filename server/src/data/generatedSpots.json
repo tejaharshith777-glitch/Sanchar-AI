@@ -309,9 +309,307 @@
       "image": "/images/spots/lal-bagh.jpg"
     }
   ],
-  "Mumbai": [],
-  "Delhi": [],
+  "Mumbai": [
+    {
+      "name": "Gateway of India",
+      "slug": "gateway-of-india",
+      "category": "archway",
+      "blurb": "An arch monument built during the 20th century.",
+      "bestThing": "Discovering Gateway of India",
+      "bestTime": "Open 24 Hours",
+      "timeToSpend": "2 Hours",
+      "entryCost": "Free",
+      "nearTransport": "Mumbai Central",
+      "tips": [
+        "Carry water.",
+        "Wear comfortable shoes."
+      ],
+      "lat": 18.922,
+      "lng": 72.8347,
+      "image": "/images/spots/gateway-of-india.jpg"
+    },
+    {
+      "name": "Marine Drive Promenade",
+      "slug": "marine-drive",
+      "category": "viewpoint",
+      "blurb": "A 3.6-kilometre-long Promenade along the Netaji Subhash Chandra Bose Road.",
+      "bestThing": "Discovering Marine Drive Promenade",
+      "bestTime": "Open 24 Hours",
+      "timeToSpend": "2 Hours",
+      "entryCost": "Free",
+      "nearTransport": "Mumbai Central",
+      "tips": [
+        "Carry water.",
+        "Wear comfortable shoes."
+      ],
+      "lat": 18.944,
+      "lng": 72.8236,
+      "image": "/images/spots/marine-drive.jpg"
+    },
+    {
+      "name": "CST Railway Station",
+      "slug": "chhatrapati-shivaji-terminus",
+      "category": "heritage",
+      "blurb": "A historic railway terminus and UNESCO World Heritage Site in Mumbai.",
+      "bestThing": "Discovering CST Railway Station",
+      "bestTime": "Open 24 Hours",
+      "timeToSpend": "2 Hours",
+      "entryCost": "Free",
+      "nearTransport": "Mumbai Central",
+      "tips": [
+        "Carry water.",
+        "Wear comfortable shoes."
+      ],
+      "lat": 18.9398,
+      "lng": 72.8354,
+      "image": "/images/spots/chhatrapati-shivaji-terminus.jpg"
+    }
+  ],
+  "Delhi": [
+    {
+      "name": "Qutub Minar",
+      "slug": "qutub-minar",
+      "category": "monument",
+      "blurb": "A minaret and victory tower that forms part of the Qutb complex.",
+      "bestThing": "Discovering Qutub Minar",
+      "bestTime": "7:00 AM - 5:00 PM",
+      "timeToSpend": "2 Hours",
+      "entryCost": "₹35",
+      "nearTransport": "Delhi Central",
+      "tips": [
+        "Carry water.",
+        "Wear comfortable shoes."
+      ],
+      "lat": 28.5245,
+      "lng": 77.1855,
+      "image": "/images/spots/qutub-minar.jpg"
+    },
+    {
+      "name": "Red Fort (Lal Qila)",
+      "slug": "red-fort",
+      "category": "fort",
+      "blurb": "A historic fort in the city of Delhi that served as the main residence of the Mughal Emperors.",
+      "bestThing": "Discovering Red Fort (Lal Qila)",
+      "bestTime": "9:30 AM - 4:30 PM",
+      "timeToSpend": "2 Hours",
+      "entryCost": "₹35",
+      "nearTransport": "Delhi Central",
+      "tips": [
+        "Carry water.",
+        "Wear comfortable shoes."
+      ],
+      "lat": 28.6562,
+      "lng": 77.241,
+      "image": "/images/spots/red-fort.jpg"
+    }
+  ],
   "Kolkata": [],
-  "Hyderabad": [],
-  "Jaipur": []
+  "Hyderabad": [
+    {
+      "name": "Charminar & Laad Bazaar",
+      "slug": "charminar",
+      "category": "heritage",
+      "blurb": "Charminar is a monument and mosque in Hyderabad.",
+      "bestThing": "Discovering Charminar & Laad Bazaar",
+      "bestTime": "6:00 AM - 6:30 PM",
+      "timeToSpend": "2 Hours",
+      "entryCost": "₹25",
+      "nearTransport": "Hyderabad Central",
+      "tips": [
+        "Carry water.",
+        "Wear comfortable shoes."
+      ],
+      "lat": 17.3616,
+      "lng": 78.4747,
+      "image": "/images/spots/charminar.jpg"
+    },
+    {
+      "name": "Golconda Fort",
+      "slug": "golconda-fort",
+      "category": "fort",
+      "blurb": "A fortified citadel and early capital of the Qutb Shahi dynasty.",
+      "bestThing": "Discovering Golconda Fort",
+      "bestTime": "9:00 AM - 5:30 PM",
+      "timeToSpend": "2 Hours",
+      "entryCost": "₹25",
+      "nearTransport": "Hyderabad Central",
+      "tips": [
+        "Carry water.",
+        "Wear comfortable shoes."
+      ],
+      "lat": 17.3833,
+      "lng": 78.4011,
+      "image": "/images/spots/golconda-fort.jpg"
+    },
+    {
+      "name": "Hussain Sagar Lake",
+      "slug": "hussain-sagar-lake",
+      "category": "viewpoint",
+      "blurb": "A heart-shaped lake in Hyderabad built by Ibrahim Quli Qutb Shah.",
+      "bestThing": "Discovering Hussain Sagar Lake",
+      "bestTime": "8:00 AM - 10:00 PM",
+      "timeToSpend": "2 Hours",
+      "entryCost": "Free",
+      "nearTransport": "Hyderabad Central",
+      "tips": [
+        "Carry water.",
+        "Wear comfortable shoes."
+      ],
+      "lat": 17.4239,
+      "lng": 78.4738,
+      "image": "/images/spots/hussain-sagar-lake.jpg"
+    }
+  ],
+  "Jaipur": [
+    {
+      "name": "Amber Fort & Maota Lake",
+      "slug": "amber-fort",
+      "category": "fort",
+      "blurb": "A fort located in Amer, Rajasthan.",
+      "bestThing": "Discovering Amber Fort & Maota Lake",
+      "bestTime": "8:00 AM - 5:30 PM",
+      "timeToSpend": "2 Hours",
+      "entryCost": "₹100",
+      "nearTransport": "Jaipur Central",
+      "tips": [
+        "Carry water.",
+        "Wear comfortable shoes."
+      ],
+      "lat": 26.9855,
+      "lng": 75.8513,
+      "image": "/images/spots/amber-fort.jpg"
+    },
+    {
+      "name": "Hawa Mahal",
+      "slug": "hawa-mahal",
+      "category": "heritage",
+      "blurb": "A palace in Jaipur, built from red and pink sandstone.",
+      "bestThing": "Discovering Hawa Mahal",
+      "bestTime": "9:00 AM - 5:00 PM",
+      "timeToSpend": "2 Hours",
+      "entryCost": "₹50",
+      "nearTransport": "Jaipur Central",
+      "tips": [
+        "Carry water.",
+        "Wear comfortable shoes."
+      ],
+      "lat": 26.9239,
+      "lng": 75.8267,
+      "image": "/images/spots/hawa-mahal.jpg"
+    },
+    {
+      "name": "City Palace Jaipur",
+      "slug": "city-palace-jaipur",
+      "category": "heritage",
+      "blurb": "The City Palace was established at the same time as the city of Jaipur.",
+      "bestThing": "Discovering City Palace Jaipur",
+      "bestTime": "9:30 AM - 5:00 PM",
+      "timeToSpend": "2 Hours",
+      "entryCost": "₹200",
+      "nearTransport": "Jaipur Central",
+      "tips": [
+        "Carry water.",
+        "Wear comfortable shoes."
+      ],
+      "lat": 26.9258,
+      "lng": 75.8237,
+      "image": "/images/spots/city-palace-jaipur.jpg"
+    }
+  ],
+  "Varanasi": [
+    {
+      "name": "Dashashwamedh Ghat",
+      "slug": "dashashwamedh-ghat",
+      "category": "ghat",
+      "blurb": "The main ghat in Varanasi on the Ganga River.",
+      "bestThing": "Discovering Dashashwamedh Ghat",
+      "bestTime": "3:00 AM - 11:00 PM",
+      "timeToSpend": "2 Hours",
+      "entryCost": "Free",
+      "nearTransport": "Varanasi Central",
+      "tips": [
+        "Carry water.",
+        "Wear comfortable shoes."
+      ],
+      "lat": 25.3068,
+      "lng": 83.0076,
+      "image": "/images/spots/dashashwamedh-ghat.jpg"
+    },
+    {
+      "name": "Kashi Vishwanath Temple",
+      "slug": "kashi-vishwanath-temple",
+      "category": "temple",
+      "blurb": "One of the most famous Hindu temples dedicated to Lord Shiva.",
+      "bestThing": "Discovering Kashi Vishwanath Temple",
+      "bestTime": "3:00 AM - 11:00 PM",
+      "timeToSpend": "2 Hours",
+      "entryCost": "Free",
+      "nearTransport": "Varanasi Central",
+      "tips": [
+        "Carry water.",
+        "Wear comfortable shoes."
+      ],
+      "lat": 25.3109,
+      "lng": 83.0107,
+      "image": "/images/spots/kashi-vishwanath-temple.jpg"
+    },
+    {
+      "name": "Sarnath Stupa Complex",
+      "slug": "sarnath-sacred-site",
+      "category": "sacred",
+      "blurb": "A place located 10 kilometres north-east of Varanasi where Gautama Buddha first taught the Dharma.",
+      "bestThing": "Discovering Sarnath Stupa Complex",
+      "bestTime": "8:00 AM - 6:00 PM",
+      "timeToSpend": "2 Hours",
+      "entryCost": "₹25",
+      "nearTransport": "Varanasi Central",
+      "tips": [
+        "Carry water.",
+        "Wear comfortable shoes."
+      ],
+      "lat": 25.3811,
+      "lng": 83.0241,
+      "image": "/images/spots/sarnath-sacred-site.jpg"
+    }
+  ],
+  "Guntur": [
+    {
+      "name": "Amaravati Great Stupa",
+      "slug": "amaravati-stupa",
+      "category": "heritage",
+      "blurb": "A ruined Buddhist monument located at Amaravati village.",
+      "bestThing": "Discovering Amaravati Great Stupa",
+      "bestTime": "9:00 AM - 5:00 PM",
+      "timeToSpend": "2 Hours",
+      "entryCost": "Free",
+      "nearTransport": "Guntur Central",
+      "tips": [
+        "Carry water.",
+        "Wear comfortable shoes."
+      ],
+      "lat": 16.5746,
+      "lng": 80.3582,
+      "image": "/images/spots/amaravati-stupa.jpg"
+    }
+  ],
+  "Indore": [
+    {
+      "name": "Rajwada Palace",
+      "slug": "rajwada-palace",
+      "category": "palace",
+      "blurb": "A historical palace in Indore city.",
+      "bestThing": "Discovering Rajwada Palace",
+      "bestTime": "10:00 AM - 5:00 PM",
+      "timeToSpend": "2 Hours",
+      "entryCost": "₹10",
+      "nearTransport": "Indore Central",
+      "tips": [
+        "Carry water.",
+        "Wear comfortable shoes."
+      ],
+      "lat": 22.7188,
+      "lng": 75.8554,
+      "image": "/images/spots/rajwada-palace.jpg"
+    }
+  ]
 }

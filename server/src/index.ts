@@ -4,7 +4,7 @@ import helmet from 'helmet';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import apiRoutes from './routes/api';
-import { connectDB } from './services/db';
+import { connectDB, isMemoryFallback } from './services/db';
 
 mongoose.set('bufferCommands', false);
 
@@ -24,7 +24,7 @@ app.use('/api', apiRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', time: new Date() });
+  res.json({ status: 'ok', time: new Date(), db: isMemoryFallback ? 'memory' : 'atlas' });
 });
 
 connectDB().then(() => {

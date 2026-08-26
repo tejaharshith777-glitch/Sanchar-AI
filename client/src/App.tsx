@@ -5,10 +5,11 @@ import {
   Zap, Globe, Lock, IndianRupee, Phone,
   ChevronRight, Check, AlertTriangle, Share2,
   BookOpen, BarChart3, Search, Compass, HelpCircle,
-  Mic, History as HistoryIcon, Plus, Unlock, Bot, Send, Loader2
+  Mic, History as HistoryIcon, Plus, Unlock, Bot, Send, Loader2, Upload
 } from 'lucide-react';
 import axios from 'axios';
 import { queueOfflineMutation, getOfflineQueue, removeQueueItem } from './store/db';
+import { API_BASE } from './config';
 import { ocrProvider } from './ocr/OcrProvider';
 import PocketMap from './components/PocketMap';
 import SancharChatbot from './components/SancharChatbot';
@@ -171,7 +172,7 @@ function useNetworkAndHealth() {
         for (const item of queue) {
           await axios({
             method: item.method,
-            url: item.url,
+            url: API_BASE + item.url,
             data: item.body,
             headers: { 'Idempotency-Key': item.idempotencyKey }
           });
@@ -266,12 +267,46 @@ function useGPSTracker(tripId: string | null) {
   return { speed, segment, confidence, distance, points, permDenied };
 }
 
+// ─── Global Retry Banner ───────────────────────────────────────
+const RetryBanner = () => {
+  const [retryState, setRetryState] = useState<{ attempt: number, maxRetries: number } | null>(null);
+  
+  useEffect(() => {
+    const handleStart = (e: any) => setRetryState(e.detail);
+    const handleEnd = () => setRetryState(null);
+    window.addEventListener('axios-retry-start', handleStart);
+    window.addEventListener('axios-retry-end', handleEnd);
+    return () => {
+      window.removeEventListener('axios-retry-start', handleStart);
+      window.removeEventListener('axios-retry-end', handleEnd);
+    }
+  }, []);
+
+  if (!retryState) return null;
+
+  return (
+    <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-[100] bg-slate-900 text-white px-4 py-2.5 rounded-full shadow-2xl flex items-center gap-3 text-sm font-medium animate-in slide-in-from-top-4">
+      <Loader2 size={16} className="animate-spin text-teal-400" />
+      <span>Waking up the server... retrying (attempt {retryState.attempt} of {retryState.maxRetries})</span>
+    </div>
+  );
+};
+
 // ─── App Main Router ─────────────────────────────────────────
 const App = () => {
   const healthData = useNetworkAndHealth();
 
+  useEffect(() => {
+    // Warm-up Ping
+    const ping = () => axios.get('/api/health').catch(() => {});
+    ping(); // Immediate ping on load
+    const interval = setInterval(ping, 4 * 60 * 1000); // Re-ping every 4 minutes
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <HealthContext.Provider value={healthData}>
+      <RetryBanner />
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<LandingPage />} />
@@ -299,25 +334,11 @@ const App = () => {
 
 // ─── App Shell Wrapper ───────────────────────────────────────
 const AppShell = ({ children }: { children: React.ReactNode }) => {
-  const { isBackendOffline, isConnecting, dbMode, activeTrip } = useContext(HealthContext);
+  const { activeTrip } = useContext(HealthContext);
   return (
     <div className="min-h-screen bg-[#FAFAF7] flex flex-col relative">
       <InnerNav />
-      {/* Sleek Non-intrusive Health Status Pill */}
-      {isConnecting ? (
-        <div className="bg-[#00695C]/90 backdrop-blur-md text-white text-[11px] py-1.5 px-4 text-center font-semibold animate-fade-in flex items-center justify-center gap-1.5 border-b border-teal-700/30">
-          <span className="w-2 h-2 rounded-full bg-white animate-ping shrink-0" /> Connecting to Sanchar AI...
-        </div>
-      ) : isBackendOffline ? (
-        <div className="bg-amber-500/90 backdrop-blur-md text-white text-[11px] py-1.5 px-4 text-center font-semibold animate-fade-in flex items-center justify-center gap-1.5 border-b border-amber-600/30">
-          <WifiOff size={13} /> Offline Mode — Telemetry saving to local IndexedDB
-        </div>
-      ) : dbMode === 'memory' ? (
-        <div className="bg-[#00695C]/90 backdrop-blur-md text-white text-[11px] py-1.5 px-4 text-center font-semibold flex items-center justify-center gap-1.5 border-b border-teal-700/30">
-          <Check size={13} /> Sanchar AI Online · Memory Store Active
-        </div>
-      ) : null}
-      <main className="flex-1 max-w-2xl mx-auto w-full">
+      <main className="flex-1 max-w-2xl mx-auto w-full mt-4">
         {children}
       </main>
       <SancharChatbot activeTrip={activeTrip} />
@@ -524,18 +545,11 @@ const VaultGuard = ({ children }: { children: React.ReactNode }) => {
 
 
 const ConnectivityHeaderChip = () => {
-  const { isOnline, syncState } = useContext(HealthContext);
-  const [lastSyncedText, setLastSyncedText] = useState('just now');
+  const { isOnline, syncState, isConnecting, isBackendOffline } = useContext(HealthContext);
 
   useEffect(() => {
     const update = () => {
-      const ts = localStorage.getItem('sanchar_last_sync_timestamp');
-      if (!ts) {
-        setLastSyncedText('just now');
-      } else {
-        const mins = Math.max(0, Math.floor((Date.now() - parseInt(ts, 10)) / 60000));
-        setLastSyncedText(mins === 0 ? 'just now' : `${mins}m ago`);
-      }
+      // Logic without lastSyncedText state since it was unused in render
     };
     update();
     const timer = setInterval(update, 30000);
@@ -543,27 +557,34 @@ const ConnectivityHeaderChip = () => {
   }, [isOnline]);
 
   const isSyncing = (syncState as any) === 'syncing' || Boolean((syncState as any)?.syncing);
-  const qCount = typeof syncState === 'object' && syncState ? (syncState as any).queueCount || 1 : 1;
 
-  if (isSyncing) {
+  if (isConnecting) {
     return (
-      <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-full border border-blue-200">
-        <span className="animate-spin text-blue-600">⟳</span> Syncing… ({qCount} {qCount === 1 ? 'item' : 'items'})
+      <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-gray-500 bg-gray-50 px-2 py-1 rounded-full border border-gray-200">
+        <span className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-ping" /> Connecting
       </span>
     );
   }
 
-  if (isOnline) {
+  if (isSyncing) {
     return (
-      <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
-        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> ● Online · live data
+      <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded-full border border-blue-200">
+        <span className="animate-spin text-blue-500">⟳</span> Syncing
+      </span>
+    );
+  }
+
+  if (isOnline && !isBackendOffline) {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-full border border-emerald-200">
+        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Online
       </span>
     );
   }
 
   return (
-    <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold text-amber-900 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-300">
-      <span className="w-2 h-2 rounded-full bg-amber-500" /> ● Offline · cached data · last synced {lastSyncedText}
+    <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-gray-500 bg-gray-100 px-2 py-1 rounded-full border border-gray-200">
+      <span className="w-1.5 h-1.5 rounded-full bg-gray-400" /> Offline · cached
     </span>
   );
 };
@@ -1146,58 +1167,156 @@ const DiarySlide = () => {
 
 // ─── CAROUSEL CITIES (Real City Packs Only) ───────────────────
 const CAROUSEL_CITIES = [
-  { name: 'Chennai', img: '/images/india/chennai.jpg' },
-  { name: 'Kochi', img: '/images/india/kochi.jpg' },
-  { name: 'Hyderabad', img: '/images/india/hyderabad.jpg' },
-  { name: 'Bengaluru', img: '/images/india/bengaluru.jpg' },
-  { name: 'Mumbai', img: '/images/india/mumbai.jpg' },
-  { name: 'Jaipur', img: '/images/india/jaipur.jpg' },
-  { name: 'Varanasi', img: '/images/india/kashi_vishwanath.jpg' },
-  { name: 'Delhi', img: '/images/india/delhi.jpg' },
-  { name: 'Guntur', img: '/images/india/stat_temple.jpg' },
-  { name: 'Indore', img: '/images/india/bg_section2.jpg' },
-  { name: 'Nashik', img: '/images/india/stat_temple.jpg' },
-  { name: 'Madurai', img: '/images/india/chennai.jpg' },
-  { name: 'Nagpur', img: '/images/india/bg_section1.jpg' },
-  { name: 'Bhubaneswar', img: '/images/india/stat_temple.jpg' },
-  { name: 'Guwahati', img: '/images/india/guwahati_river.jpg' },
-  { name: 'Kolkata', img: '/images/india/kolkata.jpg' }
+  { name: 'Chennai', img: '/images/cities/chennai.jpg' },
+  { name: 'Kochi', img: '/images/cities/kochi.jpg' },
+  { name: 'Hyderabad', img: '/images/cities/hyderabad.jpg' },
+  { name: 'Bengaluru', img: '/images/cities/bengaluru.jpg' },
+  { name: 'Mumbai', img: '/images/cities/mumbai.jpg' },
+  { name: 'Jaipur', img: '/images/cities/jaipur.jpg' },
+  { name: 'Varanasi', img: '/images/cities/varanasi.jpg' },
+  { name: 'Delhi', img: '/images/cities/delhi.jpg' },
+  { name: 'Guntur', img: '/images/cities/guntur.jpg' },
+  { name: 'Indore', img: '/images/cities/indore.jpg' },
+  { name: 'Nashik', img: '/images/cities/nashik.jpg' },
+  { name: 'Madurai', img: '/images/cities/madurai.jpg' },
+  { name: 'Nagpur', img: '/images/cities/nagpur.jpg' },
+  { name: 'Bhubaneswar', img: '/images/cities/bhubaneswar.jpg' },
+  { name: 'Guwahati', img: '/images/cities/guwahati.jpg' },
+  { name: 'Kolkata', img: '/images/cities/kolkata.jpg' }
 ];
 
 const CURATED_SPECIAL_SPOTS_24 = [
-  { city: 'Chennai', slug: 'marina-beach', name: 'Marina Beach', category: 'Beach', location: 'Beach Road, Chennai', timing: '5:00 AM - 8:00 PM', trustedCount: '520+', img: '/images/india/marina_beach.jpg' },
-  { city: 'Chennai', slug: 'kapaleeshwarar-temple', name: 'Kapaleeshwarar Temple', category: 'Temple', location: 'Mylapore, Chennai', timing: '6:00 AM - 8:30 PM', trustedCount: '410+', img: '/images/india/stat_temple.jpg' },
-  { city: 'Chennai', slug: 'san-thome-basilica', name: 'San Thome Basilica', category: 'Heritage', location: 'Santhome, Chennai', timing: '8:00 AM - 6:00 PM', trustedCount: '340+', img: '/images/india/chennai.jpg' },
+  { city: 'Chennai', slug: 'marina-beach', name: 'Marina Beach', category: 'Beach', location: 'Beach Road, Chennai', timing: '5:00 AM - 8:00 PM', trustedCount: '520+', img: '/images/spots/marina-beach.jpg' },
+  { city: 'Chennai', slug: 'kapaleeshwarar-temple', name: 'Kapaleeshwarar Temple', category: 'Temple', location: 'Mylapore, Chennai', timing: '6:00 AM - 8:30 PM', trustedCount: '410+', img: '/images/spots/kapaleeshwarar-temple.jpg' },
+  { city: 'Chennai', slug: 'san-thome-basilica', name: 'San Thome Basilica', category: 'Heritage', location: 'Santhome, Chennai', timing: '8:00 AM - 6:00 PM', trustedCount: '340+', img: '/images/spots/san-thome-basilica.jpg' },
   
-  { city: 'Kochi', slug: 'chinese-fishing-nets', name: 'Chinese Fishing Nets', category: 'Heritage', location: 'Fort Kochi, Kerala', timing: '6:00 AM - 7:00 PM', trustedCount: '290+', img: '/images/india/kochi_nets.jpg' },
-  { city: 'Kochi', slug: 'mattancherry-palace', name: 'Mattancherry Palace', category: 'Heritage', location: 'Mattancherry, Kochi', timing: '9:45 AM - 4:45 PM', trustedCount: '310+', img: '/images/india/kochi.jpg' },
-  { city: 'Kochi', slug: 'fort-kochi-beach', name: 'Fort Kochi Beach', category: 'Beach', location: 'Fort Kochi Promenade', timing: 'Open 24 Hours', trustedCount: '380+', img: '/images/india/kochi.jpg' },
+  { city: 'Kochi', slug: 'chinese-fishing-nets', name: 'Chinese Fishing Nets', category: 'Heritage', location: 'Fort Kochi, Kerala', timing: '6:00 AM - 7:00 PM', trustedCount: '290+', img: '/images/spots/chinese-fishing-nets.jpg' },
+  { city: 'Kochi', slug: 'mattancherry-palace', name: 'Mattancherry Palace', category: 'Heritage', location: 'Mattancherry, Kochi', timing: '9:45 AM - 4:45 PM', trustedCount: '310+', img: '/images/spots/mattancherry-palace.jpg' },
+  { city: 'Kochi', slug: 'fort-kochi-beach', name: 'Fort Kochi Beach', category: 'Beach', location: 'Fort Kochi Promenade', timing: 'Open 24 Hours', trustedCount: '380+', img: '/images/spots/fort-kochi-beach.jpg' },
   
-  { city: 'Hyderabad', slug: 'charminar', name: 'Charminar & Laad Bazaar', category: 'Heritage', location: 'Old City, Hyderabad', timing: '6:00 AM - 6:30 PM', trustedCount: '680+', img: '/images/india/charminar.jpg' },
-  { city: 'Hyderabad', slug: 'golconda-fort', name: 'Golconda Fort', category: 'Fort', location: 'Golconda, Hyderabad', timing: '9:00 AM - 5:30 PM', trustedCount: '510+', img: '/images/india/hyderabad.jpg' },
-  { city: 'Hyderabad', slug: 'hussain-sagar-lake', name: 'Hussain Sagar Lake', category: 'Viewpoint', location: 'Necklace Road, Hyderabad', timing: '8:00 AM - 10:00 PM', trustedCount: '430+', img: '/images/india/hyderabad.jpg' },
+  { city: 'Hyderabad', slug: 'charminar', name: 'Charminar & Laad Bazaar', category: 'Heritage', location: 'Old City, Hyderabad', timing: '6:00 AM - 6:30 PM', trustedCount: '680+', img: '/images/spots/charminar.jpg' },
+  { city: 'Hyderabad', slug: 'golconda-fort', name: 'Golconda Fort', category: 'Fort', location: 'Golconda, Hyderabad', timing: '9:00 AM - 5:30 PM', trustedCount: '510+', img: '/images/spots/golconda-fort.jpg' },
+  { city: 'Hyderabad', slug: 'hussain-sagar-lake', name: 'Hussain Sagar Lake', category: 'Viewpoint', location: 'Necklace Road, Hyderabad', timing: '8:00 AM - 10:00 PM', trustedCount: '430+', img: '/images/spots/hussain-sagar-lake.jpg' },
 
-  { city: 'Jaipur', slug: 'amber-fort', name: 'Amber Fort & Maota Lake', category: 'Fort', location: 'Amer, Jaipur, Rajasthan', timing: '8:00 AM - 5:30 PM', trustedCount: '610+', img: '/images/india/jaipur.jpg' },
-  { city: 'Jaipur', slug: 'hawa-mahal', name: 'Hawa Mahal', category: 'Heritage', location: 'Pink City, Jaipur', timing: '9:00 AM - 5:00 PM', trustedCount: '720+', img: '/images/india/jaipur.jpg' },
-  { city: 'Jaipur', slug: 'city-palace-jaipur', name: 'City Palace Jaipur', category: 'Heritage', location: 'Jaleb Chowk, Jaipur', timing: '9:30 AM - 5:00 PM', trustedCount: '490+', img: '/images/india/jaipur.jpg' },
+  { city: 'Jaipur', slug: 'amber-fort', name: 'Amber Fort & Maota Lake', category: 'Fort', location: 'Amer, Jaipur, Rajasthan', timing: '8:00 AM - 5:30 PM', trustedCount: '610+', img: '/images/spots/amber-fort.jpg' },
+  { city: 'Jaipur', slug: 'hawa-mahal', name: 'Hawa Mahal', category: 'Heritage', location: 'Pink City, Jaipur', timing: '9:00 AM - 5:00 PM', trustedCount: '720+', img: '/images/spots/hawa-mahal.jpg' },
+  { city: 'Jaipur', slug: 'city-palace-jaipur', name: 'City Palace Jaipur', category: 'Heritage', location: 'Jaleb Chowk, Jaipur', timing: '9:30 AM - 5:00 PM', trustedCount: '490+', img: '/images/spots/city-palace-jaipur.jpg' },
 
-  { city: 'Mumbai', slug: 'gateway-of-india', name: 'Gateway of India', category: 'Archway', location: 'Apollo Bunder, Mumbai', timing: 'Open 24 Hours', trustedCount: '890+', img: '/images/india/gateway_of_india.jpg' },
-  { city: 'Mumbai', slug: 'marine-drive', name: 'Marine Drive Promenade', category: 'Viewpoint', location: 'South Mumbai', timing: 'Open 24 Hours', trustedCount: '950+', img: '/images/india/mumbai.jpg' },
-  { city: 'Mumbai', slug: 'chhatrapati-shivaji-terminus', name: 'CST Railway Station', category: 'Heritage', location: 'Fort, Mumbai', timing: 'Open 24 Hours', trustedCount: '620+', img: '/images/india/mumbai.jpg' },
+  { city: 'Mumbai', slug: 'gateway-of-india', name: 'Gateway of India', category: 'Archway', location: 'Apollo Bunder, Mumbai', timing: 'Open 24 Hours', trustedCount: '890+', img: '/images/spots/gateway-of-india.jpg' },
+  { city: 'Mumbai', slug: 'marine-drive', name: 'Marine Drive Promenade', category: 'Viewpoint', location: 'South Mumbai', timing: 'Open 24 Hours', trustedCount: '950+', img: '/images/spots/marine-drive.jpg' },
+  { city: 'Mumbai', slug: 'chhatrapati-shivaji-terminus', name: 'CST Railway Station', category: 'Heritage', location: 'Fort, Mumbai', timing: 'Open 24 Hours', trustedCount: '620+', img: '/images/spots/chhatrapati-shivaji-terminus.jpg' },
 
-  { city: 'Varanasi', slug: 'dashashwamedh-ghat', name: 'Dashashwamedh Ghat', category: 'Ghat', location: 'Godowlia, Varanasi', timing: '3:00 AM - 11:00 PM', trustedCount: '810+', img: '/images/india/kashi_vishwanath.jpg' },
-  { city: 'Varanasi', slug: 'kashi-vishwanath-temple', name: 'Kashi Vishwanath Temple', category: 'Temple', location: 'Varanasi, UP', timing: '3:00 AM - 11:00 PM', trustedCount: '940+', img: '/images/india/kashi_vishwanath.jpg' },
-  { city: 'Varanasi', slug: 'sarnath-sacred-site', name: 'Sarnath Stupa Complex', category: 'Sacred', location: 'Sarnath, Varanasi', timing: '8:00 AM - 6:00 PM', trustedCount: '370+', img: '/images/india/stat_temple.jpg' },
+  { city: 'Varanasi', slug: 'dashashwamedh-ghat', name: 'Dashashwamedh Ghat', category: 'Ghat', location: 'Godowlia, Varanasi', timing: '3:00 AM - 11:00 PM', trustedCount: '810+', img: '/images/spots/dashashwamedh-ghat.jpg' },
+  { city: 'Varanasi', slug: 'kashi-vishwanath-temple', name: 'Kashi Vishwanath Temple', category: 'Temple', location: 'Varanasi, UP', timing: '3:00 AM - 11:00 PM', trustedCount: '940+', img: '/images/spots/kashi-vishwanath-temple.jpg' },
+  { city: 'Varanasi', slug: 'sarnath-sacred-site', name: 'Sarnath Stupa Complex', category: 'Sacred', location: 'Sarnath, Varanasi', timing: '8:00 AM - 6:00 PM', trustedCount: '370+', img: '/images/spots/sarnath-sacred-site.jpg' },
 
-  { city: 'Bengaluru', slug: 'cubbon-park', name: 'Cubbon Park', category: 'Park', location: 'Kasturba Road, Bengaluru', timing: '6:00 AM - 7:00 PM', trustedCount: '540+', img: '/images/india/bengaluru.jpg' },
-  { city: 'Bengaluru', slug: 'lalbagh-botanical-garden', name: 'Lalbagh Botanical Garden', category: 'Park', location: 'Mavalli, Bengaluru', timing: '8:00 AM - 6:00 PM', trustedCount: '480+', img: '/images/india/bengaluru.jpg' },
+  { city: 'Bengaluru', slug: 'cubbon-park', name: 'Cubbon Park', category: 'Park', location: 'Kasturba Road, Bengaluru', timing: '6:00 AM - 7:00 PM', trustedCount: '540+', img: '/images/spots/cubbon-park.jpg' },
+  { city: 'Bengaluru', slug: 'lalbagh-botanical-garden', name: 'Lalbagh Botanical Garden', category: 'Park', location: 'Mavalli, Bengaluru', timing: '8:00 AM - 6:00 PM', trustedCount: '480+', img: '/images/spots/lalbagh-botanical-garden.jpg' },
 
-  { city: 'Delhi', slug: 'qutub-minar', name: 'Qutub Minar', category: 'Monument', location: 'Mehrauli, New Delhi', timing: '7:00 AM - 5:00 PM', trustedCount: '780+', img: '/images/india/delhi.jpg' },
-  { city: 'Delhi', slug: 'red-fort', name: 'Red Fort (Lal Qila)', category: 'Fort', location: 'Old Delhi', timing: '9:30 AM - 4:30 PM', trustedCount: '860+', img: '/images/india/delhi.jpg' },
+  { city: 'Delhi', slug: 'qutub-minar', name: 'Qutub Minar', category: 'Monument', location: 'Mehrauli, New Delhi', timing: '7:00 AM - 5:00 PM', trustedCount: '780+', img: '/images/spots/qutub-minar.jpg' },
+  { city: 'Delhi', slug: 'red-fort', name: 'Red Fort (Lal Qila)', category: 'Fort', location: 'Old Delhi', timing: '9:30 AM - 4:30 PM', trustedCount: '860+', img: '/images/spots/red-fort.jpg' },
 
-  { city: 'Guntur', slug: 'amaravati-stupa', name: 'Amaravati Great Stupa', category: 'Heritage', location: 'Amaravati, Guntur, AP', timing: '9:00 AM - 5:00 PM', trustedCount: '210+', img: '/images/india/stat_temple.jpg' },
-  { city: 'Indore', slug: 'rajwada-palace', name: 'Rajwada Palace', category: 'Palace', location: 'Rajwada, Indore, MP', timing: '10:00 AM - 5:00 PM', trustedCount: '260+', img: '/images/india/bg_section2.jpg' }
+  { city: 'Guntur', slug: 'amaravati-stupa', name: 'Amaravati Great Stupa', category: 'Heritage', location: 'Amaravati, Guntur, AP', timing: '9:00 AM - 5:00 PM', trustedCount: '210+', img: '/images/spots/amaravati-stupa.jpg' },
+  { city: 'Indore', slug: 'rajwada-palace', name: 'Rajwada Palace', category: 'Palace', location: 'Rajwada, Indore, MP', timing: '10:00 AM - 5:00 PM', trustedCount: '260+', img: '/images/spots/rajwada-palace.jpg' }
 ];
+
+// ─── LANDING OCR DEMO ─────────────────────────────────────────
+const LandingOcrDemo = () => {
+  const [processing, setProcessing] = useState(false);
+  const [status, setStatus] = useState('Upload a receipt or ticket to test the live OCR.');
+  const [amount, setAmount] = useState<number | null>(null);
+
+  const handleCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setProcessing(true);
+    setStatus('Reading text on your device…');
+    setAmount(null);
+    
+    try {
+      // Very basic image downscaling if needed, or direct
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      
+      const imgUrl = URL.createObjectURL(file);
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+        img.src = imgUrl;
+      });
+
+      // Basic downscale for speed
+      const maxDim = 800;
+      let w = img.width;
+      let h = img.height;
+      if (w > maxDim || h > maxDim) {
+        if (w > h) { h = (h/w)*maxDim; w = maxDim; }
+        else { w = (w/h)*maxDim; h = maxDim; }
+      }
+      canvas.width = w; canvas.height = h;
+      ctx?.drawImage(img, 0, 0, w, h);
+      
+      const blob = await new Promise<Blob | null>(r => canvas.toBlob(r, 'image/jpeg', 0.8));
+      const downscaled = blob || file;
+
+      const text = await ocrProvider.recognize(downscaled as File);
+      
+      const match = text.match(/(?:Rs\.?|₹|INR)\s*(\d+(?:,\d+)*(?:\.\d{1,2})?)/i)
+        || text.match(/(\d+(?:,\d+)*(?:\.\d{1,2})?)\s*(?:\/-)/i)
+        || text.match(/(?:total|fare|amount|price)[:\s]*(\d+(?:,\d+)*(?:\.\d{1,2})?)/i);
+      
+      if (match && match[1]) {
+        const extracted = parseFloat(match[1].replace(/,/g, ''));
+        setAmount(extracted);
+        setStatus('Amount detected successfully!');
+      } else {
+        setStatus('Could not autodetect an amount from this image.');
+      }
+    } catch (err: any) {
+      console.warn(err);
+      setStatus(err.message || 'OCR failed. Please try again.');
+    }
+    setProcessing(false);
+  };
+
+  return (
+    <div className="card-retreat border border-teal-100 p-5 bg-gray-50 flex flex-col gap-4 rounded-3xl shadow-sm">
+      <div className="text-center mb-2">
+        <span className="badge badge-teal text-[10px] uppercase tracking-wider font-bold mb-2 inline-block">Live Demo</span>
+        <h3 className="font-display font-bold text-lg text-ink">Test the Scanner</h3>
+        <p className="text-xs text-muted">No data is sent to the server. Entirely on-device.</p>
+      </div>
+      
+      <div className="bg-white rounded-2xl border border-gray-150 p-6 flex flex-col items-center justify-center text-center relative overflow-hidden group hover:border-teal-300 transition-colors">
+        {processing ? (
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-10 h-10 border-4 border-teal-100 border-t-teal-600 rounded-full animate-spin" />
+            <p className="text-sm font-bold text-teal-800 animate-pulse">{status}</p>
+          </div>
+        ) : (
+          <>
+            <Camera size={32} className="text-teal-600 mb-3 group-hover:scale-110 transition-transform" />
+            {amount !== null ? (
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-3xl font-display font-extrabold text-teal-800">₹{amount}</span>
+                <p className="text-xs font-bold text-teal-600 bg-teal-50 px-2 py-0.5 rounded border border-teal-100">Live OCR Result</p>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500 font-medium px-4">{status}</p>
+            )}
+            
+            <label className="btn-primary mt-4 cursor-pointer text-xs w-full py-2 flex items-center justify-center gap-2 relative overflow-hidden">
+              <Upload size={14} /> Upload Receipt
+              <input type="file" accept="image/*" capture="environment" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleCapture} disabled={processing} />
+            </label>
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
 
 // ─── LANDING PAGE ────────────────────────────────────────────
 const LandingPage = () => {
@@ -1731,8 +1850,6 @@ const LandingPage = () => {
         </div>
       </section>
 
-
-
       {/* ── 7. FEATURE — REAL SCAN ── */}
       <section className="section-rhythm bg-white border-y border-gray-100 reveal-element">
         <div className="max-w-[1200px] mx-auto px-5 md:px-8 flex flex-col md:flex-row items-center gap-12">
@@ -1746,14 +1863,8 @@ const LandingPage = () => {
               Try it in a live trip
             </Link>
           </div>
-          <div className="flex-1 max-w-sm card-retreat border border-teal-100 p-4 bg-gray-50 flex flex-col gap-3">
-            <div className="bg-white rounded-2xl border border-gray-150 p-4 shadow-sm text-center">
-              <span className="badge badge-teal text-[10px] mb-2">Mock Scanner View</span>
-              <Camera size={40} className="text-teal-700 mx-auto mb-2" />
-              <p className="text-xs text-ink font-bold">1200 INR scanned</p>
-              <p className="text-[10px] text-muted mt-1">Processed live via Tesseract.js</p>
-            </div>
-            <p className="text-center text-[10px] text-muted">Works in airplane mode (on-device).</p>
+          <div className="flex-1 w-full max-w-sm">
+            <LandingOcrDemo />
           </div>
         </div>
       </section>
@@ -1862,8 +1973,27 @@ const LandingPage = () => {
               </div>
             </div>
             <div className="p-3 border-t border-gray-100 flex gap-2 shrink-0">
-              <input type="text" placeholder="Ask about safety, fares..." className="flex-1 bg-gray-50 text-xs p-2 rounded-xl border border-gray-200 focus:outline-none" disabled />
-              <button className="w-8 h-8 rounded-xl bg-orange-600 text-white flex items-center justify-center cursor-not-allowed" disabled>
+              <input 
+                type="text" 
+                placeholder="Ask about safety, fares..." 
+                className="flex-1 bg-gray-50 text-xs p-2 rounded-xl border border-gray-200 focus:outline-none" 
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    window.dispatchEvent(new CustomEvent('open-sanchar-chat', { detail: e.currentTarget.value }));
+                    e.currentTarget.value = '';
+                  }
+                }}
+              />
+              <button 
+                className="w-8 h-8 rounded-xl bg-orange-600 hover:bg-orange-700 text-white flex items-center justify-center cursor-pointer transition-colors"
+                onClick={(e) => {
+                  const input = e.currentTarget.previousElementSibling as HTMLInputElement;
+                  if (input.value) {
+                    window.dispatchEvent(new CustomEvent('open-sanchar-chat', { detail: input.value }));
+                    input.value = '';
+                  }
+                }}
+              >
                 <Send size={14} />
               </button>
             </div>
@@ -1939,13 +2069,19 @@ const LandingPage = () => {
       <section className="section-rhythm reveal-element relative bg-[#0B1320] text-white overflow-hidden border-y border-[#1E293B] min-h-[600px]">
         {/* Abstract India Map Background */}
         <div 
-          className="absolute inset-0 z-0 opacity-60 bg-no-repeat bg-right-bottom md:bg-center bg-contain md:bg-cover mix-blend-screen"
-          style={{ backgroundImage: "url('/images/india_map_glowing.svg')", backgroundPosition: 'calc(50% + 200px) center' }}
+          className="absolute inset-0 z-0 opacity-60 bg-no-repeat bg-center bg-contain mix-blend-screen"
+          style={{ backgroundImage: "url('/images/india_map_glowing.svg')", transform: 'scale(1.2)' }}
         >
           {/* Glowing spots plotted approximately on the map (Delhi, Mumbai, Bengaluru) */}
-          <div className="absolute top-[35%] left-[62%] md:left-[55%] md:top-[30%] w-3 h-3 bg-amber-400 rounded-full shadow-[0_0_15px_4px_rgba(251,191,36,0.6)] animate-pulse" />
-          <div className="absolute top-[60%] left-[53%] md:left-[50%] md:top-[50%] w-3 h-3 bg-teal-400 rounded-full shadow-[0_0_15px_4px_rgba(45,212,191,0.6)] animate-pulse" style={{ animationDelay: '1s' }} />
-          <div className="absolute top-[75%] left-[58%] md:left-[54%] md:top-[68%] w-3 h-3 bg-amber-400 rounded-full shadow-[0_0_15px_4px_rgba(251,191,36,0.6)] animate-pulse" style={{ animationDelay: '0.5s' }} />
+          <div className="absolute top-[35%] left-[62%] md:left-[55%] md:top-[30%] w-3 h-3 bg-amber-400 rounded-full shadow-[0_0_15px_4px_rgba(251,191,36,0.6)] animate-pulse group cursor-help">
+            <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] px-2 py-1 rounded hidden group-hover:block whitespace-nowrap border border-gray-700">Delhi (Safe Zone)</div>
+          </div>
+          <div className="absolute top-[60%] left-[53%] md:left-[50%] md:top-[50%] w-3 h-3 bg-teal-400 rounded-full shadow-[0_0_15px_4px_rgba(45,212,191,0.6)] animate-pulse group cursor-help" style={{ animationDelay: '1s' }}>
+            <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] px-2 py-1 rounded hidden group-hover:block whitespace-nowrap border border-gray-700">Mumbai (Encrypted DB)</div>
+          </div>
+          <div className="absolute top-[75%] left-[58%] md:left-[54%] md:top-[68%] w-3 h-3 bg-amber-400 rounded-full shadow-[0_0_15px_4px_rgba(251,191,36,0.6)] animate-pulse group cursor-help" style={{ animationDelay: '0.5s' }}>
+            <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] px-2 py-1 rounded hidden group-hover:block whitespace-nowrap border border-gray-700">Bengaluru (Sync Node)</div>
+          </div>
         </div>
         
         {/* Glow overlay */}
@@ -2164,7 +2300,7 @@ const HeroSearchForm = ({ preFillDest }: { preFillDest: string }) => {
       await axios.post(`/api/trips/${res.data._id}/start`);
       navigate(`/active/${res.data._id}`);
     } catch {
-      setError('Failed to create trip. The server may be offline.');
+      setError('Server is taking too long to respond. [Retry now]');
     }
   };
 
@@ -2362,7 +2498,7 @@ const CreateTrip = () => {
       await axios.post(`/api/trips/${res.data._id}/start`);
       navigate(`/active/${res.data._id}`);
     } catch {
-      setError('Failed to create trip. The server may be offline.');
+      setError('Server is taking too long to respond. [Retry now]');
     }
   };
 

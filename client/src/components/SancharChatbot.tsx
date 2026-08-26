@@ -140,6 +140,20 @@ export default function SancharChatbot({ activeTrip }: SancharChatbotProps) {
     }
   }, [messages, isOpen]);
 
+  // ─── LISTEN FOR EXTERNAL OPEN COMMANDS ───
+  useEffect(() => {
+    const handleOpenEvent = (e: Event) => {
+      const customEvent = e as CustomEvent<string>;
+      setIsOpen(true);
+      if (customEvent.detail) {
+        setInput(customEvent.detail);
+        // We could also auto-send, but let's just prefill for now so the user can see it
+      }
+    };
+    window.addEventListener('open-sanchar-chat', handleOpenEvent);
+    return () => window.removeEventListener('open-sanchar-chat', handleOpenEvent);
+  }, []);
+
   // ─── BUILD TRIP CONTEXT FOR API ───
   const buildTripContext = (): TripContext | undefined => {
     if (!activeTrip) return undefined;
