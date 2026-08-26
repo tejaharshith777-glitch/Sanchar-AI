@@ -264,6 +264,7 @@ export interface ILuggageSpot extends Document {
 }
 
 const luggageSpotSchema = new Schema<ILuggageSpot>({
+  _id: { type: String },
   city: { type: String, required: true },
   name: { type: String, required: true },
   type: { type: String, enum: ['railway_cloakroom', 'airport_counter', 'metro_locker', 'partner'], required: true },
