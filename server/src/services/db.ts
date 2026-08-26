@@ -4,6 +4,7 @@ import { curatedCities } from '../data/curatedCities';
 import { curatedSpotsData, seedLuggageSpots } from '../data/spotsData';
 
 export let isMemoryFallback = false;
+export let fallbackReason = '';
 
 // Prepare pre-seeded spots and luggage spots for memory fallback
 const seededSpots = Object.keys(curatedSpotsData).map(city => ({
@@ -92,6 +93,7 @@ export const connectDB = async () => {
   if (!uri) {
     console.warn('⚠️ MONGODB_URI not provided. Falling back to in-memory test store.');
     isMemoryFallback = true;
+    fallbackReason = 'MONGODB_URI missing';
     return;
   }
   
@@ -132,10 +134,12 @@ export const connectDB = async () => {
       await Trip.insertMany(seedTripsData);
       await JourneySegment.insertMany(seedSegmentsData);
       await SafetyEvent.insertMany(seedSafetyEventsData);
-      console.log('Consented Trips & Mobility data seeded successfully.');
+      console.log('Dummy safety events seeded successfully.');
     }
-  } catch (error) {
-    console.error('MongoDB connection error, falling back to memory store:', error);
+  } catch (err: any) {
+    console.error('❌ MongoDB Connection Error:', err.message || err);
+    console.warn('⚠️ Falling back to in-memory store due to connection failure.');
     isMemoryFallback = true;
+    fallbackReason = err.message || String(err);
   }
 };

@@ -5,7 +5,8 @@ import {
   Zap, Globe, Lock, IndianRupee, Phone,
   ChevronRight, Check, AlertTriangle, Share2,
   BookOpen, BarChart3, Search, Compass, HelpCircle,
-  Mic, History as HistoryIcon, Plus, Unlock, Bot, Send, Loader2, Upload
+  Mic, History as HistoryIcon, Plus, Unlock, Bot, Send, Loader2, Upload,
+  Star
 } from 'lucide-react';
 import axios from 'axios';
 import { queueOfflineMutation, getOfflineQueue, removeQueueItem } from './store/db';
@@ -1186,38 +1187,38 @@ const CAROUSEL_CITIES = [
 ];
 
 const CURATED_SPECIAL_SPOTS_24 = [
-  { city: 'Chennai', slug: 'marina-beach', name: 'Marina Beach', category: 'Beach', location: 'Beach Road, Chennai', timing: '5:00 AM - 8:00 PM', trustedCount: '520+', img: '/images/spots/marina-beach.jpg' },
-  { city: 'Chennai', slug: 'kapaleeshwarar-temple', name: 'Kapaleeshwarar Temple', category: 'Temple', location: 'Mylapore, Chennai', timing: '6:00 AM - 8:30 PM', trustedCount: '410+', img: '/images/spots/kapaleeshwarar-temple.jpg' },
-  { city: 'Chennai', slug: 'san-thome-basilica', name: 'San Thome Basilica', category: 'Heritage', location: 'Santhome, Chennai', timing: '8:00 AM - 6:00 PM', trustedCount: '340+', img: '/images/spots/san-thome-basilica.jpg' },
+  { city: 'Chennai', slug: 'marina-beach', name: 'Marina Beach', category: 'Beach', location: 'Beach Road, Chennai', timing: '5:00 AM - 8:00 PM', img: '/images/spots/marina-beach.jpg' },
+  { city: 'Chennai', slug: 'kapaleeshwarar-temple', name: 'Kapaleeshwarar Temple', category: 'Temple', location: 'Mylapore, Chennai', timing: '6:00 AM - 8:30 PM', img: '/images/spots/kapaleeshwarar-temple.jpg' },
+  { city: 'Chennai', slug: 'san-thome-basilica', name: 'San Thome Basilica', category: 'Heritage', location: 'Santhome, Chennai', timing: '8:00 AM - 6:00 PM', img: '/images/spots/san-thome-basilica.jpg' },
   
-  { city: 'Kochi', slug: 'chinese-fishing-nets', name: 'Chinese Fishing Nets', category: 'Heritage', location: 'Fort Kochi, Kerala', timing: '6:00 AM - 7:00 PM', trustedCount: '290+', img: '/images/spots/chinese-fishing-nets.jpg' },
-  { city: 'Kochi', slug: 'mattancherry-palace', name: 'Mattancherry Palace', category: 'Heritage', location: 'Mattancherry, Kochi', timing: '9:45 AM - 4:45 PM', trustedCount: '310+', img: '/images/spots/mattancherry-palace.jpg' },
-  { city: 'Kochi', slug: 'fort-kochi-beach', name: 'Fort Kochi Beach', category: 'Beach', location: 'Fort Kochi Promenade', timing: 'Open 24 Hours', trustedCount: '380+', img: '/images/spots/fort-kochi-beach.jpg' },
+  { city: 'Kochi', slug: 'chinese-fishing-nets', name: 'Chinese Fishing Nets', category: 'Heritage', location: 'Fort Kochi, Kerala', timing: '6:00 AM - 7:00 PM', img: '/images/spots/chinese-fishing-nets.jpg' },
+  { city: 'Kochi', slug: 'mattancherry-palace', name: 'Mattancherry Palace', category: 'Heritage', location: 'Mattancherry, Kochi', timing: '9:45 AM - 4:45 PM', img: '/images/spots/mattancherry-palace.jpg' },
+  { city: 'Kochi', slug: 'fort-kochi-beach', name: 'Fort Kochi Beach', category: 'Beach', location: 'Fort Kochi Promenade', timing: 'Open 24 Hours', img: '/images/spots/fort-kochi-beach.jpg' },
   
-  { city: 'Hyderabad', slug: 'charminar', name: 'Charminar & Laad Bazaar', category: 'Heritage', location: 'Old City, Hyderabad', timing: '6:00 AM - 6:30 PM', trustedCount: '680+', img: '/images/spots/charminar.jpg' },
-  { city: 'Hyderabad', slug: 'golconda-fort', name: 'Golconda Fort', category: 'Fort', location: 'Golconda, Hyderabad', timing: '9:00 AM - 5:30 PM', trustedCount: '510+', img: '/images/spots/golconda-fort.jpg' },
-  { city: 'Hyderabad', slug: 'hussain-sagar-lake', name: 'Hussain Sagar Lake', category: 'Viewpoint', location: 'Necklace Road, Hyderabad', timing: '8:00 AM - 10:00 PM', trustedCount: '430+', img: '/images/spots/hussain-sagar-lake.jpg' },
+  { city: 'Hyderabad', slug: 'charminar', name: 'Charminar & Laad Bazaar', category: 'Heritage', location: 'Old City, Hyderabad', timing: '6:00 AM - 6:30 PM', img: '/images/spots/charminar.jpg' },
+  { city: 'Hyderabad', slug: 'golconda-fort', name: 'Golconda Fort', category: 'Fort', location: 'Golconda, Hyderabad', timing: '9:00 AM - 5:30 PM', img: '/images/spots/golconda-fort.jpg' },
+  { city: 'Hyderabad', slug: 'hussain-sagar-lake', name: 'Hussain Sagar Lake', category: 'Viewpoint', location: 'Necklace Road, Hyderabad', timing: '8:00 AM - 10:00 PM', img: '/images/spots/hussain-sagar-lake.jpg' },
 
-  { city: 'Jaipur', slug: 'amber-fort', name: 'Amber Fort & Maota Lake', category: 'Fort', location: 'Amer, Jaipur, Rajasthan', timing: '8:00 AM - 5:30 PM', trustedCount: '610+', img: '/images/spots/amber-fort.jpg' },
-  { city: 'Jaipur', slug: 'hawa-mahal', name: 'Hawa Mahal', category: 'Heritage', location: 'Pink City, Jaipur', timing: '9:00 AM - 5:00 PM', trustedCount: '720+', img: '/images/spots/hawa-mahal.jpg' },
-  { city: 'Jaipur', slug: 'city-palace-jaipur', name: 'City Palace Jaipur', category: 'Heritage', location: 'Jaleb Chowk, Jaipur', timing: '9:30 AM - 5:00 PM', trustedCount: '490+', img: '/images/spots/city-palace-jaipur.jpg' },
+  { city: 'Jaipur', slug: 'amber-fort', name: 'Amber Fort & Maota Lake', category: 'Fort', location: 'Amer, Jaipur, Rajasthan', timing: '8:00 AM - 5:30 PM', img: '/images/spots/amber-fort.jpg' },
+  { city: 'Jaipur', slug: 'hawa-mahal', name: 'Hawa Mahal', category: 'Heritage', location: 'Pink City, Jaipur', timing: '9:00 AM - 5:00 PM', img: '/images/spots/hawa-mahal.jpg' },
+  { city: 'Jaipur', slug: 'city-palace-jaipur', name: 'City Palace Jaipur', category: 'Heritage', location: 'Jaleb Chowk, Jaipur', timing: '9:30 AM - 5:00 PM', img: '/images/spots/city-palace-jaipur.jpg' },
 
-  { city: 'Mumbai', slug: 'gateway-of-india', name: 'Gateway of India', category: 'Archway', location: 'Apollo Bunder, Mumbai', timing: 'Open 24 Hours', trustedCount: '890+', img: '/images/spots/gateway-of-india.jpg' },
-  { city: 'Mumbai', slug: 'marine-drive', name: 'Marine Drive Promenade', category: 'Viewpoint', location: 'South Mumbai', timing: 'Open 24 Hours', trustedCount: '950+', img: '/images/spots/marine-drive.jpg' },
-  { city: 'Mumbai', slug: 'chhatrapati-shivaji-terminus', name: 'CST Railway Station', category: 'Heritage', location: 'Fort, Mumbai', timing: 'Open 24 Hours', trustedCount: '620+', img: '/images/spots/chhatrapati-shivaji-terminus.jpg' },
+  { city: 'Mumbai', slug: 'gateway-of-india', name: 'Gateway of India', category: 'Archway', location: 'Apollo Bunder, Mumbai', timing: 'Open 24 Hours', img: '/images/spots/gateway-of-india.jpg' },
+  { city: 'Mumbai', slug: 'marine-drive', name: 'Marine Drive Promenade', category: 'Viewpoint', location: 'South Mumbai', timing: 'Open 24 Hours', img: '/images/spots/marine-drive.jpg' },
+  { city: 'Mumbai', slug: 'chhatrapati-shivaji-terminus', name: 'CST Railway Station', category: 'Heritage', location: 'Fort, Mumbai', timing: 'Open 24 Hours', img: '/images/spots/chhatrapati-shivaji-terminus.jpg' },
 
-  { city: 'Varanasi', slug: 'dashashwamedh-ghat', name: 'Dashashwamedh Ghat', category: 'Ghat', location: 'Godowlia, Varanasi', timing: '3:00 AM - 11:00 PM', trustedCount: '810+', img: '/images/spots/dashashwamedh-ghat.jpg' },
-  { city: 'Varanasi', slug: 'kashi-vishwanath-temple', name: 'Kashi Vishwanath Temple', category: 'Temple', location: 'Varanasi, UP', timing: '3:00 AM - 11:00 PM', trustedCount: '940+', img: '/images/spots/kashi-vishwanath-temple.jpg' },
-  { city: 'Varanasi', slug: 'sarnath-sacred-site', name: 'Sarnath Stupa Complex', category: 'Sacred', location: 'Sarnath, Varanasi', timing: '8:00 AM - 6:00 PM', trustedCount: '370+', img: '/images/spots/sarnath-sacred-site.jpg' },
+  { city: 'Varanasi', slug: 'dashashwamedh-ghat', name: 'Dashashwamedh Ghat', category: 'Ghat', location: 'Godowlia, Varanasi', timing: '3:00 AM - 11:00 PM', img: '/images/spots/dashashwamedh-ghat.jpg' },
+  { city: 'Varanasi', slug: 'kashi-vishwanath-temple', name: 'Kashi Vishwanath Temple', category: 'Temple', location: 'Varanasi, UP', timing: '3:00 AM - 11:00 PM', img: '/images/spots/kashi-vishwanath-temple.jpg' },
+  { city: 'Varanasi', slug: 'sarnath-sacred-site', name: 'Sarnath Stupa Complex', category: 'Sacred', location: 'Sarnath, Varanasi', timing: '8:00 AM - 6:00 PM', img: '/images/spots/sarnath-sacred-site.jpg' },
 
-  { city: 'Bengaluru', slug: 'cubbon-park', name: 'Cubbon Park', category: 'Park', location: 'Kasturba Road, Bengaluru', timing: '6:00 AM - 7:00 PM', trustedCount: '540+', img: '/images/spots/cubbon-park.jpg' },
-  { city: 'Bengaluru', slug: 'lalbagh-botanical-garden', name: 'Lalbagh Botanical Garden', category: 'Park', location: 'Mavalli, Bengaluru', timing: '8:00 AM - 6:00 PM', trustedCount: '480+', img: '/images/spots/lalbagh-botanical-garden.jpg' },
+  { city: 'Bengaluru', slug: 'cubbon-park', name: 'Cubbon Park', category: 'Park', location: 'Kasturba Road, Bengaluru', timing: '6:00 AM - 7:00 PM', img: '/images/spots/cubbon-park.jpg' },
+  { city: 'Bengaluru', slug: 'lalbagh-botanical-garden', name: 'Lalbagh Botanical Garden', category: 'Park', location: 'Mavalli, Bengaluru', timing: '8:00 AM - 6:00 PM', img: '/images/spots/lalbagh-botanical-garden.jpg' },
 
-  { city: 'Delhi', slug: 'qutub-minar', name: 'Qutub Minar', category: 'Monument', location: 'Mehrauli, New Delhi', timing: '7:00 AM - 5:00 PM', trustedCount: '780+', img: '/images/spots/qutub-minar.jpg' },
-  { city: 'Delhi', slug: 'red-fort', name: 'Red Fort (Lal Qila)', category: 'Fort', location: 'Old Delhi', timing: '9:30 AM - 4:30 PM', trustedCount: '860+', img: '/images/spots/red-fort.jpg' },
+  { city: 'Delhi', slug: 'qutub-minar', name: 'Qutub Minar', category: 'Monument', location: 'Mehrauli, New Delhi', timing: '7:00 AM - 5:00 PM', img: '/images/spots/qutub-minar.jpg' },
+  { city: 'Delhi', slug: 'red-fort', name: 'Red Fort (Lal Qila)', category: 'Fort', location: 'Old Delhi', timing: '9:30 AM - 4:30 PM', img: '/images/spots/red-fort.jpg' },
 
-  { city: 'Guntur', slug: 'amaravati-stupa', name: 'Amaravati Great Stupa', category: 'Heritage', location: 'Amaravati, Guntur, AP', timing: '9:00 AM - 5:00 PM', trustedCount: '210+', img: '/images/spots/amaravati-stupa.jpg' },
-  { city: 'Indore', slug: 'rajwada-palace', name: 'Rajwada Palace', category: 'Palace', location: 'Rajwada, Indore, MP', timing: '10:00 AM - 5:00 PM', trustedCount: '260+', img: '/images/spots/rajwada-palace.jpg' }
+  { city: 'Guntur', slug: 'amaravati-stupa', name: 'Amaravati Great Stupa', category: 'Heritage', location: 'Amaravati, Guntur, AP', timing: '9:00 AM - 5:00 PM', img: '/images/spots/amaravati-stupa.jpg' },
+  { city: 'Indore', slug: 'rajwada-palace', name: 'Rajwada Palace', category: 'Palace', location: 'Rajwada, Indore, MP', timing: '10:00 AM - 5:00 PM', img: '/images/spots/rajwada-palace.jpg' }
 ];
 
 // ─── LANDING OCR DEMO ─────────────────────────────────────────
@@ -1818,8 +1819,8 @@ const LandingPage = () => {
                       <div className="flex items-center gap-2">
                         <span className="text-[#F59E0B]">👥</span> {spot.category}
                       </div>
-                      <div className="flex items-center gap-2 text-emerald-400 font-semibold pt-1">
-                        ★★★★★ <span className="text-[11px] text-gray-400 font-normal">Trusted by {spot.trustedCount} travelers</span>
+                      <div className="flex items-center gap-2 pt-1">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-[#00695C] bg-[#00695C]/10 py-0.5 px-2 rounded-full">Curated · verify locally</span>
                       </div>
                     </div>
                   </div>
@@ -3698,7 +3699,7 @@ const Diary = () => {
                       <p className="text-sm text-[#1F2937] font-semibold mt-0.5">{stop.near ? `Stopped near ${stop.near.name}` : 'Stopped'}</p>
                     </div>
                     <button onClick={() => handleMarkMoment('Stop', stop)} className="opacity-0 group-hover:opacity-100 transition text-amber-500 hover:text-amber-600 text-xs flex items-center gap-1 font-bold bg-amber-50 px-2 py-1 rounded">
-                      ★ Mark moment
+                      <Star size={12} className="inline mr-1" /> Mark moment
                     </button>
                   </div>
                 </div>
@@ -3783,7 +3784,7 @@ const Diary = () => {
               </div>
               <div className="flex items-center gap-3">
                 <button onClick={() => handleMarkMoment('Expense', e)} className="opacity-0 group-hover:opacity-100 transition text-amber-500 hover:text-amber-600 text-[10px] font-bold bg-amber-50 px-2 py-1 rounded">
-                  ★ Mark
+                  <Star size={12} className="inline mr-1" /> Mark
                 </button>
                 <span className="text-sm font-semibold text-[#1F2937]">₹{(e.amount || 0).toLocaleString('en-IN')}</span>
               </div>
@@ -3859,7 +3860,7 @@ const Diary = () => {
             <p className="text-xs font-bold text-amber-900 mb-1">Safety Events Triggered: 0</p>
             <p className="text-[10px] text-amber-800">No route deviations or late arrivals were recorded.</p>
           </div>
-          <button onClick={() => handleMarkMoment('Story', {})} className="text-amber-600 bg-amber-100 hover:bg-amber-200 px-2 py-1 rounded text-xs font-bold">★ Mark</button>
+          <button onClick={() => handleMarkMoment('Story', {})} className="flex items-center text-amber-600 bg-amber-100 hover:bg-amber-200 px-2 py-1 rounded text-xs font-bold"><Star size={12} className="mr-1" /> Mark</button>
         </div>
       </div>
 
