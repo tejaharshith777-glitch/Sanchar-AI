@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, CircleMarker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Plus, Minus, Target, WifiOff } from 'lucide-react';
+import { Plus, Minus, Target } from 'lucide-react';
 
 // Fix Leaflet default marker icons
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -83,7 +83,6 @@ export default function SancharMap({
   userPos = null,
   trackPoints = [],
   stillnessStops = [],
-  showOfflineBanner = false,
   markers = [],
   polylines = [],
   heightClass = "h-[420px]"
@@ -202,13 +201,6 @@ export default function SancharMap({
         {/* Overlay controls */}
         <MapController userPos={userPos || center} onLocateClick={handleLocate} />
       </MapContainer>
-
-      {/* Offline Banner */}
-      {!isOnline && showOfflineBanner && (
-        <div className="absolute top-3 right-3 z-[1000] bg-amber-50/95 backdrop-blur-xs border border-amber-200 text-amber-900 text-[10px] font-extrabold px-3 py-1.5 rounded-full flex items-center gap-1 shadow-sm">
-          <WifiOff size={11} /> Offline map — showing saved route
-        </div>
-      )}
     </div>
   );
 }

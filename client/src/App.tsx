@@ -268,31 +268,6 @@ function useGPSTracker(tripId: string | null) {
   return { speed, segment, confidence, distance, points, permDenied };
 }
 
-// ─── Global Retry Banner ───────────────────────────────────────
-const RetryBanner = () => {
-  const [retryState, setRetryState] = useState<{ attempt: number, maxRetries: number } | null>(null);
-  
-  useEffect(() => {
-    const handleStart = (e: any) => setRetryState(e.detail);
-    const handleEnd = () => setRetryState(null);
-    window.addEventListener('axios-retry-start', handleStart);
-    window.addEventListener('axios-retry-end', handleEnd);
-    return () => {
-      window.removeEventListener('axios-retry-start', handleStart);
-      window.removeEventListener('axios-retry-end', handleEnd);
-    }
-  }, []);
-
-  if (!retryState) return null;
-
-  return (
-    <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-[100] bg-slate-900 text-white px-4 py-2.5 rounded-full shadow-2xl flex items-center gap-3 text-sm font-medium animate-in slide-in-from-top-4">
-      <Loader2 size={16} className="animate-spin text-teal-400" />
-      <span>Waking up the server... retrying (attempt {retryState.attempt} of {retryState.maxRetries})</span>
-    </div>
-  );
-};
-
 // ─── App Main Router ─────────────────────────────────────────
 const App = () => {
   const healthData = useNetworkAndHealth();
@@ -307,7 +282,6 @@ const App = () => {
 
   return (
     <HealthContext.Provider value={healthData}>
-      <RetryBanner />
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<LandingPage />} />
@@ -1337,7 +1311,7 @@ const LandingOcrDemo = () => {
 
 // ─── LANDING PAGE ────────────────────────────────────────────
 const LandingPage = () => {
-  const { isBackendOffline, isConnecting, isOnline, dbMode, activeTrip, lastCompletedTrip } = useContext(HealthContext);
+  const { isConnecting, isOnline, activeTrip, lastCompletedTrip } = useContext(HealthContext);
   const [showLoader, setShowLoader] = useState(() => !sessionStorage.getItem('sanchar_intro_loaded'));
   const [destinationPreFill] = useState('');
   const [searchCityInput, setSearchCityInput] = useState('');
@@ -1467,21 +1441,6 @@ const LandingPage = () => {
           </button>
         </div>
       )}
-
-      {/* Global Health Notification Indicator */}
-      {isConnecting ? (
-        <div className="fixed top-16 left-0 right-0 z-40 bg-[#00695C]/95 backdrop-blur-md text-white text-[11px] py-1.5 px-4 text-center font-semibold flex items-center justify-center gap-1.5 border-b border-teal-700/30">
-          <span className="w-2 h-2 rounded-full bg-white animate-ping shrink-0" /> Connecting to Sanchar AI...
-        </div>
-      ) : isBackendOffline ? (
-        <div className="fixed top-16 left-0 right-0 z-40 bg-amber-500/95 backdrop-blur-md text-white text-[11px] py-1.5 px-4 text-center font-semibold shadow-sm animate-fade-in flex items-center justify-center gap-1.5 border-b border-amber-600/30">
-          <WifiOff size={13} /> Offline Mode — Telemetry saving to local IndexedDB
-        </div>
-      ) : dbMode === 'memory' ? (
-        <div className="fixed top-16 left-0 right-0 z-40 bg-[#00695C]/95 backdrop-blur-md text-white text-[11px] py-1.5 px-4 text-center font-semibold flex items-center justify-center gap-1.5 border-b border-teal-700/30">
-          <Check size={13} /> Sanchar AI Online · Memory Store Active
-        </div>
-      ) : null}
 
       {/* ── Sticky Nav ── */}
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrollY > 50 ? 'bg-cream/90 backdrop-blur-md border-b border-gray-150 shadow-xs' : 'bg-transparent'}`}>
@@ -2134,7 +2093,7 @@ const LandingPage = () => {
             <h2 className="font-display text-4xl md:text-6xl font-extrabold text-white mb-6 tracking-tight">Your journey<br/>stays yours</h2>
             <p className="text-teal-200 text-lg md:text-xl mb-6 font-semibold">We build strictly private on-device pipelines.</p>
             <p className="text-gray-300 text-sm sm:text-base leading-relaxed mb-10 max-w-lg">
-              Explore freely across 28 States and 8 Union Territories in India. Your exact route coordinate log never leaves the local IndexedDB, telemetry is strictly opt-in, and the first and last 500 meters of your journey are stripped instantly.
+              Explore freely across 28 States and 8 Union Territories in India. Your exact route coordinate log never leaves your device storage, telemetry is strictly opt-in, and the first and last 500 meters of your journey are stripped instantly.
             </p>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -4227,7 +4186,7 @@ const PrivacyPage = () => {
       <div className="card p-5 border border-gray-100 rounded-2xl bg-white shadow-sm">
         <h3 className="font-bold text-sm text-[#1F2937] mb-3">On-Device Security Pipeline</h3>
         <ul className="text-xs sm:text-sm text-[#1F2937] space-y-3 font-medium">
-          <li className="flex items-start gap-2"><Check size={16} className="text-teal-600 mt-0.5 shrink-0" /> Your exact route telemetry stays on your device IndexedDB.</li>
+          <li className="flex items-start gap-2"><Check size={16} className="text-teal-600 mt-0.5 shrink-0" /> Your exact route telemetry stays on your device storage.</li>
           <li className="flex items-start gap-2"><Check size={16} className="text-teal-600 mt-0.5 shrink-0" /> Analytics off by default — requires explicit user opt-in.</li>
           <li className="flex items-start gap-2"><Check size={16} className="text-teal-600 mt-0.5 shrink-0" /> First and last 300–500 meters are stripped automatically from any logs.</li>
           <li className="flex items-start gap-2"><Check size={16} className="text-teal-600 mt-0.5 shrink-0" /> Photos & voice notes are encrypted with Web Crypto SHA-256 local PIN.</li>
