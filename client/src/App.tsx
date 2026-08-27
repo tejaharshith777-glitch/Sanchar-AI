@@ -898,12 +898,14 @@ const CitySpotlightPage = () => {
                       }`}>
                         {data.source === 'curated-sample'
                           ? 'Curated verified pack'
-                          : 'Live open-data pack · verify before visiting'}
+                          : `Live open-data pack · ${data.spots.length} spots`}
                       </span>
                     </div>
                     <p className="text-[#64748B] text-sm flex items-center gap-2 font-medium">
                       <Compass size={16} className="text-[#00695C]" />
-                      {`${data.spots.length} real places — live data from Wikipedia · verify before visiting`}
+                      {data.source === 'curated-sample'
+                        ? `${data.spots.length} verified spots · Curated pack`
+                        : `${data.spots.length} real places — live data from Wikipedia · verify before visiting`}
                     </p>
                   </div>
 
@@ -916,26 +918,40 @@ const CitySpotlightPage = () => {
                 {/* Spots Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {data.spots.map((spot: any, index: number) => (
-                    <div key={index} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between gap-4">
+                    <div 
+                      key={index} 
+                      onClick={() => navigate(`/spot/${encodeURIComponent(data.city.toLowerCase())}/${spot.slug || spot.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}`)}
+                      className="bg-white p-6 rounded-2xl border border-gray-150 shadow-sm hover:shadow-md hover:border-[#00695C]/40 transition-all duration-200 flex flex-col justify-between gap-4 cursor-pointer group"
+                    >
                       <div>
                         <div className="flex items-start justify-between gap-3 mb-2">
                           <div className="flex items-start gap-2.5">
-                            <span className="w-6 h-6 rounded-full bg-[#00695C]/10 text-[#00695C] text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
+                            <span className="w-6 h-6 rounded-full bg-[#00695C]/10 text-[#00695C] text-xs font-bold flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-[#00695C] group-hover:text-white transition-colors">
                               {index + 1}
                             </span>
-                            <h3 className="font-bold text-[#1F2937] text-base leading-snug">{spot.name}</h3>
+                            <div>
+                              <h3 className="font-bold text-[#1F2937] text-base leading-snug group-hover:text-[#00695C] transition-colors">{spot.name}</h3>
+                              {spot.area && (
+                                <span className="text-[11px] font-medium text-gray-500 block mt-0.5">{spot.area}</span>
+                              )}
+                            </div>
                           </div>
                           {spot.category && (
-                            <span className="text-[10px] font-bold uppercase tracking-wider bg-gray-100 text-gray-600 py-0.5 px-2.5 rounded-full whitespace-nowrap">
+                            <span className="text-[10px] font-bold uppercase tracking-wider bg-gray-100 text-gray-600 py-0.5 px-2.5 rounded-full whitespace-nowrap shrink-0">
                               {spot.category}
                             </span>
                           )}
                         </div>
                         {spot.blurb && (
-                          <p className="text-xs text-[#64748B] leading-relaxed pl-8">
-                            {spot.blurb.length > 90 ? spot.blurb.slice(0, 87) + '...' : spot.blurb}
+                          <p className="text-xs text-[#64748B] leading-relaxed pl-8 line-clamp-3 mt-1">
+                            {spot.blurb}
                           </p>
                         )}
+                      </div>
+
+                      <div className="pl-8 pt-2 border-t border-gray-100 flex items-center justify-between text-xs font-bold text-[#00695C]">
+                        <span>View details & directions</span>
+                        <span className="group-hover:translate-x-1 transition-transform">→</span>
                       </div>
                     </div>
                   ))}

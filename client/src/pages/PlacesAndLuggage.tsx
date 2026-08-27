@@ -27,9 +27,11 @@ export const PlaceDetailPage = () => {
   const navigate = useNavigate();
 
   const [spot, setSpot] = useState<any>(null);
+  const [nearbySpots, setNearbySpots] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSaved, setIsSaved] = useState(false);
+  const [imgError, setImgError] = useState(false);
   
   // Directions state
   const [directionsActive, setDirectionsActive] = useState(false);
@@ -47,11 +49,27 @@ export const PlaceDetailPage = () => {
     const fetchSpotDetails = async () => {
       setLoading(true);
       setError(null);
+      setImgError(false);
       
       try {
         if (navigator.onLine) {
           const res = await axios.get(`/api/spots/${encodeURIComponent(city)}/${encodeURIComponent(slug || '')}`);
           setSpot(res.data);
+          
+          // Fetch nearby spots from same city
+          try {
+            const cityRes = await axios.get(`/api/city-spots/${encodeURIComponent(city)}`);
+            if (cityRes.data && Array.isArray(cityRes.data.spots)) {
+              const currentSlug = (slug || '').toLowerCase();
+              const others = cityRes.data.spots.filter((s: any) => 
+                (s.slug || '').toLowerCase() !== currentSlug &&
+                s.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') !== currentSlug
+              );
+              setNearbySpots(others.slice(0, 3));
+            }
+          } catch (e) {
+            // ignore nearby error
+          }
         } else {
           // Offline cached pack fallback
           const pack = await getCachedCityPack(city);
@@ -61,6 +79,10 @@ export const PlaceDetailPage = () => {
           );
           if (localSpot) {
             setSpot(localSpot);
+            const others = (pack?.spots || []).filter((s: any) => 
+              (s.slug || '').toLowerCase() !== (slug || '').toLowerCase()
+            );
+            setNearbySpots(others.slice(0, 3));
           } else {
             setError('Spot not found in offline cache.');
           }
@@ -146,16 +168,12 @@ export const PlaceDetailPage = () => {
   // Save place to trip
   const handleSaveToTrip = async () => {
     try {
-      // Find active trip first
       const activeRes = await axios.get('/api/trips/active');
       const activeTrip = activeRes.data;
       if (!activeTrip) {
         alert('Start a trip first to save places to it!');
         return;
       }
-      
-      // Save spot inside active trip expenses or journal logic
-      // In this system, we store saved places in activeTrip metadata or simply confirm local state
       setIsSaved(true);
       alert(`${spot.name} saved to your trip itinerary.`);
     } catch (err) {
@@ -194,7 +212,7 @@ export const PlaceDetailPage = () => {
           <AlertTriangle size={48} className="text-amber-500 mx-auto mb-4" />
           <h2 className="text-xl font-bold text-gray-800 mb-2">Place details unavailable</h2>
           <p className="text-sm text-gray-500 mb-6">{error || 'Place was not found.'}</p>
-          <button onClick={() => navigate(-1)} className="btn-primary w-full cursor-pointer">Back to overview</button>
+          <button onClick={() => navigate(`/city/${encodeURIComponent(city)}`)} className="btn-primary w-full cursor-pointer">Back to {city || 'City'}</button>
         </div>
       </div>
     );
@@ -207,8 +225,8 @@ export const PlaceDetailPage = () => {
     <div className="min-h-screen bg-[#FAF7F2] flex flex-col">
       {/* Back nav bar */}
       <div className="bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between shadow-sm shrink-0">
-        <button onClick={() => navigate(-1)} className="flex items-center gap-1.5 text-sm font-bold text-[#00695C] cursor-pointer">
-          <ChevronLeft size={18} /> Back
+        <button onClick={() => navigate(`/city/${encodeURIComponent(city)}`)} className="flex items-center gap-1.5 text-sm font-bold text-[#00695C] hover:underline cursor-pointer">
+          <ChevronLeft size={18} /> Back to {city}
         </button>
         <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Place spotlight</span>
         <div className="flex gap-2">
@@ -218,26 +236,35 @@ export const PlaceDetailPage = () => {
 
       {/* Hero section */}
       <div className="relative h-64 md:h-80 w-full overflow-hidden bg-gradient-to-br from-[#00695C] to-[#004D40]">
-        {spot.image ? (
+        {spot.image && !imgError ? (
           <img 
             src={spot.image} 
             alt={spot.name} 
             className="w-full h-full object-cover opacity-80" 
-            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+            onError={() => setImgError(true)}
           />
         ) : (
           <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-white text-center">
             <span className="text-5xl mb-4">{isCurated ? '🏛️' : '📍'}</span>
-            <span className="text-xs font-bold uppercase tracking-widest bg-white/20 px-3 py-1 rounded-full">{spot.category}</span>
+            <span className="text-xs font-bold uppercase tracking-widest bg-white/20 px-3.5 py-1.5 rounded-full border border-white/30">{spot.category || 'Spot'}</span>
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-6 md:p-8">
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent flex flex-col justify-end p-6 md:p-8">
           <div className="max-w-4xl mx-auto w-full">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-[#F59E0B] bg-[#F59E0B]/10 py-1 px-3 rounded-full inline-block mb-3 border border-[#F59E0B]/30">
-              {isCurated ? 'Curated — verified local data' : `wikipedia live data · verify before visiting`}
-            </span>
+            <div className="flex items-center gap-2 flex-wrap mb-3">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-[#F59E0B] bg-[#F59E0B]/20 py-1 px-3 rounded-full border border-[#F59E0B]/40">
+                Curated · verify locally
+              </span>
+              {spot.category && (
+                <span className="text-[10px] font-bold uppercase tracking-widest text-white bg-teal-800/80 py-1 px-3 rounded-full border border-teal-600/50">
+                  {spot.category}
+                </span>
+              )}
+            </div>
             <h1 className="text-2xl md:text-4xl font-display font-bold text-white mb-2">{spot.name}</h1>
-            <p className="text-xs md:text-sm text-gray-200 flex items-center gap-1"><MapPin size={14} /> {city}, India</p>
+            <p className="text-xs md:text-sm text-gray-200 flex items-center gap-1 font-medium">
+              <MapPin size={14} className="text-[#F59E0B]" /> {spot.area ? `${spot.area}, ${city}` : `${city}, India`}
+            </p>
           </div>
         </div>
       </div>
@@ -264,6 +291,13 @@ export const PlaceDetailPage = () => {
             {/* Info Grid */}
             <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-100">
               <div className="flex items-start gap-2">
+                <MapPin size={16} className="text-[#00695C] mt-0.5 shrink-0" />
+                <div>
+                  <h5 className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Area / Location</h5>
+                  <p className="text-xs font-semibold text-gray-700">{spot.area || city}</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
                 <Clock size={16} className="text-[#00695C] mt-0.5 shrink-0" />
                 <div>
                   <h5 className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Best Time</h5>
@@ -284,11 +318,11 @@ export const PlaceDetailPage = () => {
                   <p className="text-xs font-semibold text-gray-700">{spot.entryCost || '—'}</p>
                 </div>
               </div>
-              <div className="flex items-start gap-2">
+              <div className="flex items-start gap-2 col-span-2">
                 <Navigation size={16} className="text-[#00695C] mt-0.5 shrink-0" />
                 <div>
-                  <h5 className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Transport</h5>
-                  <p className="text-xs font-semibold text-gray-700 truncate max-w-[150px]">{spot.nearTransport || '—'}</p>
+                  <h5 className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Nearest Transport</h5>
+                  <p className="text-xs font-semibold text-gray-700">{spot.nearTransport || '—'}</p>
                 </div>
               </div>
             </div>
@@ -396,6 +430,49 @@ export const PlaceDetailPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Nearby spots section */}
+      {nearbySpots.length > 0 && (
+        <div className="max-w-7xl mx-auto w-full px-4 md:px-8 pb-12">
+          <div className="border-t border-gray-200 pt-8 mt-4">
+            <h3 className="font-display font-bold text-xl text-gray-800 mb-6 flex items-center gap-2">
+              <Compass size={20} className="text-[#00695C]" /> Nearby spots in {city}
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {nearbySpots.map((nSpot: any, idx: number) => (
+                <div 
+                  key={idx}
+                  onClick={() => navigate(`/spot/${encodeURIComponent(city)}/${nSpot.slug}`)}
+                  className="bg-white p-6 rounded-2xl border border-gray-150 shadow-sm hover:shadow-md transition cursor-pointer flex flex-col justify-between group"
+                >
+                  <div>
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <h4 className="font-bold text-gray-800 text-base leading-snug group-hover:text-[#00695C] transition-colors">{nSpot.name}</h4>
+                      {nSpot.category && (
+                        <span className="text-[10px] font-bold uppercase tracking-wider bg-gray-100 text-gray-600 px-2.5 py-0.5 rounded-full shrink-0">
+                          {nSpot.category}
+                        </span>
+                      )}
+                    </div>
+                    {nSpot.area && (
+                      <p className="text-xs font-semibold text-[#00695C] mb-2 flex items-center gap-1">
+                        <MapPin size={12} /> {nSpot.area}
+                      </p>
+                    )}
+                    <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">
+                      {nSpot.blurb}
+                    </p>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-xs font-bold text-[#00695C]">
+                    <span>View spot details</span>
+                    <span className="group-hover:translate-x-1 transition-transform">→</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

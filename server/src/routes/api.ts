@@ -336,6 +336,15 @@ async function getOrCreateCitySpots(cityName: string): Promise<any> {
 
   // 1. Check Curated static first
   const curated = curatedSpotsData[city];
+  if (curated) {
+    return {
+      city,
+      source: 'curated-sample' as const,
+      count: curated.length,
+      spots: curated,
+      fetchedAt: new Date()
+    };
+  }
 
   // 2. Check Database/Memory Cache
   let cached: any = null;
@@ -347,24 +356,6 @@ async function getOrCreateCitySpots(cityName: string): Promise<any> {
 
   if (cached) {
     return cached;
-  }
-
-  // If curated static exists and not cached, seed it
-  if (curated) {
-    const record = {
-      city,
-      source: 'curated-sample' as const,
-      count: curated.length,
-      spots: curated,
-      fetchedAt: new Date()
-    };
-    if (isMemoryFallback) {
-      memoryStore.citySpots.push(record);
-    } else {
-      const doc = new CitySpot(record);
-      await doc.save();
-    }
-    return record;
   }
 
   // 3. Wikipedia Live attraction scraper
