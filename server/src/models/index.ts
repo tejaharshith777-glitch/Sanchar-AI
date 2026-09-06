@@ -1,7 +1,9 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 // --- TRIPS ---
-export interface ITrip extends Document {
+export interface ITrip extends Document<string> {
+  _id: string;
+  userId?: string;
   originCity: string;
   destinationCity: string;
   destinationLatLng?: { lat: number, lng: number };
@@ -20,6 +22,8 @@ export interface ITrip extends Document {
 }
 
 const tripSchema = new Schema<ITrip>({
+  _id: { type: String, required: true },
+  userId: { type: String },
   originCity: { type: String, required: true },
   destinationCity: { type: String, required: true },
   destinationLatLng: { lat: Number, lng: Number },
@@ -41,7 +45,7 @@ export const Trip = mongoose.model<ITrip>('Trip', tripSchema);
 
 // --- LOCATION POINTS ---
 export interface ILocationPoint extends Document {
-  tripId: mongoose.Types.ObjectId;
+  tripId: string;
   lat: number;
   lng: number;
   speedKmh: number;
@@ -50,7 +54,7 @@ export interface ILocationPoint extends Document {
 }
 
 const locationPointSchema = new Schema<ILocationPoint>({
-  tripId: { type: Schema.Types.ObjectId, ref: 'Trip', required: true },
+  tripId: { type: String, required: true, index: true },
   lat: { type: Number, required: true },
   lng: { type: Number, required: true },
   speedKmh: { type: Number, default: 0 },
@@ -62,7 +66,7 @@ export const LocationPoint = mongoose.model<ILocationPoint>('LocationPoint', loc
 
 // --- JOURNEY SEGMENTS ---
 export interface IJourneySegment extends Document {
-  tripId: mongoose.Types.ObjectId;
+  tripId: string;
   mode: 'walking' | 'road_vehicle' | 'rail' | 'still' | 'unknown';
   confidence: number;
   startTime: Date;
@@ -72,7 +76,7 @@ export interface IJourneySegment extends Document {
 }
 
 const journeySegmentSchema = new Schema<IJourneySegment>({
-  tripId: { type: Schema.Types.ObjectId, ref: 'Trip', required: true },
+  tripId: { type: String, required: true, index: true },
   mode: { type: String, enum: ['walking', 'road_vehicle', 'rail', 'still', 'unknown'], required: true },
   confidence: { type: Number, min: 0, max: 1, default: 0 },
   startTime: { type: Date, default: Date.now },
@@ -85,7 +89,7 @@ export const JourneySegment = mongoose.model<IJourneySegment>('JourneySegment', 
 
 // --- EXPENSES ---
 export interface IExpense extends Document {
-  tripId: mongoose.Types.ObjectId;
+  tripId: string;
   merchant: string;
   amount: number;
   category: 'transport' | 'food' | 'hotel' | 'other';
@@ -96,7 +100,7 @@ export interface IExpense extends Document {
 }
 
 const expenseSchema = new Schema<IExpense>({
-  tripId: { type: Schema.Types.ObjectId, ref: 'Trip', required: true },
+  tripId: { type: String, required: true, index: true },
   merchant: { type: String, default: '' },
   amount: { type: Number, required: true },
   category: { type: String, enum: ['transport', 'food', 'hotel', 'other'], default: 'other' },
@@ -137,7 +141,7 @@ export const CityPack = mongoose.model<ICityPack>('CityPack', cityPackSchema);
 
 // --- SAFETY EVENTS ---
 export interface ISafetyEvent extends Document {
-  tripId: mongoose.Types.ObjectId;
+  tripId: string;
   type: 'route-deviation' | 'late-arrival' | 'user-initiated-sos';
   triggeredAt: Date;
   userResponse?: string;
@@ -145,7 +149,7 @@ export interface ISafetyEvent extends Document {
 }
 
 const safetyEventSchema = new Schema<ISafetyEvent>({
-  tripId: { type: Schema.Types.ObjectId, ref: 'Trip', required: true },
+  tripId: { type: String, required: true, index: true },
   type: { type: String, enum: ['route-deviation', 'late-arrival', 'user-initiated-sos'], required: true },
   triggeredAt: { type: Date, default: Date.now },
   userResponse: String,
@@ -282,13 +286,13 @@ export const LuggageSpot = mongoose.model<ILuggageSpot>('LuggageSpot', luggageSp
 
 // --- LUGGAGE CHECKINS ---
 export interface ILuggageCheckIn extends Document {
-  spotId: mongoose.Types.ObjectId;
+  spotId: string;
   status: 'full' | 'limited' | 'available';
   createdAt: Date;
 }
 
 const luggageCheckInSchema = new Schema<ILuggageCheckIn>({
-  spotId: { type: Schema.Types.ObjectId, ref: 'LuggageSpot', required: true },
+  spotId: { type: String, required: true, index: true },
   status: { type: String, enum: ['full', 'limited', 'available'], required: true },
   createdAt: { type: Date, default: Date.now }
 });

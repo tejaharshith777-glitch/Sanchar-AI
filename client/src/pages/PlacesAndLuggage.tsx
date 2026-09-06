@@ -228,9 +228,9 @@ export const PlaceDetailPage = () => {
         <button onClick={() => navigate(`/city/${encodeURIComponent(city)}`)} className="flex items-center gap-1.5 text-sm font-bold text-[#00695C] hover:underline cursor-pointer">
           <ChevronLeft size={18} /> Back to {city}
         </button>
-        <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Place spotlight</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-gray-600">Place spotlight</span>
         <div className="flex gap-2">
-          <button onClick={sharePlace} className="p-2 rounded-full hover:bg-gray-100 text-gray-600 cursor-pointer"><Share2 size={16} /></button>
+          <button onClick={sharePlace} aria-label="Share place" className="p-2 rounded-full hover:bg-gray-100 text-gray-600 cursor-pointer"><Share2 size={16} /></button>
         </div>
       </div>
 
@@ -293,35 +293,35 @@ export const PlaceDetailPage = () => {
               <div className="flex items-start gap-2">
                 <MapPin size={16} className="text-[#00695C] mt-0.5 shrink-0" />
                 <div>
-                  <h5 className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Area / Location</h5>
+                  <h5 className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Area / Location</h5>
                   <p className="text-xs font-semibold text-gray-700">{spot.area || city}</p>
                 </div>
               </div>
               <div className="flex items-start gap-2">
                 <Clock size={16} className="text-[#00695C] mt-0.5 shrink-0" />
                 <div>
-                  <h5 className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Best Time</h5>
+                  <h5 className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Best Time</h5>
                   <p className="text-xs font-semibold text-gray-700">{spot.bestTime || '—'}</p>
                 </div>
               </div>
               <div className="flex items-start gap-2">
                 <Clock size={16} className="text-[#00695C] mt-0.5 shrink-0" />
                 <div>
-                  <h5 className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Time to Spend</h5>
+                  <h5 className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Time to Spend</h5>
                   <p className="text-xs font-semibold text-gray-700">{spot.timeToSpend || '—'}</p>
                 </div>
               </div>
               <div className="flex items-start gap-2">
                 <Info size={16} className="text-[#00695C] mt-0.5 shrink-0" />
                 <div>
-                  <h5 className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Entry Cost</h5>
+                  <h5 className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Entry Cost</h5>
                   <p className="text-xs font-semibold text-gray-700">{spot.entryCost || '—'}</p>
                 </div>
               </div>
               <div className="flex items-start gap-2 col-span-2">
                 <Navigation size={16} className="text-[#00695C] mt-0.5 shrink-0" />
                 <div>
-                  <h5 className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Nearest Transport</h5>
+                  <h5 className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Nearest Transport</h5>
                   <p className="text-xs font-semibold text-gray-700">{spot.nearTransport || '—'}</p>
                 </div>
               </div>
@@ -347,26 +347,41 @@ export const PlaceDetailPage = () => {
           )}
 
           {/* Action buttons */}
-          <div className="flex gap-4">
-            <button
-              onClick={handleSaveToTrip}
-              disabled={isSaved}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 px-6 rounded-2xl font-bold text-sm cursor-pointer border transition ${
-                isSaved
-                  ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                  : 'bg-white text-gray-800 border-gray-200 hover:bg-gray-50'
-              }`}
-            >
-              {isSaved ? <Check size={16} /> : <Save size={16} />}
-              {isSaved ? 'Saved to active trip' : 'Save to my trip'}
-            </button>
-            <button
-              onClick={() => setDirectionsActive(!directionsActive)}
-              className="flex-1 flex items-center justify-center gap-2 py-3 px-6 rounded-2xl font-bold text-sm bg-[#00695C] hover:bg-teal-800 text-white shadow-md transition cursor-pointer"
-            >
-              <Compass size={16} />
-              {directionsActive ? 'Stop Journey' : 'Start Journey'}
-            </button>
+          <div className="space-y-3">
+            <div className="bg-[#E0F2F1] border border-[#B2DFDB] p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#00695C] block mb-0.5">Destination selected</span>
+                <p className="text-sm font-extrabold text-[#004D40]">Your destination: {spot.name}</p>
+              </div>
+              <button
+                onClick={() => navigate(`/create?destination=${encodeURIComponent(spot.name)}`)}
+                className="w-full sm:w-auto flex items-center justify-center gap-2 py-3 px-6 rounded-xl font-bold text-sm bg-[#00695C] hover:bg-[#004D40] text-white shadow-md transition cursor-pointer min-h-[44px]"
+              >
+                <Compass size={16} /> Start Safe Trip Here
+              </button>
+            </div>
+
+            <div className="flex gap-4">
+              <button
+                onClick={handleSaveToTrip}
+                disabled={isSaved}
+                className={`flex-1 flex items-center justify-center gap-2 py-3 px-6 rounded-2xl font-bold text-sm cursor-pointer border transition min-h-[44px] ${
+                  isSaved
+                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                    : 'bg-white text-gray-800 border-gray-200 hover:bg-gray-50'
+                }`}
+              >
+                {isSaved ? <Check size={16} /> : <Save size={16} />}
+                {isSaved ? 'Saved to active trip' : 'Save to my trip'}
+              </button>
+              <button
+                onClick={() => setDirectionsActive(!directionsActive)}
+                className="flex-1 flex items-center justify-center gap-2 py-3 px-6 rounded-2xl font-bold text-sm bg-[#00695C] hover:bg-[#004D40] text-white shadow-md transition cursor-pointer min-h-[44px]"
+              >
+                <Compass size={16} />
+                {directionsActive ? 'Stop Radar' : 'Live Radar'}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -705,8 +720,8 @@ export const LuggageRadarPage = () => {
             )}
 
             {wakingUp && (
-              <div className="bg-blue-50 text-blue-800 text-xs p-4 rounded-2xl border border-blue-200 shadow-sm">
-                Server waking up — results will appear automatically…
+              <div className="bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold p-3 rounded-xl mb-4 text-center">
+                Connecting to server — results will appear automatically…
               </div>
             )}
 

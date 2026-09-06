@@ -547,7 +547,7 @@ router.get('/luggage-spots', async (req, res) => {
       if (isMemoryFallback) {
         checkins = memoryStore.luggageCheckIns.filter(c => String(c.spotId) === String(spotObj._id) && c.createdAt >= cutoff24h);
       } else {
-        checkins = await LuggageCheckIn.find({ spotId: spotObj._id, createdAt: { $gte: cutoff24h } });
+        checkins = await LuggageCheckIn.find({ spotId: String(spotObj._id), createdAt: { $gte: cutoff24h } });
       }
 
       const reportCount = checkins.length;
@@ -580,7 +580,8 @@ router.get('/luggage-spots', async (req, res) => {
     }
 
     res.json(finalSpots);
-  } catch (error) {
+  } catch (error: any) {
+    console.error('Error in GET /api/luggage-spots:', error?.stack || error);
     res.status(500).json({ error: 'Server error fetching luggage spots.' });
   }
 });

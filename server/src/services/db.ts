@@ -17,40 +17,43 @@ const seededSpots = Object.keys(curatedSpotsData).map(city => ({
 
 export const seedTripsData = [
   {
+    _id: "trip-chennai-heritage-01",
     tripId: "trip-chennai-heritage-01",
     userId: "user-demotrip-1",
     status: "completed",
     originCity: "Chennai",
     destinationCity: "Chennai",
-    budgetAmount: 1500,
+    budget: 1500,
     amountSpent: 450,
-    startedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+    startTime: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
     endTime: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000 + 4 * 60 * 60 * 1000),
     analyticsConsent: true,
     createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
   },
   {
+    _id: "trip-kochi-coastal-02",
     tripId: "trip-kochi-coastal-02",
     userId: "user-demotrip-2",
     status: "completed",
     originCity: "Kochi",
     destinationCity: "Kochi",
-    budgetAmount: 2000,
+    budget: 2000,
     amountSpent: 850,
-    startedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+    startTime: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
     endTime: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000 + 3 * 60 * 60 * 1000),
     analyticsConsent: true,
     createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
   },
   {
+    _id: "trip-hyderabad-heritage-03",
     tripId: "trip-hyderabad-heritage-03",
     userId: "user-demotrip-3",
     status: "completed",
     originCity: "Hyderabad",
     destinationCity: "Hyderabad",
-    budgetAmount: 3000,
+    budget: 3000,
     amountSpent: 1200,
-    startedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+    startTime: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
     endTime: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000 + 5 * 60 * 60 * 1000),
     analyticsConsent: true,
     createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000)
@@ -59,17 +62,17 @@ export const seedTripsData = [
 
 export const seedSegmentsData = [
   { tripId: "trip-chennai-heritage-01", mode: "walking", durationMin: 45, startTime: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), analyticsConsent: true },
-  { tripId: "trip-chennai-heritage-01", mode: "road", durationMin: 30, startTime: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000 + 45 * 60 * 1000), analyticsConsent: true },
+  { tripId: "trip-chennai-heritage-01", mode: "road_vehicle", durationMin: 30, startTime: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000 + 45 * 60 * 1000), analyticsConsent: true },
   { tripId: "trip-kochi-coastal-02", mode: "rail", durationMin: 35, startTime: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), analyticsConsent: true },
   { tripId: "trip-kochi-coastal-02", mode: "walking", durationMin: 40, startTime: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000 + 35 * 60 * 1000), analyticsConsent: true },
-  { tripId: "trip-hyderabad-heritage-03", mode: "road", durationMin: 50, startTime: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), analyticsConsent: true },
+  { tripId: "trip-hyderabad-heritage-03", mode: "road_vehicle", durationMin: 50, startTime: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), analyticsConsent: true },
   { tripId: "trip-hyderabad-heritage-03", mode: "still", durationMin: 20, startTime: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000 + 50 * 60 * 1000), analyticsConsent: true }
 ];
 
 export const seedSafetyEventsData = [
-  { category: "signage", details: "Lack of English signage near station exit", createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), analyticsConsent: true },
-  { category: "overcharging", details: "Auto driver requested 2x fare above meter", createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), analyticsConsent: true },
-  { category: "language", details: "Local bus conductor only speaks Tamil", createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), analyticsConsent: true }
+  { _id: "safety-event-01", tripId: "trip-chennai-heritage-01", type: "late-arrival", triggeredAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), userResponse: "im-safe", resolvedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) },
+  { _id: "safety-event-02", tripId: "trip-kochi-coastal-02", type: "route-deviation", triggeredAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), userResponse: "im-safe", resolvedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000) },
+  { _id: "safety-event-03", tripId: "trip-hyderabad-heritage-03", type: "user-initiated-sos", triggeredAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), userResponse: "open-sos", resolvedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000) }
 ];
 
 // Basic in-memory store for fallback
@@ -126,14 +129,20 @@ export const connectDB = async () => {
     }
     console.log('LuggageSpots synced successfully.');
 
+    // Idempotent auto-seed/update SafetyEvent
+    console.log('Syncing safety events...');
+    for (const event of seedSafetyEventsData) {
+      await SafetyEvent.updateOne({ _id: event._id }, { $set: event }, { upsert: true });
+    }
+    console.log('SafetyEvents synced successfully.');
+
     // Idempotent auto-seed Trip if empty
     const tripCount = await Trip.countDocuments();
     if (tripCount === 0) {
       console.log('Trip collection is empty. Auto-seeding 3 real consented trips...');
       await Trip.insertMany(seedTripsData);
       await JourneySegment.insertMany(seedSegmentsData);
-      await SafetyEvent.insertMany(seedSafetyEventsData);
-      console.log('Dummy safety events seeded successfully.');
+      console.log('Dummy trips seeded successfully.');
     }
   } catch (err: any) {
     console.error('❌ MongoDB Connection Error:', err.message || err);

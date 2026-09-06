@@ -17,8 +17,8 @@ axios.interceptors.response.use(
       return Promise.reject(error);
     }
     
-    // Skip retrying health endpoint to avoid UI spam during warm-up
-    if (config.url && config.url.includes('/api/health')) {
+    // Skip retrying if caller handles its own retries, or health endpoint
+    if (config.skipRetry || (config.url && config.url.includes('/api/health'))) {
       return Promise.reject(error);
     }
 

@@ -6,7 +6,7 @@ import {
   ChevronRight, Check, AlertTriangle, Share2,
   BookOpen, BarChart3, Search, Compass, HelpCircle,
   Mic, History as HistoryIcon, Plus, Unlock, Bot, Send, Loader2, Upload,
-  Star
+  Star, Clock
 } from 'lucide-react';
 import axios from 'axios';
 import { queueOfflineMutation, getOfflineQueue, removeQueueItem } from './store/db';
@@ -767,31 +767,76 @@ const CitySpotlightPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [retryAttempt, setRetryAttempt] = useState(0);
 
   const formattedCity = cityName ? cityName.trim().split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ') : '';
 
   useEffect(() => {
     if (!formattedCity) return;
-    let isMounted = true;
+    let cancelled = false;
 
-    axios.get(`/api/city-spots/${encodeURIComponent(formattedCity)}`)
-      .then(res => {
-        if (isMounted && res.data && res.data.spots && res.data.spots.length > 0) {
-          setData(res.data);
-        } else if (isMounted) {
-          setData(getFallbackSpotData(formattedCity));
-        }
-      })
-      .catch(() => {
-        if (isMounted) {
-          setData(getFallbackSpotData(formattedCity));
-        }
-      })
-      .finally(() => {
-        if (isMounted) setLoading(false);
-      });
+    // Reset state on each fetch attempt
+    setLoading(true);
+    setError(null);
+    setData(null);
 
-    return () => { isMounted = false; };
+    const controller = new AbortController();
+
+    const fetchSpots = async () => {
+      // Try up to 3 wake-retries (5s, 10s, 20s)
+      const delays = [0, 5000, 10000, 20000];
+      
+      for (let attempt = 0; attempt < delays.length; attempt++) {
+        if (cancelled) return;
+        setRetryAttempt(attempt);
+
+        if (attempt > 0) {
+          await new Promise(r => setTimeout(r, delays[attempt]));
+          if (cancelled) return;
+        }
+
+        try {
+          const res = await axios.get(
+            `/api/city-spots/${encodeURIComponent(formattedCity)}`,
+            { signal: controller.signal, timeout: 15000, skipRetry: true } as any
+          );
+          
+          if (cancelled) return;
+
+          if (res.data && Array.isArray(res.data.spots)) {
+            setData(res.data);
+          } else if (res.data && res.data.city) {
+            // API returned valid response but no spots
+            setData(res.data);
+          } else {
+            setData(getFallbackSpotData(formattedCity));
+          }
+          setLoading(false);
+          return; // success — exit retry loop
+        } catch (err: any) {
+          if (cancelled || err?.name === 'CanceledError' || err?.name === 'AbortError') return;
+          // On last attempt, fall through to error handling
+          if (attempt === delays.length - 1) {
+            // Try client-side fallback data before showing error
+            const fallback = getFallbackSpotData(formattedCity);
+            if (fallback && fallback.spots && fallback.spots.length > 0) {
+              setData(fallback);
+              setLoading(false);
+              return;
+            }
+            setError(`Could not fetch spot data for ${formattedCity}. Please check connection and retry.`);
+            setLoading(false);
+          }
+        }
+      }
+    };
+
+    fetchSpots();
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
   }, [formattedCity, retryCount]);
 
   return (
@@ -815,19 +860,29 @@ const CitySpotlightPage = () => {
         {loading && (
           <div className="text-center py-24 flex flex-col items-center gap-4">
             <div className="w-12 h-12 border-4 border-[#00695C] border-t-transparent rounded-full animate-spin" />
-            <p className="text-base text-[#64748B] font-medium">Fetching real spot data for {formattedCity}…</p>
+            <p className="text-base text-[#64748B] font-medium">
+              {retryAttempt > 0 
+                ? `Connecting to server... (Attempt ${retryAttempt}/3)`
+                : `Fetching real spot data for ${formattedCity}…`}
+            </p>
           </div>
         )}
 
         {error && !loading && (
-          <div className="card p-8 text-center max-w-lg mx-auto border border-red-100 bg-red-50/50 my-12">
+          <div className="card p-8 text-center max-w-lg mx-auto border border-red-100 bg-red-50/50 my-12 rounded-3xl shadow-sm">
             <AlertTriangle className="text-[#D32F2F] mx-auto mb-3" size={36} />
             <p className="text-base font-bold text-[#1F2937] mb-4">{error}</p>
             <div className="flex justify-center gap-3">
-              <button onClick={() => { setError(null); setLoading(true); setRetryCount(c => c + 1); }} className="btn-primary !py-2.5 !px-6 text-xs font-bold cursor-pointer">
+              <button 
+                onClick={() => { setError(null); setLoading(true); setRetryCount(c => c + 1); }} 
+                className="btn-primary !py-2.5 !px-6 text-xs font-bold cursor-pointer min-h-[44px]"
+              >
                 Retry
               </button>
-              <button onClick={() => navigate('/')} className="btn-secondary !py-2.5 !px-6 text-xs font-bold cursor-pointer">
+              <button 
+                onClick={() => navigate('/')} 
+                className="btn-secondary !py-2.5 !px-6 text-xs font-bold cursor-pointer min-h-[44px]"
+              >
                 Back to home
               </button>
             </div>
@@ -846,13 +901,13 @@ const CitySpotlightPage = () => {
                 <div className="flex flex-col sm:flex-row justify-center gap-4">
                   <button
                     onClick={() => navigate(`/create?destination=${encodeURIComponent(data.city || formattedCity)}`)}
-                    className="btn-primary !py-3 !px-8 text-sm font-bold flex items-center justify-center gap-2 cursor-pointer"
+                    className="btn-primary !py-3 !px-8 text-sm font-bold flex items-center justify-center gap-2 cursor-pointer min-h-[44px]"
                   >
                     <Zap size={16} /> Create trip to {data.city || formattedCity}
                   </button>
                   <button
                     onClick={() => navigate('/')}
-                    className="btn-secondary !py-3 !px-8 text-sm font-bold cursor-pointer"
+                    className="btn-secondary !py-3 !px-8 text-sm font-bold cursor-pointer min-h-[44px]"
                   >
                     Back to home
                   </button>
@@ -871,8 +926,8 @@ const CitySpotlightPage = () => {
                           : 'bg-blue-50 text-blue-700 border-blue-100'
                       }`}>
                         {data.source === 'curated-sample'
-                          ? 'Curated verified pack'
-                          : `Live open-data pack · ${data.spots.length} spots`}
+                          ? `Curated verified pack · ${data.spots.length} real places`
+                          : `Live open-data pack · ${data.spots.length} real places`}
                       </span>
                     </div>
                     <p className="text-[#64748B] text-sm flex items-center gap-2 font-medium">
@@ -906,7 +961,9 @@ const CitySpotlightPage = () => {
                             <div>
                               <h3 className="font-bold text-[#1F2937] text-base leading-snug group-hover:text-[#00695C] transition-colors">{spot.name}</h3>
                               {spot.area && (
-                                <span className="text-[11px] font-medium text-gray-500 block mt-0.5">{spot.area}</span>
+                                <span className="text-[11px] font-medium text-gray-500 block mt-0.5 flex items-center gap-1">
+                                  <MapPin size={10} className="text-[#00695C]" /> {spot.area}
+                                </span>
                               )}
                             </div>
                           </div>
@@ -916,15 +973,23 @@ const CitySpotlightPage = () => {
                             </span>
                           )}
                         </div>
+                        
+                        {spot.bestTime && spot.bestTime !== '—' && (
+                          <div className="text-[11px] font-semibold text-amber-700 bg-amber-50/80 px-2.5 py-1 rounded-md mb-2 inline-flex items-center gap-1.5 border border-amber-200/50">
+                            <Clock size={12} className="text-amber-600 shrink-0" />
+                            <span>📅 {spot.bestTime}</span>
+                          </div>
+                        )}
+
                         {spot.blurb && (
-                          <p className="text-xs text-[#64748B] leading-relaxed pl-8 line-clamp-3 mt-1">
+                          <p className="text-xs text-[#64748B] leading-relaxed line-clamp-2 mt-1">
                             {spot.blurb}
                           </p>
                         )}
                       </div>
 
-                      <div className="pl-8 pt-2 border-t border-gray-100 flex items-center justify-between text-xs font-bold text-[#00695C]">
-                        <span>View details & directions</span>
+                      <div className="pt-3 border-t border-gray-100 flex items-center justify-between text-xs font-bold text-[#00695C]">
+                        <span>Explore Spot</span>
                         <span className="group-hover:translate-x-1 transition-transform">→</span>
                       </div>
                     </div>
@@ -1518,14 +1583,46 @@ const LandingPage = () => {
             <Zap size={13} className="text-[#F59E0B]" /> Offline AI Travel Companion
           </span>
           <HeroHeadline />
-          <p className="text-teal-100 text-base sm:text-lg md:text-xl mb-10 max-w-xl mx-auto font-medium">
+          <p className="text-teal-100 text-base sm:text-lg md:text-xl mb-6 max-w-xl mx-auto font-medium">
             One companion. Any city in India. Even offline.
           </p>
+
+          {/* Prominent City Search Bar */}
+          <div className="max-w-md mx-auto mb-8 w-full">
+            <form 
+              onSubmit={(e) => {
+                e.preventDefault();
+                const form = e.currentTarget;
+                const inputEl = form.elements.namedItem('homeCitySearch') as HTMLInputElement;
+                if (inputEl && inputEl.value.trim()) {
+                  navigate(`/city/${encodeURIComponent(inputEl.value.trim().toLowerCase())}`);
+                }
+              }}
+              className="bg-white/95 backdrop-blur-md p-2 rounded-full border border-white/30 shadow-2xl flex items-center gap-2"
+            >
+              <Search className="text-[#00695C] shrink-0 ml-3" size={18} />
+              <input
+                name="homeCitySearch"
+                type="text"
+                placeholder="Search any city in India… (e.g. Chennai, Jaipur)"
+                className="flex-1 text-sm text-[#1F2937] placeholder:text-gray-500 bg-transparent focus:outline-none px-1 py-1 font-['Plus_Jakarta_Sans']"
+                aria-label="Search any city in India"
+              />
+              <button
+                type="submit"
+                className="btn-primary !py-2.5 !px-6 text-xs font-bold shrink-0 !rounded-full bg-[#00695C] hover:bg-[#004D40] text-white cursor-pointer min-h-[44px]"
+                aria-label="Search City"
+              >
+                Search City
+              </button>
+            </form>
+          </div>
+
           <div className="flex flex-wrap justify-center gap-4 mb-12">
-            <button onClick={handleStartSafeTripScroll} className="btn-primary !py-3.5 !px-8 text-sm font-bold bg-[#F59E0B] hover:bg-[#D97706] text-[#1F2937] shadow-lg border-0 cursor-pointer">
+            <button onClick={handleStartSafeTripScroll} className="btn-primary !py-3.5 !px-8 text-sm font-bold bg-[#F59E0B] hover:bg-[#D97706] text-[#1F2937] shadow-lg border-0 cursor-pointer min-h-[44px]">
               Start Safe Trip
             </button>
-            <button onClick={handleExplorePacksScroll} className="btn-secondary !py-3.5 !px-8 text-sm font-bold text-white border-white/30 hover:bg-white/10 bg-transparent cursor-pointer">
+            <button onClick={handleExplorePacksScroll} className="btn-secondary !py-3.5 !px-8 text-sm font-bold text-white border-white/30 hover:bg-white/10 bg-transparent cursor-pointer min-h-[44px]">
               Explore City Packs
             </button>
           </div>
@@ -2508,6 +2605,12 @@ const CreateTrip = () => {
         <span className="badge badge-teal mb-3"><MapPin size={14} /> New Journey</span>
         <h1 className="text-2xl md:text-3xl font-extrabold text-[#1F2937] font-['Plus_Jakarta_Sans']">Plan Your Trip</h1>
         <p className="text-[#64748B] text-sm mt-1">Every field produces real data — no simulations.</p>
+        {(searchParams.get('destination') || (location.state as any)?.destination) && (
+          <div className="mt-3 bg-[#E0F2F1] border border-[#B2DFDB] text-[#00695C] px-4 py-2.5 rounded-2xl text-xs font-bold flex items-center gap-2">
+            <MapPin size={14} className="text-[#00695C]" />
+            <span>Your destination: {searchParams.get('destination') || (location.state as any)?.destination}</span>
+          </div>
+        )}
       </div>
 
       <form onSubmit={handleStart} className="flex flex-col gap-5">
