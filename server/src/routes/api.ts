@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import { Trip, LocationPoint, JourneySegment, Expense, CityPack, SafetyEvent, MobilityAggregate, PilotSignup, CitySpot, IdempotencyKey, LuggageSpot, LuggageCheckIn, User } from '../models';
-import { isMemoryFallback, memoryStore } from '../services/db';
+import { isMemoryFallback, fallbackReason, memoryStore } from '../services/db';
 import { processTripPrivacySync } from '../services/privacy';
 
 const router = Router();
@@ -65,7 +65,7 @@ async function recalculateTripBudget(tripId: string): Promise<number> {
 router.get('/health', (req, res) => {
   res.json({
     status: 'ok',
-    db: isMemoryFallback ? 'memory' : 'atlas',
+    db: isMemoryFallback ? `memory (fallback: ${fallbackReason})` : 'atlas',
     timestamp: new Date()
   });
 });
