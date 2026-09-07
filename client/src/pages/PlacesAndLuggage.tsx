@@ -354,7 +354,7 @@ export const PlaceDetailPage = () => {
                 <p className="text-sm font-extrabold text-[#004D40]">Your destination: {spot.name}</p>
               </div>
               <button
-                onClick={() => navigate(`/create?destination=${encodeURIComponent(spot.name)}`)}
+                onClick={() => navigate(`/create?to=${encodeURIComponent(city)}&spot=${encodeURIComponent(spot.name)}`)}
                 className="w-full sm:w-auto flex items-center justify-center gap-2 py-3 px-6 rounded-xl font-bold text-sm bg-[#00695C] hover:bg-[#004D40] text-white shadow-md transition cursor-pointer min-h-[44px]"
               >
                 <Compass size={16} /> Start Safe Trip Here
