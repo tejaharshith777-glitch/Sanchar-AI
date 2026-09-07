@@ -6,6 +6,11 @@ import { curatedSpotsData, seedLuggageSpots } from '../data/spotsData';
 export let isMemoryFallback = false;
 export let fallbackReason = '';
 
+export function setMemoryFallback(reason: string) {
+  isMemoryFallback = true;
+  fallbackReason = reason;
+}
+
 // Prepare pre-seeded spots and luggage spots for memory fallback
 const seededSpots = Object.keys(curatedSpotsData).map(city => ({
   city,
@@ -106,43 +111,79 @@ export const connectDB = async () => {
     isMemoryFallback = false;
 
     // Idempotent auto-seed CityPack if empty
-    const { CityPack, CitySpot, LuggageSpot, Trip, JourneySegment, SafetyEvent } = await import('../models');
-    const packCount = await CityPack.countDocuments();
-    if (packCount === 0) {
-      console.log('CityPack collection is empty. Auto-seeding 8 curated cities...');
-      await CityPack.insertMany(curatedCities);
-      console.log('Curated CityPacks seeded successfully.');
+    try {
+      const { CityPack } = await import('../models');
+      const packCount = await CityPack.countDocuments();
+      if (packCount === 0) {
+        console.log('CityPack collection is empty. Auto-seeding 8 curated cities...');
+        await CityPack.insertMany(curatedCities);
+        console.log('Curated CityPacks seeded successfully.');
+      }
+    } catch (err: any) {
+      console.error('Error seeding CityPacks:', err?.message || err);
     }
 
     // Idempotent auto-seed CitySpot if empty
-    const spotCount = await CitySpot.countDocuments();
-    if (spotCount === 0) {
-      console.log('CitySpot collection is empty. Auto-seeding curated places...');
-      await CitySpot.insertMany(seededSpots);
-      console.log('Curated CitySpots seeded successfully.');
+    try {
+      const { CitySpot } = await import('../models');
+      const spotCount = await CitySpot.countDocuments();
+      if (spotCount === 0) {
+        console.log('CitySpot collection is empty. Auto-seeding curated places...');
+        await CitySpot.insertMany(seededSpots);
+        console.log('Curated CitySpots seeded successfully.');
+      }
+    } catch (err: any) {
+      console.error('Error seeding CitySpots:', err?.message || err);
     }
 
     // Idempotent auto-seed/update LuggageSpot
-    console.log('Syncing luggage spots...');
-    for (const spot of seedLuggageSpots) {
-      await LuggageSpot.updateOne({ _id: spot._id }, { $set: spot }, { upsert: true });
+    try {
+      const { LuggageSpot } = await import('../models');
+      console.log('Syncing luggage spots...');
+      for (const spot of seedLuggageSpots) {
+        await LuggageSpot.updateOne({ _id: spot._id }, { $set: spot }, { upsert: true });
+      }
+      console.log('LuggageSpots synced successfully.');
+    } catch (err: any) {
+      console.error('Error syncing LuggageSpots:', err?.message || err);
     }
-    console.log('LuggageSpots synced successfully.');
 
     // Idempotent auto-seed/update SafetyEvent
-    console.log('Syncing safety events...');
-    for (const event of seedSafetyEventsData) {
-      await SafetyEvent.updateOne({ _id: event._id }, { $set: event }, { upsert: true });
+    try {
+      const { SafetyEvent } = await import('../models');
+      console.log('Syncing safety events...');
+      for (const event of seedSafetyEventsData) {
+        await SafetyEvent.updateOne({ _id: event._id }, { $set: event }, { upsert: true });
+      }
+      console.log('SafetyEvents synced successfully.');
+    } catch (err: any) {
+      console.error('Error syncing SafetyEvents:', err?.message || err);
     }
-    console.log('SafetyEvents synced successfully.');
 
     // Idempotent auto-seed Trip if empty
-    const tripCount = await Trip.countDocuments();
-    if (tripCount === 0) {
-      console.log('Trip collection is empty. Auto-seeding 3 real consented trips...');
-      await Trip.insertMany(seedTripsData);
-      await JourneySegment.insertMany(seedSegmentsData);
-      console.log('Dummy trips seeded successfully.');
+    try {
+      const { Trip } = await import('../models');
+      const tripCount = await Trip.countDocuments();
+      if (tripCount === 0) {
+        console.log('Trip collection is empty. Auto-seeding 3 real consented trips...');
+        await Trip.insertMany(seedTripsData);
+        console.log('Trips seeded successfully.');
+      }
+    } catch (err: any) {
+      console.error('Error seeding Trips:', err?.message || err);
+    }
+
+    // Idempotent auto-seed JourneySegment if empty
+    try {
+      const { JourneySegment } = await import('../models');
+      const segmentCount = await JourneySegment.countDocuments();
+      if (segmentCount === 0) {
+        console.log('JourneySegment collection is empty. Auto-seeding segments...');
+        await JourneySegment.insertMany(seedSegmentsData);
+        console.log('JourneySegments seeded successfully.');
+      }
+    } catch (err: any) {
+      console.error('Error seeding JourneySegments:', err?.message || err);
     }
   } catch (err: any) {
     console.error('❌ MongoDB Connection Error:', err.message || err);

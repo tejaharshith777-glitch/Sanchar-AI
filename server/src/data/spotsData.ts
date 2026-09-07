@@ -134,5 +134,18 @@ export const seedLuggageSpots = [
     requiredDocs: "Confirmed Ticket & ID",
     rules: "Bags must be locked securely.",
     verified: true
+  },
+  {
+    _id: "luggage-varanasi-junction",
+    city: "Varanasi",
+    name: "Varanasi Junction Cloakroom",
+    type: "railway_cloakroom",
+    lat: 25.3267,
+    lng: 82.9863,
+    hours: "24 Hours",
+    pricingPerBagHour: "₹15/day",
+    requiredDocs: "Confirmed Ticket & ID Proof",
+    rules: "Lockable luggage only.",
+    verified: true
   }
 ];

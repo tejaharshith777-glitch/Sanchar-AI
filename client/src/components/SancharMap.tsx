@@ -57,6 +57,21 @@ function MapController({
   );
 }
 
+function InvalidateSizeOnMount() {
+  const map = useMap();
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      try {
+        map.invalidateSize();
+      } catch (err) {
+        console.warn('invalidateSize error:', err);
+      }
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [map]);
+  return null;
+}
+
 interface SancharMapProps {
   center: [number, number];
   zoom?: number;
@@ -85,7 +100,7 @@ export default function SancharMap({
   stillnessStops = [],
   markers = [],
   polylines = [],
-  heightClass = "h-[420px]"
+  heightClass = "min-h-[320px] h-[350px] md:h-[420px]"
 }: SancharMapProps) {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const mapRef = useRef<L.Map | null>(null);
@@ -129,6 +144,7 @@ export default function SancharMap({
         style={{ width: '100%', height: '100%', background: 'transparent' }}
         ref={mapRef}
       >
+        <InvalidateSizeOnMount />
         {isOnline ? (
           <TileLayer
             attribution='&copy; OpenStreetMap contributors'

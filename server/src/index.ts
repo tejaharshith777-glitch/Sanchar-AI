@@ -4,7 +4,7 @@ import helmet from 'helmet';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import apiRoutes from './routes/api';
-import { connectDB, isMemoryFallback, fallbackReason } from './services/db';
+import { connectDB, isMemoryFallback, fallbackReason, setMemoryFallback } from './services/db';
 
 mongoose.set('bufferCommands', false);
 
@@ -32,8 +32,25 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-connectDB().then(() => {
+process.on('uncaughtException', (err) => {
+  console.error('CRITICAL: Uncaught Exception:', err);
+  if (!isMemoryFallback) {
+    setMemoryFallback(`Uncaught Exception: ${err.message || String(err)}`);
+  }
+});
+
+process.on('unhandledRejection', (reason: any) => {
+  console.error('CRITICAL: Unhandled Rejection:', reason);
+  if (!isMemoryFallback) {
+    setMemoryFallback(`Unhandled Rejection: ${reason?.message || String(reason)}`);
+  }
+});
+
+connectDB().catch((err) => {
+  console.error('connectDB failed unexpectedly:', err);
+  setMemoryFallback(err.message || String(err));
+}).finally(() => {
   app.listen(port, '0.0.0.0', () => {
     console.log(`Server running on http://0.0.0.0:${port}`);
   });
-}).catch(console.error);
+});

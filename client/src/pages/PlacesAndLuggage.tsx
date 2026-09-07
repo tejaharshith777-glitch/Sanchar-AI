@@ -674,7 +674,7 @@ export const LuggageRadarPage = () => {
       <div className="p-4 bg-white border-b border-gray-150 flex flex-col sm:flex-row gap-3 items-center justify-between shrink-0 shadow-sm z-20">
         <div>
           <h2 className="font-display font-bold text-base text-gray-800">Verify Cloakrooms & Metro Lockers</h2>
-          <p className="text-xs text-gray-400">Curated locations · community-reported availability status</p>
+          <p className="text-xs text-gray-600">Curated locations · community-reported availability status</p>
         </div>
         <div className="flex gap-2 w-full sm:w-auto shrink-0">
           <input
@@ -686,7 +686,7 @@ export const LuggageRadarPage = () => {
           />
           <button 
             onClick={() => setSelectedCity(cityInput)}
-            className="bg-[#00695C] text-white font-bold text-xs px-4 py-2 rounded-xl hover:bg-teal-800 cursor-pointer"
+            className="bg-[#00695C] text-white font-bold text-xs px-4 py-2 rounded-xl hover:bg-teal-800 cursor-pointer min-h-[44px]"
           >
             Search
           </button>
@@ -699,7 +699,7 @@ export const LuggageRadarPage = () => {
           <div className="max-w-md bg-white p-8 rounded-3xl border border-gray-150 shadow-sm">
             <Info size={40} className="text-[#00695C] mx-auto mb-3" />
             <h3 className="font-bold text-gray-800 mb-1">Enter a city to locate cloakrooms</h3>
-            <p className="text-xs text-gray-400 mb-6">We map verified cloakrooms at central railway junctions and metro locker points across India.</p>
+            <p className="text-xs text-gray-600 mb-6">We map verified cloakrooms at central railway junctions and metro locker points across India.</p>
           </div>
         </div>
       ) : (
@@ -735,7 +735,7 @@ export const LuggageRadarPage = () => {
               <div className="bg-white p-8 rounded-3xl border border-gray-150 shadow-sm text-center">
                 <AlertTriangle size={32} className="text-amber-500 mx-auto mb-3" />
                 <h4 className="font-bold text-gray-800 text-sm mb-1">No verified luggage spots for {selectedCity} yet</h4>
-                <p className="text-xs text-gray-400">Railway cloakrooms are usually at the main station arrival exit, confirm availability on site.</p>
+                <p className="text-xs text-gray-600">Railway cloakrooms are usually at the main station arrival exit, confirm availability on site.</p>
               </div>
             )}
 
@@ -753,7 +753,7 @@ export const LuggageRadarPage = () => {
                       {spot.type.replace('_', ' ')}
                     </span>
                     <h3 className="font-bold text-base text-gray-800 leading-tight">{spot.name}</h3>
-                    <p className="text-xs text-gray-400 mt-1 flex items-center gap-1"><Clock size={12} /> Hours: {spot.hours}</p>
+                    <p className="text-xs text-gray-600 mt-1 flex items-center gap-1"><Clock size={12} /> Hours: {spot.hours}</p>
                   </div>
                   
                   {/* Availability status badge */}
@@ -772,22 +772,22 @@ export const LuggageRadarPage = () => {
 
                 <div className="grid grid-cols-2 gap-3 mt-4 pt-3 border-t border-gray-100 text-xs text-gray-600">
                   <div>
-                    <h5 className="font-bold text-[9px] uppercase tracking-wider text-gray-400 mb-0.5">Pricing</h5>
+                    <h5 className="font-bold text-[9px] uppercase tracking-wider text-gray-600 mb-0.5">Pricing</h5>
                     <p className="font-semibold text-gray-700">{spot.pricingPerBagHour}</p>
                   </div>
                   <div>
-                    <h5 className="font-bold text-[9px] uppercase tracking-wider text-gray-400 mb-0.5">Required Docs</h5>
+                    <h5 className="font-bold text-[9px] uppercase tracking-wider text-gray-600 mb-0.5">Required Docs</h5>
                     <p className="font-semibold text-gray-700">{spot.requiredDocs}</p>
                   </div>
                   <div className="col-span-2">
-                    <h5 className="font-bold text-[9px] uppercase tracking-wider text-gray-400 mb-0.5">Rules</h5>
-                    <p className="text-gray-500 leading-relaxed">{spot.rules}</p>
+                    <h5 className="font-bold text-[9px] uppercase tracking-wider text-gray-600 mb-0.5">Rules</h5>
+                    <p className="text-gray-600 leading-relaxed">{spot.rules}</p>
                   </div>
                 </div>
 
                 {/* Report availability buttons */}
                 <div className="mt-5 pt-4 border-t border-gray-100 flex flex-col sm:flex-row gap-3 items-center justify-between">
-                  <span className="text-[10px] font-bold text-gray-400">
+                  <span className="text-[10px] font-bold text-gray-600">
                     {spot.reportCount > 0 ? `Based on ${spot.reportCount} reports (24h)` : 'No reports yet — be first to report'}
                   </span>
                   

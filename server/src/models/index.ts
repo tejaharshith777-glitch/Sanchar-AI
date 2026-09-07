@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 // --- TRIPS ---
-export interface ITrip extends Document<string> {
+export interface ITrip extends Omit<Document, '_id'> {
   _id: string;
   userId?: string;
   originCity: string;
@@ -39,7 +39,7 @@ const tripSchema = new Schema<ITrip>({
   analyticsConsent: { type: Boolean, default: false },
   heavyLuggage: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now }
-});
+}, { _id: false });
 
 export const Trip = mongoose.model<ITrip>('Trip', tripSchema);
 
@@ -140,7 +140,8 @@ const cityPackSchema = new Schema<ICityPack>({
 export const CityPack = mongoose.model<ICityPack>('CityPack', cityPackSchema);
 
 // --- SAFETY EVENTS ---
-export interface ISafetyEvent extends Document {
+export interface ISafetyEvent extends Omit<Document, '_id'> {
+  _id: string;
   tripId: string;
   type: 'route-deviation' | 'late-arrival' | 'user-initiated-sos';
   triggeredAt: Date;
@@ -149,12 +150,13 @@ export interface ISafetyEvent extends Document {
 }
 
 const safetyEventSchema = new Schema<ISafetyEvent>({
+  _id: { type: String, required: true },
   tripId: { type: String, required: true, index: true },
   type: { type: String, enum: ['route-deviation', 'late-arrival', 'user-initiated-sos'], required: true },
   triggeredAt: { type: Date, default: Date.now },
   userResponse: String,
   resolvedAt: Date
-});
+}, { _id: false });
 
 export const SafetyEvent = mongoose.model<ISafetyEvent>('SafetyEvent', safetyEventSchema);
 
@@ -254,7 +256,7 @@ const citySpotSchema = new Schema<ICitySpot>({
 export const CitySpot = mongoose.model<ICitySpot>('CitySpot', citySpotSchema);
 
 // --- LUGGAGE SPOTS ---
-export interface ILuggageSpot extends Document<string> {
+export interface ILuggageSpot extends Omit<Document, '_id'> {
   _id: string;
   city: string;
   name: string;
@@ -280,7 +282,7 @@ const luggageSpotSchema = new Schema<ILuggageSpot>({
   requiredDocs: { type: String, default: 'Valid ID Card & Train Ticket' },
   rules: { type: String, default: 'Lockable bags only' },
   verified: { type: Boolean, default: false }
-});
+}, { _id: false });
 
 export const LuggageSpot = mongoose.model<ILuggageSpot>('LuggageSpot', luggageSpotSchema);
 

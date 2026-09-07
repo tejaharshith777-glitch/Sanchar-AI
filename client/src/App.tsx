@@ -14,6 +14,7 @@ import { API_BASE } from './config';
 import { ocrProvider } from './ocr/OcrProvider';
 import PocketMap from './components/PocketMap';
 import SancharChatbot from './components/SancharChatbot';
+import SancharMap from './components/SancharMap';
 import MapsPage from './pages/MapsPage';
 import { PlaceDetailPage, LuggageRadarPage } from './pages/PlacesAndLuggage';
 import {
@@ -2549,10 +2550,26 @@ const JoinPilotForm = () => {
   );
 };
 
+async function asyncWithWakeRetry<T>(fn: () => Promise<T>, maxRetries = 3, delayMs = 1500): Promise<T> {
+  let lastErr: any = null;
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+      if (i < maxRetries - 1) {
+        await new Promise(r => setTimeout(r, delayMs * (i + 1)));
+      }
+    }
+  }
+  throw lastErr;
+}
+
 // ─── M1: CREATE TRIP (INNER SCREEN) ──────────────────────────
 const CreateTrip = () => {
   const [searchParams] = useSearchParams();
   const location = useLocation();
+  const { refreshTrips } = useContext(HealthContext);
 
   const [home, setHome] = useState('');
   const [dest, setDest] = useState(() => {
@@ -2572,31 +2589,50 @@ const CreateTrip = () => {
   const [trustedContact, setTrustedContact] = useState('');
   const [consent, setConsent] = useState(false);
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
 
   const origin = home === 'Other' ? customHome : home;
   const destination = dest === 'Other' ? customDest : dest;
 
-  const handleStart = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const executeStartTrip = async () => {
     setError('');
-    if (!origin || !destination) return setError('Please select both cities.');
-    if (origin === destination) return setError("Pick a different destination — you're already there! 😄");
+    setSubmitting(true);
     try {
-      const res = await axios.post('/api/trips', {
+      // Step 1: POST /api/trips
+      const createRes = await asyncWithWakeRetry(() => axios.post('/api/trips', {
         originCity: origin,
         destinationCity: destination,
+        status: 'created',
         budget,
         expectedArrival: expectedArrival ? new Date(expectedArrival) : null,
         trustedContactLabel: trustedContact || undefined,
         analyticsConsent: consent,
-      });
-      // Start journey tracking
-      await axios.post(`/api/trips/${res.data._id}/start`);
-      navigate(`/active/${res.data._id}`);
-    } catch {
-      setError('Server is taking too long to respond. [Retry now]');
+      }), 3);
+
+      const tripId = createRes.data._id || createRes.data.id;
+      if (!tripId) {
+        throw new Error('Trip created, but trip ID was missing.');
+      }
+
+      // Step 2: POST /api/trips/{id}/start
+      await asyncWithWakeRetry(() => axios.post(`/api/trips/${tripId}/start`), 3);
+
+      // Step 3: Navigate to active trip screen
+      await refreshTrips();
+      navigate(`/active/${tripId}`);
+    } catch (err: any) {
+      setError(err?.response?.data?.error || err.message || 'Server error starting trip. Click Retry to try again.');
+    } finally {
+      setSubmitting(false);
     }
+  };
+
+  const handleStart = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!origin || !destination) return setError('Please select both cities.');
+    if (origin === destination) return setError("Pick a different destination — you're already there! 😄");
+    await executeStartTrip();
   };
 
   return (
@@ -2659,10 +2695,38 @@ const CreateTrip = () => {
           </label>
         </div>
 
-        {error && <div className="badge badge-red px-4 py-3 w-full justify-center"><AlertTriangle size={14} /> {error}</div>}
+        {error && (
+          <div className="card p-4 bg-red-50 border border-red-200 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 text-red-800 text-xs">
+            <div className="flex items-center gap-2 font-medium">
+              <AlertTriangle size={16} className="text-red-600 shrink-0" />
+              <span>{error}</span>
+            </div>
+            <button
+              type="button"
+              onClick={executeStartTrip}
+              disabled={submitting}
+              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shrink-0 cursor-pointer transition min-h-[44px]"
+            >
+              Retry
+            </button>
+          </div>
+        )}
 
-        <button type="submit" className="btn-primary w-full !py-4 text-base mt-2">
-          <Navigation2 size={20} /> Start Safe Trip
+        <button 
+          type="submit" 
+          disabled={submitting}
+          className="btn-primary w-full !py-4 text-base mt-2 flex items-center justify-center gap-2 disabled:opacity-75 cursor-pointer min-h-[44px]"
+        >
+          {submitting ? (
+            <>
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <span>Starting Journey...</span>
+            </>
+          ) : (
+            <>
+              <Navigation2 size={20} /> Start Safe Trip
+            </>
+          )}
         </button>
       </form>
     </div>
@@ -2697,14 +2761,53 @@ const isRouteDeviationCooldownActive = (trip: any) => {
   return Date.now() - lastTrigger < 30 * 60 * 1000;
 };
 
+const cityCoordsCache: Record<string, [number, number]> = {
+  'Chennai': [13.0827, 80.2707],
+  'Coimbatore': [11.0168, 76.9558],
+  'Madurai': [9.9252, 78.1198],
+  'Kochi': [9.9312, 76.2673],
+  'Bengaluru': [12.9716, 77.5946],
+  'Mumbai': [18.9388, 72.8353],
+  'Pune': [18.5204, 73.8567],
+  'Delhi': [28.6139, 77.2090],
+  'Jaipur': [26.9124, 75.7873],
+  'Kolkata': [22.5726, 88.3639],
+  'Bhubaneswar': [20.2961, 85.8245],
+  'Ahmedabad': [23.0225, 72.5714],
+  'Guwahati': [26.1445, 91.7362],
+  'Varanasi': [25.3176, 82.9739],
+  'Ooty': [11.4102, 76.6950],
+};
+
+async function geocodeCityName(city: string): Promise<[number, number] | null> {
+  if (!city) return null;
+  const key = city.trim();
+  if (cityCoordsCache[key]) return cityCoordsCache[key];
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(key + ", India")}`);
+    const data = await res.json();
+    if (data && data.length > 0) {
+      const coords: [number, number] = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+      cityCoordsCache[key] = coords;
+      return coords;
+    }
+  } catch (err) {
+    console.warn('Geocoding failed for', key, err);
+  }
+  return null;
+}
+
 // ─── M2: ACTIVE TRIP ─────────────────────────────────────────
 const ActiveTrip = () => {
   const { id } = useParams();
   const tripId = id || '';
   const { speed, segment, confidence, distance, points, permDenied } = useGPSTracker(tripId);
+  const { refreshTrips } = useContext(HealthContext);
   const [startTime] = useState(() => Date.now());
   const [elapsed, setElapsed] = useState(0);
   const [trip, setTrip] = useState<any>(null);
+  const [originCoords, setOriginCoords] = useState<[number, number] | null>(null);
+  const [destCoords, setDestCoords] = useState<[number, number] | null>(null);
   const [safetyAlert, setSafetyAlert] = useState<{ type: 'late-arrival' | 'route-deviation'; msg: string } | null>(null);
   const [stillnessAlert, setStillnessAlert] = useState(false);
   const [showSosModal, setShowSosModal] = useState(false);
@@ -2717,7 +2820,8 @@ const ActiveTrip = () => {
 
   const handleLogLuggageAutoExpense = async () => {
     try {
-      await axios.post(`/api/trips/${tripId}/expenses`, {
+      const targetId = trip?._id || trip?.id || tripId;
+      await axios.post(`/api/trips/${targetId}/expenses`, {
         amount: 50,
         category: 'transport',
         merchant: 'Auto Rickshaw (Porter Nudge)',
@@ -2727,7 +2831,7 @@ const ActiveTrip = () => {
       });
       alert('Logged ₹50 transport expense.');
       setLastNudgeTime(Date.now());
-      axios.get(`/api/trips/${tripId}`).then(r => setTrip(r.data)).catch(console.warn);
+      axios.get(`/api/trips/${targetId}`).then(r => setTrip(r.data)).catch(console.warn);
     } catch (err) {
       console.warn(err);
     }
@@ -2736,27 +2840,59 @@ const ActiveTrip = () => {
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    const targetId = trip?._id || trip?.id || tripId;
     const reader = new FileReader();
     reader.onload = async (evt) => {
       const dataUrl = evt.target?.result as string;
       const { savePhoto } = await import('./store/db');
       const lastPoint = points.length > 0 ? points[points.length - 1] : null;
-      await savePhoto(tripId, dataUrl, lastPoint?.lat, lastPoint?.lng);
+      await savePhoto(targetId, dataUrl, lastPoint?.lat, lastPoint?.lng);
       setPhotoAddedMsg('Photo saved securely on your device.');
       setTimeout(() => setPhotoAddedMsg(''), 3000);
     };
     reader.readAsDataURL(file);
   };
 
-  // Load trip config
+  // Load active trip data
   useEffect(() => {
-    const fetchTrip = () => {
-      if (tripId) {
-        axios.get(`/api/trips/${tripId}`).then(r => setTrip(r.data)).catch(console.warn);
+    let isMounted = true;
+    const fetchTripData = async () => {
+      try {
+        if (!tripId || tripId === 'active') {
+          const res = await axios.get('/api/trips/active');
+          if (isMounted && res.data && !res.data.message) {
+            setTrip(res.data);
+          }
+        } else {
+          try {
+            const res = await axios.get(`/api/trips/${tripId}`);
+            if (isMounted && res.data) {
+              setTrip(res.data);
+            }
+          } catch {
+            const resActive = await axios.get('/api/trips/active');
+            if (isMounted && resActive.data && !resActive.data.message) {
+              setTrip(resActive.data);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to load trip', err);
       }
     };
-    fetchTrip();
+    fetchTripData();
+    return () => { isMounted = false; };
   }, [tripId]);
+
+  // Geocode origin & destination cities on load
+  useEffect(() => {
+    if (trip?.originCity) {
+      geocodeCityName(trip.originCity).then(coords => coords && setOriginCoords(coords));
+    }
+    if (trip?.destinationCity) {
+      geocodeCityName(trip.destinationCity).then(coords => coords && setDestCoords(coords));
+    }
+  }, [trip?.originCity, trip?.destinationCity]);
 
   // Elapsed timer
   useEffect(() => {
@@ -2764,7 +2900,7 @@ const ActiveTrip = () => {
     return () => clearInterval(timer);
   }, [startTime]);
 
-  // 1. Late-Arrival Trigger (+15 mins) check
+  // Late-Arrival Trigger (+15 mins) check
   useEffect(() => {
     if (!trip) return;
     const interval = setInterval(() => {
@@ -2784,10 +2920,9 @@ const ActiveTrip = () => {
     return () => clearInterval(interval);
   }, [trip]);
 
-  // 2. Deviation triggers check
+  // Deviation triggers check
   useEffect(() => {
     if (points.length < 5 || !trip || isRouteDeviationCooldownActive(trip)) return;
-    // Rolling direction deviation trigger mock logic
     const lastPoints = points.slice(-5);
     const bearings = lastPoints.map((p, i) => {
       if (i === 0) return 0;
@@ -2808,17 +2943,15 @@ const ActiveTrip = () => {
     }
   }, [points, trip]);
 
-  // Stillness detector (speed < 1 km/h for 10 minutes)
+  // Stillness detector
   useEffect(() => {
     if (points.length < 2) return;
-    
-    // reset lastNotYetTime on real movement
     const lastPoint = points[points.length - 1];
     if (lastPoint.speedKmh >= 1 && lastNotYetTime > 0) {
       setTimeout(() => setLastNotYetTime(0), 0);
     }
     
-    if (Date.now() - lastNotYetTime < 10 * 60 * 1000) return; // cooldown active
+    if (Date.now() - lastNotYetTime < 10 * 60 * 1000) return;
 
     const now = Date.now();
     const tenMinsAgo = now - 10 * 60 * 1000;
@@ -2835,8 +2968,9 @@ const ActiveTrip = () => {
     setStillnessAlert(false);
     setLastNotYetTime(Date.now());
     if (trip) {
+      const targetId = trip._id || trip.id || tripId;
       try {
-        const patchRes = await axios.patch(`/api/trips/${tripId}`, {
+        const patchRes = await axios.patch(`/api/trips/${targetId}`, {
           notYetCount: (trip.notYetCount || 0) + 1
         });
         setTrip(patchRes.data);
@@ -2846,19 +2980,17 @@ const ActiveTrip = () => {
     }
   };
 
-  // Safety Response handler (I'm Safe / Open SOS)
   const handleSafetyResponse = async (type: 'late-arrival' | 'route-deviation', response: 'im-safe' | 'open-sos') => {
     setSafetyAlert(null);
+    const targetId = trip?._id || trip?.id || tripId;
     try {
-      // 1. Post SafetyEvent record to database
-      await axios.post(`/api/trips/${tripId}/safety-events`, {
+      await axios.post(`/api/trips/${targetId}/safety-events`, {
         type,
         userResponse: response,
         resolvedAt: new Date()
       });
-      // 2. Patch trip trigger cooldown timestamp
       const field = type === 'late-arrival' ? 'lastLateArrivalTriggerAt' : 'lastRouteDeviationTriggerAt';
-      const patchRes = await axios.patch(`/api/trips/${tripId}`, {
+      const patchRes = await axios.patch(`/api/trips/${targetId}`, {
         [field]: new Date()
       });
       setTrip(patchRes.data);
@@ -2867,17 +2999,16 @@ const ActiveTrip = () => {
     }
   };
 
-  // SOS button press timer
   const sosPressTimer = useRef<any>(null);
   const handleSosStart = () => {
+    const targetId = trip?._id || trip?.id || tripId;
     sosPressTimer.current = setTimeout(() => {
       setShowSosModal(true);
-      // Log SOS safety event
-      axios.post(`/api/trips/${tripId}/safety-events`, {
+      axios.post(`/api/trips/${targetId}/safety-events`, {
         type: 'user-initiated-sos',
         resolvedAt: new Date()
       }).catch(console.warn);
-    }, 3000); // 3s hold trigger
+    }, 3000);
   };
 
   const handleSosEnd = () => {
@@ -2893,32 +3024,130 @@ const ActiveTrip = () => {
     return `${h}h ${m % 60}m ${s % 60}s`;
   };
 
+  // Pause / Resume Trip via PATCH /api/trips/{id}
+  const handlePauseTrip = async () => {
+    if (!trip) return;
+    const targetId = trip._id || trip.id || tripId;
+    const newStatus = trip.status === 'paused' ? 'active' : 'paused';
+    try {
+      const res = await axios.patch(`/api/trips/${targetId}`, { status: newStatus });
+      setTrip(res.data);
+      refreshTrips();
+    } catch (err) {
+      console.warn('Failed to pause/resume trip', err);
+    }
+  };
+
+  // Complete Trip via PATCH /api/trips/{id} (or /complete)
   const completeTrip = async () => {
     if (completing) return;
     setCompleting(true);
+    const targetId = trip?._id || trip?.id || tripId;
     try {
-      await axios.post(`/api/trips/${tripId}/complete`);
+      const patchRes = await axios.patch(`/api/trips/${targetId}`, {
+        status: 'completed',
+        endTime: new Date()
+      });
+      setTrip(patchRes.data);
+      refreshTrips();
       // Run privacy pipeline sync
-      await axios.post(`/api/sync/${tripId}`);
-      navigate(`/diary/${tripId}`);
+      axios.post(`/api/sync/${targetId}`).catch(console.warn);
+      navigate(`/diary/${targetId}`);
     } catch {
-      navigate(`/diary/${tripId}`);
+      navigate(`/diary/${targetId}`);
+    } finally {
+      setCompleting(false);
     }
   };
 
   const segmentEmoji: Record<string, string> = { still: '🧍', walking: '🚶', road_vehicle: '🚗', rail: '🚆', unknown: '❓' };
 
+  // Calculate Map center and markers
+  const currentPt = points.length > 0 ? points[points.length - 1] : null;
+  const mapCenter: [number, number] = currentPt 
+    ? [currentPt.lat, currentPt.lng]
+    : (destCoords || originCoords || [13.0827, 80.2707]);
+
+  const mapMarkers: { position: [number, number]; popupContent: React.ReactNode; iconEmoji?: string }[] = [];
+  if (originCoords) {
+    mapMarkers.push({
+      position: originCoords,
+      popupContent: <div className="text-center font-bold">🏁 Origin: {trip?.originCity || 'Origin'}</div>,
+      iconEmoji: '🏁'
+    });
+  }
+  if (destCoords) {
+    mapMarkers.push({
+      position: destCoords,
+      popupContent: <div className="text-center font-bold">🎯 Destination: {trip?.destinationCity || 'Destination'}</div>,
+      iconEmoji: '🎯'
+    });
+  }
+
+  const mapPolylines: { positions: [number, number][]; color?: string; dashArray?: string }[] = [];
+  if (originCoords && destCoords) {
+    mapPolylines.push({
+      positions: [originCoords, destCoords],
+      color: '#F59E0B',
+      dashArray: '8, 8'
+    });
+  }
+
   return (
     <div className="flex flex-col min-h-screen bg-[#FAFAF7] animate-fade-in-up">
-      {/* Header */}
+      {/* Header & Origin → Destination Banner */}
       <div className="p-5 md:p-8 pb-0">
-        <span className="badge badge-green mb-3"><Navigation2 size={14} /> Tracking Active</span>
-        <h1 className="text-2xl font-extrabold text-[#1F2937] font-['Plus_Jakarta_Sans']">Live Journey</h1>
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+          <div className="flex items-center gap-2">
+            <span className={`badge ${trip?.status === 'paused' ? 'badge-amber' : trip?.status === 'completed' ? 'badge-teal' : 'badge-green'}`}>
+              <Navigation2 size={14} /> 
+              {trip?.status === 'paused' ? 'Trip Paused' : trip?.status === 'completed' ? 'Completed' : 'Tracking Active'}
+            </span>
+            <span className="text-xs font-semibold text-gray-500">ID: {trip?._id || trip?.id || tripId}</span>
+          </div>
+
+          {/* Pause / Resume & Complete Actions */}
+          <div className="flex items-center gap-2">
+            {trip?.status !== 'completed' && (
+              <button
+                onClick={handlePauseTrip}
+                className="px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-100 text-amber-900 hover:bg-amber-200 transition cursor-pointer min-h-[36px]"
+              >
+                {trip?.status === 'paused' ? '▶ Resume Trip' : '⏸ Pause Trip'}
+              </button>
+            )}
+            {trip?.status !== 'completed' && (
+              <button
+                onClick={completeTrip}
+                disabled={completing}
+                className="px-3 py-1.5 rounded-xl text-xs font-bold bg-teal-700 text-white hover:bg-teal-800 transition cursor-pointer min-h-[36px] disabled:opacity-70"
+              >
+                {completing ? 'Completing...' : '✓ Complete Trip'}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Route Card: Origin → Destination */}
+        <div className="bg-white p-5 rounded-2xl border border-gray-150 shadow-sm flex items-center justify-between gap-4">
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] block mb-1">Route</span>
+            <h1 className="text-xl md:text-2xl font-extrabold text-[#1F2937] font-['Plus_Jakarta_Sans'] flex items-center gap-2">
+              <span>{trip?.originCity || 'Origin'}</span>
+              <span className="text-[#00695C]">→</span>
+              <span>{trip?.destinationCity || 'Destination'}</span>
+            </h1>
+          </div>
+          <div className="text-right shrink-0">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] block mb-1">Elapsed</span>
+            <span className="text-base font-extrabold text-[#00695C] font-mono">{formatTime(elapsed)}</span>
+          </div>
+        </div>
       </div>
 
       {permDenied && (
-        <div className="mx-5 md:mx-8 mt-4 badge badge-amber !rounded-xl px-4 py-3 w-auto">
-          <AlertTriangle size={14} /> Location permission denied — tracking manual
+        <div className="mx-5 md:mx-8 mt-4 badge badge-amber !rounded-xl px-4 py-3 w-auto flex items-center gap-2">
+          <AlertTriangle size={14} /> Location off — route tracking paused.
         </div>
       )}
 
@@ -3002,7 +3231,6 @@ const ActiveTrip = () => {
 
       {/* Metrics Grid */}
       <div className="p-5 md:p-8 grid grid-cols-2 gap-4">
-
         <div className="card metric-card p-5 text-center">
           <p className="text-xs font-semibold text-[#64748B] uppercase tracking-wider mb-1">Speed</p>
           <p className="text-3xl font-extrabold text-[#00695C] font-['Plus_Jakarta_Sans']">{speed.toFixed(1)}</p>
@@ -3037,72 +3265,183 @@ const ActiveTrip = () => {
         </div>
       </div>
 
-      {/* Offline Pocket Map */}
+      {/* TRIP MAP (Working & Honest) */}
       <div className="px-5 md:px-8 mb-4">
-        <PocketMap 
-          points={points} 
-          currentLocation={points.length > 0 ? points[points.length - 1] : undefined}
-          destinationCity={trip?.destinationCity || 'Destination'}
-        />
+        <div className="card overflow-hidden border border-gray-250 relative">
+          <div className="p-4 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
+            <div>
+              <h3 className="font-bold text-[#1F2937] text-sm flex items-center gap-1.5">
+                <Compass size={16} className="text-[#00695C]" /> Live Journey Map
+              </h3>
+              <p className="text-[11px] text-[#64748B] mt-0.5">
+                {permDenied 
+                  ? 'Location off — route tracking paused.' 
+                  : points.length === 0 
+                  ? 'Tracking active — your route appears as you move.' 
+                  : `Route active · ${points.length} GPS points logged.`}
+              </p>
+            </div>
+            <span className="badge badge-teal text-[10px]">
+              {trip?.originCity && trip?.destinationCity ? `${trip.originCity} → ${trip.destinationCity}` : 'Live Track'}
+            </span>
+          </div>
+
+          {/* Map Honest State Banner */}
+          {points.length === 0 && !permDenied && (
+            <div className="bg-[#E0F2F1] border-b border-[#B2DFDB] px-4 py-2 text-xs font-semibold text-[#00695C] flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-[#00695C] animate-ping" />
+              <span>Tracking active — your route appears as you move.</span>
+            </div>
+          )}
+          {permDenied && (
+            <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 text-xs font-semibold text-amber-900 flex items-center gap-2">
+              <AlertTriangle size={14} className="text-amber-600 shrink-0" />
+              <span>Location off — route tracking paused.</span>
+            </div>
+          )}
+
+          <div className="relative">
+            <SancharMap
+              center={mapCenter}
+              zoom={12}
+              userPos={currentPt ? [currentPt.lat, currentPt.lng] : null}
+              trackPoints={points.map(p => [p.lat, p.lng])}
+              markers={mapMarkers}
+              polylines={mapPolylines}
+              heightClass="min-h-[320px] h-[350px] md:h-[420px]"
+            />
+          </div>
+
+          <div className="p-3 bg-white text-[11px] text-[#64748B] flex items-center justify-between">
+            <span>🏁 Origin &amp; 🎯 Destination geocoded via OpenStreetMap.</span>
+            <span className="font-semibold text-[#00695C]">{points.length} live points</span>
+          </div>
+        </div>
       </div>
 
-      {/* Budget Health Card */}
+      {/* FULL TRIP DATA CARDS (from GET /api/trips/active) */}
       {trip && (
-        <div className="px-5 md:px-8 mb-4">
+        <div className="px-5 md:px-8 mb-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Budget Health Card */}
           <div className="card p-5">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="font-bold text-[#1F2937] flex items-center gap-1"><IndianRupee size={16} /> Budget Health</h3>
+              <h3 className="font-bold text-[#1F2937] flex items-center gap-1.5"><IndianRupee size={16} className="text-[#00695C]" /> Budget Health</h3>
               {trip.heavyLuggage && <span className="badge badge-teal !bg-teal-100 !text-teal-800 text-[10px]">Luggage Mode ON</span>}
             </div>
             
-            <div className="grid grid-cols-2 gap-4 mb-4">
+            <div className="grid grid-cols-3 gap-3 mb-4">
               <div>
                 <p className="text-[10px] uppercase font-bold text-[#64748B] mb-1">Total Budget</p>
-                <p className="font-extrabold text-xl text-[#00695C]">₹{trip.budget?.toLocaleString('en-IN')}</p>
+                <p className="font-extrabold text-lg text-[#00695C]">₹{trip.budget?.toLocaleString('en-IN')}</p>
               </div>
               <div>
                 <p className="text-[10px] uppercase font-bold text-[#64748B] mb-1">Total Spent</p>
-                <p className="font-extrabold text-xl text-[#D32F2F]">₹{trip.amountSpent?.toLocaleString('en-IN')}</p>
+                <p className="font-extrabold text-lg text-[#D32F2F]">₹{trip.amountSpent?.toLocaleString('en-IN')}</p>
+              </div>
+              <div>
+                <p className="text-[10px] uppercase font-bold text-[#64748B] mb-1">Remaining</p>
+                <p className="font-extrabold text-lg text-[#2E7D32]">₹{Math.max(0, (trip.budget || 0) - (trip.amountSpent || 0)).toLocaleString('en-IN')}</p>
               </div>
             </div>
 
-            <div className="w-full bg-gray-100 h-2 rounded-full mb-2 overflow-hidden">
+            <div className="w-full bg-gray-100 h-2.5 rounded-full mb-2 overflow-hidden">
               <div 
-                className={`h-full ${trip.amountSpent > trip.budget ? 'bg-red-500' : 'bg-teal-500'}`} 
+                className={`h-full ${trip.amountSpent > trip.budget ? 'bg-red-500' : 'bg-teal-600'}`} 
                 style={{ width: `${Math.min(100, ((trip.amountSpent || 0) / (trip.budget || 1)) * 100)}%` }}
               ></div>
             </div>
-
-            <p className="text-xs font-bold text-[#1F2937]">Remaining: ₹{Math.max(0, (trip.budget || 0) - (trip.amountSpent || 0)).toLocaleString('en-IN')}</p>
+            <p className="text-[11px] text-[#64748B] mt-1 font-medium">
+              {trip.amountSpent > trip.budget ? 'Budget exceeded!' : `${Math.round(((trip.amountSpent || 0) / (trip.budget || 1)) * 100)}% of budget utilized`}
+            </p>
           </div>
-        </div>
-      )}
 
-      {/* Luggage Buddy Prompt (cooldown logic checked via state) */}
-      {trip?.heavyLuggage && distance > 1.5 && segment === 'walking' && (Date.now() - lastRestTime > 1800000) && (
-        <div className="px-5 md:px-8 mb-4">
-          <div className="p-4 bg-amber-50 rounded-2xl border border-amber-200 shadow-sm relative">
-            <button onClick={() => setLastRestTime(Date.now())} className="absolute top-2 right-2 text-amber-600 font-bold p-1 cursor-pointer"><Check size={16} /></button>
-            <h4 className="font-bold text-amber-900 mb-1 flex items-center gap-1"><AlertTriangle size={14} /> Heavy load? Take a break.</h4>
-            <p className="text-xs text-amber-800 mb-3">You've been walking for a while with heavy luggage. There are water stations and rest areas nearby (approximate).</p>
-            <div className="flex gap-2">
-              <button onClick={() => { alert('Locating nearest rest zone...'); setLastRestTime(Date.now()); }} className="bg-amber-600 text-white text-xs font-bold py-1.5 px-3 rounded-lg cursor-pointer">Find Rest Area</button>
-              <button onClick={() => setLastRestTime(Date.now())} className="bg-amber-200 text-amber-900 text-xs font-bold py-1.5 px-3 rounded-lg cursor-pointer">Got it</button>
+          {/* Trip Details Card */}
+          <div className="card p-5 flex flex-col justify-between">
+            <h3 className="font-bold text-[#1F2937] text-sm mb-3 flex items-center gap-1.5">
+              <Shield size={16} className="text-[#00695C]" /> Trip Metadata
+            </h3>
+            <div className="space-y-2.5 text-xs">
+              <div className="flex justify-between border-b border-gray-100 pb-2">
+                <span className="text-[#64748B] font-medium">Expected Arrival:</span>
+                <span className="font-bold text-[#1F2937]">
+                  {trip.expectedArrival ? new Date(trip.expectedArrival).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' }) : 'Not specified'}
+                </span>
+              </div>
+              <div className="flex justify-between border-b border-gray-100 pb-2">
+                <span className="text-[#64748B] font-medium">Trusted Contact:</span>
+                <span className="font-bold text-[#1F2937]">
+                  {trip.trustedContactLabel || trip.trustedContact || 'Not specified'}
+                </span>
+              </div>
+              <div className="flex justify-between border-b border-gray-100 pb-2">
+                <span className="text-[#64748B] font-medium">Consent State:</span>
+                <span className="font-bold text-[#00695C]">
+                  {trip.analyticsConsent ? 'Enabled (Mobility Insights)' : 'Disabled'}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[#64748B] font-medium">Trip Status:</span>
+                <span className="font-bold capitalize text-[#1F2937]">{trip.status || 'Active'}</span>
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Luggage Buddy Auto Nudge (cooldown logic checked via state) */}
+      {/* TIMELINE (Journey Points) */}
+      <div className="px-5 md:px-8 mb-4">
+        <div className="card p-5">
+          <h3 className="font-bold text-[#1F2937] text-sm mb-3 flex items-center gap-1.5">
+            <HistoryIcon size={16} className="text-[#00695C]" /> Journey Timeline
+          </h3>
+          {points.length === 0 ? (
+            <div className="p-4 bg-teal-50/60 rounded-xl border border-teal-100 text-xs font-semibold text-[#00695C] text-center">
+              Tracking is active — points appear as you move.
+            </div>
+          ) : (
+            <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+              {points.slice(-10).reverse().map((pt, idx) => (
+                <div key={idx} className="flex justify-between items-center text-xs p-2.5 bg-gray-50 rounded-xl border border-gray-100">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-[#00695C]" />
+                    <span className="font-bold text-[#1F2937]">{pt.speedKmh?.toFixed(1) || '0.0'} km/h</span>
+                    <span className="text-[10px] text-gray-500">({pt.lat?.toFixed(4)}, {pt.lng?.toFixed(4)})</span>
+                  </div>
+                  <span className="text-[10px] text-[#64748B]">
+                    {new Date(pt.timestamp).toLocaleTimeString('en-IN', { timeStyle: 'short' })}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Luggage Buddy Prompt */}
+      {trip?.heavyLuggage && distance > 1.5 && segment === 'walking' && (Date.now() - lastRestTime > 1800000) && (
+        <div className="px-5 md:px-8 mb-4">
+          <div className="p-4 bg-amber-50 rounded-2xl border border-amber-200 shadow-sm relative">
+            <button onClick={() => setLastRestTime(Date.now())} className="absolute top-2 right-2 text-amber-600 font-bold p-1 cursor-pointer" aria-label="Close alert"><Check size={16} /></button>
+            <h4 className="font-bold text-amber-900 mb-1 flex items-center gap-1"><AlertTriangle size={14} /> Heavy load? Take a break.</h4>
+            <p className="text-xs text-amber-800 mb-3">You've been walking for a while with heavy luggage. There are water stations and rest areas nearby (approximate).</p>
+            <div className="flex gap-2">
+              <button onClick={() => { alert('Locating nearest rest zone...'); setLastRestTime(Date.now()); }} className="bg-amber-600 text-white text-xs font-bold py-1.5 px-3 rounded-lg cursor-pointer min-h-[44px]">Find Rest Area</button>
+              <button onClick={() => setLastRestTime(Date.now())} className="bg-amber-200 text-amber-900 text-xs font-bold py-1.5 px-3 rounded-lg cursor-pointer min-h-[44px]">Got it</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Luggage Buddy Auto Nudge */}
       {trip?.heavyLuggage && distance > 2.0 && segment === 'walking' && (Date.now() - lastNudgeTime > 1800000) && (
         <div className="px-5 md:px-8 mb-4">
           <div className="p-4 bg-blue-50 rounded-2xl border border-blue-200 shadow-sm relative">
-            <button onClick={() => setLastNudgeTime(Date.now())} className="absolute top-2 right-2 text-blue-600 font-bold p-1 cursor-pointer"><Check size={16} /></button>
+            <button onClick={() => setLastNudgeTime(Date.now())} className="absolute top-2 right-2 text-blue-600 font-bold p-1 cursor-pointer" aria-label="Close nudge"><Check size={16} /></button>
             <h4 className="font-bold text-blue-900 mb-1 flex items-center gap-1"><Smartphone size={14} /> Smart Transport Nudge</h4>
-            <p className="text-xs text-blue-800 mb-3">With heavy bags, an auto is worth it — typical fare for ~2 km: ₹40–60 (typical range).</p>
+            <p className="text-xs text-blue-800 mb-3">With heavy bags, an auto is worth it — typical fare for ~2 km: ₹40–60.</p>
             <div className="flex gap-2">
-              <button onClick={handleLogLuggageAutoExpense} className="bg-blue-600 text-white text-xs font-bold py-1.5 px-3 rounded-lg cursor-pointer">Log as expense</button>
-              <button onClick={() => setLastNudgeTime(Date.now())} className="bg-blue-200 text-blue-900 text-xs font-bold py-1.5 px-3 rounded-lg cursor-pointer">I'll walk</button>
+              <button onClick={handleLogLuggageAutoExpense} className="bg-blue-600 text-white text-xs font-bold py-1.5 px-3 rounded-lg cursor-pointer min-h-[44px]">Log as expense</button>
+              <button onClick={() => setLastNudgeTime(Date.now())} className="bg-blue-200 text-blue-900 text-xs font-bold py-1.5 px-3 rounded-lg cursor-pointer min-h-[44px]">I'll walk</button>
             </div>
           </div>
         </div>
@@ -3111,12 +3450,12 @@ const ActiveTrip = () => {
       {/* Camera / Photo Capture */}
       <div className="px-5 md:px-8 mb-4">
         <div className="flex gap-2">
-          <label className="flex-1 flex items-center justify-center gap-2 bg-[#00695C] text-white py-3 rounded-2xl cursor-pointer hover:bg-teal-800 transition">
+          <label className="flex-1 flex items-center justify-center gap-2 bg-[#00695C] text-white py-3 rounded-2xl cursor-pointer hover:bg-teal-800 transition min-h-[44px]">
             <Camera size={18} />
             <span className="font-bold text-sm">Take photo</span>
             <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhotoUpload} />
           </label>
-          <label className="flex-1 flex items-center justify-center gap-2 bg-teal-100 text-teal-900 py-3 rounded-2xl cursor-pointer hover:bg-teal-200 transition">
+          <label className="flex-1 flex items-center justify-center gap-2 bg-teal-100 text-teal-900 py-3 rounded-2xl cursor-pointer hover:bg-teal-200 transition min-h-[44px]">
             <span className="font-bold text-sm">Import</span>
             <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
           </label>
@@ -3124,30 +3463,20 @@ const ActiveTrip = () => {
         {photoAddedMsg && <p className="text-center text-xs text-[#00695C] mt-2 font-bold">{photoAddedMsg}</p>}
       </div>
 
-      {/* Android Badge */}
-      <div className="px-5 md:px-8 mb-4">
-        <div className="bg-[#FEF3C7] border border-[#FDE68A] p-4 rounded-2xl text-xs text-[#92400E] flex gap-3 items-start">
-          <Smartphone size={16} className="shrink-0 mt-0.5" />
-          <div>
-            <strong>Android app module:</strong> Background tracking, geofence starts, precise step counting, and push wakeups require the native Android application. Keep this tab open.
-          </div>
-        </div>
-      </div>
-
       {/* Action Buttons (Sticky Bottom on Mobile) */}
       <div className="mt-auto p-4 md:p-8 bg-white border-t border-gray-100 flex flex-col gap-3 sticky bottom-0 z-40 pb-safe shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] md:static md:shadow-none">
         <div className="grid grid-cols-2 gap-3">
-          <button onClick={() => navigate(`/scan/${tripId}`)} className="btn-secondary !py-3.5 text-sm font-bold bg-[#F8FAFC] text-[#1F2937]">
+          <button onClick={() => navigate(`/scan/${tripId}`)} className="btn-secondary !py-3.5 text-sm font-bold bg-[#F8FAFC] text-[#1F2937] min-h-[44px]">
             <Camera size={16} className="text-[#00695C]" /> Scan Bill
           </button>
-          <button onClick={() => navigate(`/expenses/${tripId}`)} className="btn-secondary !py-3.5 text-sm font-bold bg-[#F8FAFC] text-[#1F2937]">
+          <button onClick={() => navigate(`/expenses/${tripId}`)} className="btn-secondary !py-3.5 text-sm font-bold bg-[#F8FAFC] text-[#1F2937] min-h-[44px]">
             <IndianRupee size={16} className="text-[#00695C]" /> Expenses
           </button>
         </div>
         <button
           onClick={completeTrip}
           disabled={completing}
-          className="btn-primary w-full !py-3.5 bg-[#00695C] hover:bg-[#004D40] text-white font-bold disabled:opacity-70 disabled:cursor-not-allowed"
+          className="btn-primary w-full !py-3.5 bg-[#00695C] hover:bg-[#004D40] text-white font-bold disabled:opacity-70 disabled:cursor-not-allowed min-h-[44px]"
         >
           {completing ? 'Completing...' : 'Confirm Arrival & Complete Journey'}
         </button>
@@ -3158,7 +3487,7 @@ const ActiveTrip = () => {
           onMouseUp={handleSosEnd}
           onTouchStart={handleSosStart}
           onTouchEnd={handleSosEnd}
-          className="btn-danger w-full !py-3.5 bg-[#D32F2F] text-white font-bold active:bg-red-800 transition-colors"
+          className="btn-danger w-full !py-3.5 bg-[#D32F2F] text-white font-bold active:bg-red-800 transition-colors min-h-[44px]"
         >
           Hold to Trigger SOS (3s)
         </button>

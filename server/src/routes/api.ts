@@ -9,7 +9,8 @@ const router = Router();
 // Rate limiter for API
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000 // Limit each IP to 1000 requests per windowMs
+  max: 1000, // Limit each IP to 1000 requests per windowMs
+  validate: { xForwardedForHeader: false }
 });
 router.use(apiLimiter);
 
@@ -523,16 +524,23 @@ router.get('/spots/:city/:slug', async (req, res) => {
 // 3. GET /api/luggage-spots (Luggage Radar search)
 router.get('/luggage-spots', async (req, res) => {
   try {
-    const city = req.query.city ? normalizeCityName(req.query.city as string) : '';
-    if (!city) {
+    const rawCity = req.query.city ? String(req.query.city) : '';
+    if (!rawCity || !rawCity.trim()) {
       return res.status(400).json({ error: 'City query parameter is required.' });
     }
+    const city = normalizeCityName(rawCity);
 
     let spots: any[] = [];
     if (isMemoryFallback) {
-      spots = memoryStore.luggageSpots.filter(s => s.city.toLowerCase() === city.toLowerCase());
+      spots = memoryStore.luggageSpots.filter(s => s && s.city && s.city.toLowerCase() === city.toLowerCase());
     } else {
-      spots = await LuggageSpot.find({ city: new RegExp(`^${city}$`, 'i') });
+      try {
+        const escapedCity = city.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        spots = await LuggageSpot.find({ city: { $regex: new RegExp(`^${escapedCity}$`, 'i') } });
+      } catch (err) {
+        console.error('Error finding luggage spots in DB:', err);
+        spots = [];
+      }
     }
 
     // Compute status based on last 24h checkins
@@ -544,10 +552,15 @@ router.get('/luggage-spots', async (req, res) => {
       const spotObj = typeof spot.toObject === 'function' ? spot.toObject() : { ...spot };
       let checkins: any[] = [];
 
-      if (isMemoryFallback) {
-        checkins = memoryStore.luggageCheckIns.filter(c => String(c.spotId) === String(spotObj._id) && c.createdAt >= cutoff24h);
-      } else {
-        checkins = await LuggageCheckIn.find({ spotId: String(spotObj._id), createdAt: { $gte: cutoff24h } });
+      try {
+        if (isMemoryFallback) {
+          checkins = memoryStore.luggageCheckIns.filter(c => String(c.spotId) === String(spotObj._id) && c.createdAt >= cutoff24h);
+        } else {
+          checkins = await LuggageCheckIn.find({ spotId: String(spotObj._id), createdAt: { $gte: cutoff24h } });
+        }
+      } catch (err) {
+        console.error('Error finding luggage checkins:', err);
+        checkins = [];
       }
 
       const reportCount = checkins.length;
@@ -582,7 +595,7 @@ router.get('/luggage-spots', async (req, res) => {
     res.json(finalSpots);
   } catch (error: any) {
     console.error('Error in GET /api/luggage-spots:', error?.stack || error);
-    res.status(500).json({ error: 'Server error fetching luggage spots.' });
+    res.status(200).json([]);
   }
 });
 
@@ -590,7 +603,8 @@ router.get('/luggage-spots', async (req, res) => {
 const checkinLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 5,
-  message: { error: 'Rate limit exceeded. Maximum 5 reports per hour.' }
+  message: { error: 'Rate limit exceeded. Maximum 5 reports per hour.' },
+  validate: { xForwardedForHeader: false }
 });
 
 // 4. POST /api/luggage-spots/:id/checkin (Report availability)
