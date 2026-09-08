@@ -18,6 +18,10 @@ import SancharMap from './components/SancharMap';
 import MapsPage from './pages/MapsPage';
 import { PlaceDetailPage, LuggageRadarPage } from './pages/PlacesAndLuggage';
 import { PartnersPage } from './pages/PartnersPage';
+import { HotelPartnerPage } from './pages/HotelPartnerPage';
+import { MarketplacePage } from './pages/MarketplacePage';
+import { CrowdRadarPage } from './pages/CrowdRadarPage';
+import { EcoRewardsPage } from './pages/EcoRewardsPage';
 
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
@@ -44,7 +48,7 @@ interface HealthContextType {
   refreshTrips: () => Promise<void>;
 }
 
-const HealthContext = createContext<HealthContextType>({
+export const HealthContext = createContext<HealthContextType>({
   isBackendOffline: false,
   isConnecting: true,
   dbMode: null,
@@ -304,6 +308,10 @@ const App = () => {
           <Route path="/spot/:cityName/:slug" element={<AppShell><PlaceDetailPage /></AppShell>} />
           <Route path="/luggage" element={<AppShell><LuggageRadarPage /></AppShell>} />
           <Route path="/partners" element={<AppShell><PartnersPage /></AppShell>} />
+          <Route path="/hotel-partner" element={<AppShell><HotelPartnerPage /></AppShell>} />
+          <Route path="/marketplace" element={<AppShell><MarketplacePage /></AppShell>} />
+          <Route path="/crowd-radar" element={<AppShell><CrowdRadarPage /></AppShell>} />
+          <Route path="/green-credits" element={<AppShell><EcoRewardsPage /></AppShell>} />
           <Route path="*" element={<NotFound />} />
 
         </Routes>
@@ -582,9 +590,10 @@ const InnerNav = () => {
         </Link>
         <div className="flex items-center gap-2 sm:gap-4">
           <ConnectivityHeaderChip />
-          <Link to="/features" className="text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline hidden md:inline">Features</Link>
-          <Link to="/privacy" className="text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline hidden md:inline">Privacy</Link>
-          <Link to="/history" className="text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline">History</Link>
+          <Link to="/marketplace" className="text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline hidden md:inline">Marketplace</Link>
+          <Link to="/hotel-partner" className="text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline hidden md:inline">Hotels</Link>
+          <Link to="/crowd-radar" className="text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline hidden sm:inline">Visit Planner</Link>
+          <Link to="/green-credits" className="text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline hidden sm:inline">Green</Link>
           <Link to="/maps" className="text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline hidden sm:inline">Maps</Link>
           <Link to="/dashboard" className="text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline hidden sm:inline">Dashboard</Link>
           
@@ -1447,7 +1456,7 @@ const CAROUSEL_CITIES = [
   { name: 'Kolkata', img: '/images/cities/kolkata.jpg' }
 ];
 
-const CURATED_SPECIAL_SPOTS_24 = [
+export const CURATED_SPECIAL_SPOTS_24 = [
   { city: 'Chennai', slug: 'marina-beach', name: 'Marina Beach', category: 'Beach', location: 'Beach Road, Chennai', timing: '5:00 AM - 8:00 PM', img: '/images/spots/marina-beach.jpg' },
   { city: 'Chennai', slug: 'kapaleeshwarar-temple', name: 'Kapaleeshwarar Temple', category: 'Temple', location: 'Mylapore, Chennai', timing: '6:00 AM - 8:30 PM', img: '/images/spots/kapaleeshwarar-temple.jpg' },
   { city: 'Chennai', slug: 'san-thome-basilica', name: 'San Thome Basilica', category: 'Heritage', location: 'Santhome, Chennai', timing: '8:00 AM - 6:00 PM', img: '/images/spots/san-thome-basilica.jpg' },
@@ -2204,6 +2213,51 @@ const LandingPage = () => {
 
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── BOOSTING LOCAL HOSPITALITY & ARTISANS ── */}
+      <section className="bg-[#FAF7F2] py-20 border-t border-gray-150">
+        <div className="max-w-[1200px] mx-auto px-5 md:px-8">
+          <div className="max-w-3xl mx-auto text-center mb-12">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-[#00695C] bg-teal-50 px-3 py-1 rounded-full border border-teal-200 inline-block mb-3">
+              Direct Local Economy
+            </span>
+            <h2 className="font-display text-3xl md:text-5xl font-bold text-gray-900 leading-tight">
+              Boosting Local Hospitality & Artisans
+            </h2>
+            <p className="text-gray-600 text-xs sm:text-sm mt-3 leading-relaxed">
+              Empowering small hotels, homestays, handloom weavers, and local guide trails through direct tourist connections — with zero middleman markup.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <div className="card-retreat bg-white p-8 rounded-3xl border border-gray-200 shadow-xs space-y-4 flex flex-col justify-between">
+              <div className="space-y-3">
+                <span className="text-3xl block">🏨</span>
+                <h3 className="font-display font-bold text-xl text-gray-900">Small Hotel & Homestay Suite</h3>
+                <p className="text-xs text-gray-600 leading-relaxed">
+                  Local rate guidance planner, offline guest language helper cards, and direct property listing.
+                </p>
+              </div>
+              <Link to="/hotel-partner" className="inline-flex items-center gap-2 text-xs font-bold text-[#00695C] hover:underline no-underline pt-2">
+                Explore Hotel Partner Portal →
+              </Link>
+            </div>
+
+            <div className="card-retreat bg-white p-8 rounded-3xl border border-gray-200 shadow-xs space-y-4 flex flex-col justify-between">
+              <div className="space-y-3">
+                <span className="text-3xl block">🛍️</span>
+                <h3 className="font-display font-bold text-xl text-gray-900">Local Direct Marketplace</h3>
+                <p className="text-xs text-gray-600 leading-relaxed">
+                  Discover traditional silk weavers, street food trails, and eco-tours. Connect directly with zero commission.
+                </p>
+              </div>
+              <Link to="/marketplace" className="inline-flex items-center gap-2 text-xs font-bold text-[#00695C] hover:underline no-underline pt-2">
+                Explore Direct Marketplace →
+              </Link>
+            </div>
           </div>
         </div>
       </section>
