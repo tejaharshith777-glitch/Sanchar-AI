@@ -335,9 +335,9 @@ export const User = mongoose.model<IUser>('User', userSchema);
 // --- PARTNER PUBLISH ---
 export interface IPartnerPublish extends Omit<Document, '_id'> {
   _id: string;
-  role: 'Travel Agency' | 'Hotel' | 'Local Business';
+  role: string;
   city: string;
-  type: 'place_guide' | 'hotel';
+  type: string;
   name: string;
   category?: string;
   area?: string;
@@ -354,9 +354,9 @@ export interface IPartnerPublish extends Omit<Document, '_id'> {
 
 const partnerPublishSchema = new Schema<IPartnerPublish>({
   _id: { type: String, required: true },
-  role: { type: String, enum: ['Travel Agency', 'Hotel', 'Local Business'], required: true },
+  role: { type: String, enum: ['Travel Agency', 'Hotel', 'Local Business', 'travel_agency', 'hotel', 'local_business'], required: true },
   city: { type: String, required: true, index: true },
-  type: { type: String, enum: ['place_guide', 'hotel'], required: true },
+  type: { type: String, enum: ['place_guide', 'hotel', 'vendor'], required: true },
   name: { type: String, required: true },
   category: String,
   area: String,
