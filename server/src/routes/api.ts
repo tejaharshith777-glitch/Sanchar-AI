@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
-import { Trip, LocationPoint, JourneySegment, Expense, CityPack, SafetyEvent, MobilityAggregate, PilotSignup, CitySpot, IdempotencyKey, LuggageSpot, LuggageCheckIn, User } from '../models';
+import { Trip, LocationPoint, JourneySegment, Expense, CityPack, SafetyEvent, MobilityAggregate, PilotSignup, CitySpot, IdempotencyKey, LuggageSpot, LuggageCheckIn, User, PartnerPublish, IssueReport } from '../models';
+
 import { isMemoryFallback, fallbackReason, memoryStore } from '../services/db';
 import { processTripPrivacySync } from '../services/privacy';
 
@@ -521,7 +522,177 @@ router.get('/spots/:city/:slug', async (req, res) => {
   }
 });
 
+// ---------------------------
+// TOURISM PARTNER PUBLISHING
+// ---------------------------
+
+// GET /api/partner-publish?city={city}
+router.get('/partner-publish', async (req, res) => {
+  try {
+    const rawCity = req.query.city ? String(req.query.city) : '';
+    if (!rawCity || !rawCity.trim()) {
+      return res.status(400).json({ error: 'City parameter is required.' });
+    }
+    const city = normalizeCityName(rawCity);
+
+    let items: any[] = [];
+    if (isMemoryFallback) {
+      items = (memoryStore.partnerPublishes || []).filter(
+        p => p && p.city && p.city.toLowerCase() === city.toLowerCase()
+      );
+    } else {
+      try {
+        items = await PartnerPublish.find({ city: new RegExp(`^${city}$`, 'i') }).sort({ publishedAt: -1 });
+      } catch (err) {
+        console.error('Error fetching partner publishes:', err);
+        items = [];
+      }
+    }
+
+    res.json({ city, items, count: items.length });
+  } catch (error) {
+    res.status(500).json({ error: 'Server error fetching partner content.' });
+  }
+});
+
+// POST /api/partner-publish
+router.post('/partner-publish', async (req, res) => {
+  try {
+    const { role, city: rawCity, type, name, category, area, hours, cost, description, photo, checkInTip, contact, bestWayToArrive, publisherName } = req.body || {};
+
+    if (!role || !rawCity || !type || !name) {
+      return res.status(400).json({ error: 'role, city, type, and name are required.' });
+    }
+
+    const city = normalizeCityName(rawCity);
+    const newItem = {
+      _id: 'pub_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+      role,
+      city,
+      type, // 'place_guide' | 'hotel'
+      name,
+      category: category || 'heritage',
+      area: area || '',
+      hours: hours || 'check locally',
+      cost: cost || 'check locally',
+      description: description || '',
+      photo: photo || '',
+      checkInTip: checkInTip || '',
+      contact: contact || '',
+      bestWayToArrive: bestWayToArrive || '',
+      publisherName: publisherName || role,
+      publishedAt: new Date()
+    };
+
+    if (isMemoryFallback) {
+      if (!memoryStore.partnerPublishes) memoryStore.partnerPublishes = [];
+      memoryStore.partnerPublishes.unshift(newItem);
+    } else {
+      const doc = new PartnerPublish(newItem);
+      await doc.save();
+    }
+
+    res.status(201).json({
+      message: 'Published successfully with partner label.',
+      item: newItem
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error?.message || 'Failed to publish partner item.' });
+  }
+});
+
+// ---------------------------
+// COMMUNITY ISSUE REPORTS
+// ---------------------------
+
+// POST /api/issue-reports
+router.post('/issue-reports', async (req, res) => {
+  try {
+    const { city: rawCity, category, note, spotSlug } = req.body || {};
+    if (!rawCity || !category) {
+      return res.status(400).json({ error: 'city and category are required.' });
+    }
+
+    const city = normalizeCityName(rawCity);
+    const validCategories = ['language barrier', 'overcharging', 'poor signage', 'low connectivity', 'other'];
+    const finalCategory = validCategories.includes(category) ? category : 'other';
+
+    const reportItem = {
+      _id: 'rep_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+      city,
+      category: finalCategory,
+      note: note || '',
+      spotSlug: spotSlug || '',
+      createdAt: new Date()
+    };
+
+    if (isMemoryFallback) {
+      if (!memoryStore.issueReports) memoryStore.issueReports = [];
+      memoryStore.issueReports.push(reportItem);
+    } else {
+      const doc = new IssueReport(reportItem);
+      await doc.save();
+    }
+
+    res.status(201).json({
+      message: 'Thank you — your report is anonymous and helps local businesses improve service.',
+      report: reportItem
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error?.message || 'Failed to save issue report.' });
+  }
+});
+
+// GET /api/issue-reports/summary?city={city}
+router.get('/issue-reports/summary', async (req, res) => {
+  try {
+    const rawCity = req.query.city ? String(req.query.city) : '';
+    if (!rawCity || !rawCity.trim()) {
+      return res.status(400).json({ error: 'City parameter is required.' });
+    }
+    const city = normalizeCityName(rawCity);
+
+    let reports: any[] = [];
+    if (isMemoryFallback) {
+      reports = (memoryStore.issueReports || []).filter(
+        r => r && r.city && r.city.toLowerCase() === city.toLowerCase()
+      );
+    } else {
+      try {
+        reports = await IssueReport.find({ city: new RegExp(`^${city}$`, 'i') });
+      } catch (err) {
+        reports = [];
+      }
+    }
+
+    const byCategory: Record<string, number> = {
+      'language barrier': 0,
+      'overcharging': 0,
+      'poor signage': 0,
+      'low connectivity': 0,
+      'other': 0
+    };
+
+    reports.forEach(r => {
+      if (r.category && byCategory[r.category] !== undefined) {
+        byCategory[r.category]++;
+      } else {
+        byCategory['other']++;
+      }
+    });
+
+    res.json({
+      city,
+      total: reports.length,
+      byCategory
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Server error fetching issue report summary.' });
+  }
+});
+
 // 3. GET /api/luggage-spots (Luggage Radar search)
+
 router.get('/luggage-spots', async (req, res) => {
   try {
     const rawCity = req.query.city ? String(req.query.city) : '';
@@ -1175,14 +1346,18 @@ router.post('/sync/:tripId', async (req, res) => {
 // NOTE: Dashboard endpoints NEVER read LocationPoints. They only read MobilityAggregates & consented Trip metadata.
 router.get('/mobility/summary', async (req, res) => {
   try {
+    const filterCity = (req.query.city as string)?.trim()?.toLowerCase();
+
     let trips: any[] = [];
     let safetyEvents: any[] = [];
     let aggregates: any[] = [];
+    let reports: any[] = [];
 
     if (isMemoryFallback) {
       trips = (memoryStore.trips || []).filter(t => t.analyticsConsent !== false && t.analyticsConsented !== false);
       safetyEvents = memoryStore.safetyEvents || [];
       aggregates = memoryStore.mobilityAggregates || [];
+      reports = memoryStore.issueReports || [];
     } else {
       trips = await Trip.find({
         $or: [
@@ -1192,11 +1367,21 @@ router.get('/mobility/summary', async (req, res) => {
       });
       safetyEvents = await SafetyEvent.find();
       aggregates = await MobilityAggregate.find();
+      reports = await IssueReport.find();
+    }
+
+    if (filterCity) {
+      trips = trips.filter(t => 
+        (t.destinationCity && t.destinationCity.toLowerCase() === filterCity) ||
+        (t.originCity && t.originCity.toLowerCase() === filterCity)
+      );
+      safetyEvents = safetyEvents.filter(e => e.city && e.city.toLowerCase() === filterCity);
+      reports = reports.filter(r => r.city && r.city.toLowerCase() === filterCity);
     }
 
     const totalTrips = trips.length;
     const citiesSet = new Set(trips.map(t => t.destinationCity || t.originCity).filter(Boolean));
-    const totalCities = citiesSet.size;
+    const totalCities = filterCity ? (totalTrips > 0 ? 1 : 0) : citiesSet.size;
     const safetyChecksCount = safetyEvents.length;
 
     // a. Donut — mode share (walking / road / rail / still)
@@ -1237,14 +1422,22 @@ router.get('/mobility/summary', async (req, res) => {
     });
     const demandByHour = Object.entries(hourBuckets).map(([hour, trips]) => ({ hour, trips }));
 
-    // c. Bar — reported issue categories
-    const issueCounts: Record<string, number> = { Language: 0, Signage: 0, Overcharging: 0, Accessibility: 0, Transport: 0 };
+    // c. Bar — reported issue categories (combining safetyEvents and issueReports)
+    const issueCounts: Record<string, number> = { Language: 0, Signage: 0, Overcharging: 0, Connectivity: 0, Transport: 0 };
     safetyEvents.forEach(e => {
       const cat = (e.eventType || e.category || 'Transport').toLowerCase();
       if (cat.includes('lang')) issueCounts.Language += 1;
       else if (cat.includes('sign')) issueCounts.Signage += 1;
-      else if (cat.includes('charge') || cat.includes('cost') || cat.includes('fare')) issueCounts.Overcharging += 1;
-      else if (cat.includes('access')) issueCounts.Accessibility += 1;
+      else if (cat.includes('charge') || cat.includes('cost') || cat.includes('fare') || cat.includes('overcharge')) issueCounts.Overcharging += 1;
+      else if (cat.includes('connect') || cat.includes('wifi') || cat.includes('net')) issueCounts.Connectivity += 1;
+      else issueCounts.Transport += 1;
+    });
+    reports.forEach(r => {
+      const cat = (r.category || '').toLowerCase();
+      if (cat.includes('lang')) issueCounts.Language += 1;
+      else if (cat.includes('sign')) issueCounts.Signage += 1;
+      else if (cat.includes('charge') || cat.includes('overcharg')) issueCounts.Overcharging += 1;
+      else if (cat.includes('connect')) issueCounts.Connectivity += 1;
       else issueCounts.Transport += 1;
     });
     const issueCategories = Object.entries(issueCounts).map(([category, count]) => ({ category, count }));
@@ -1268,8 +1461,8 @@ router.get('/mobility/summary', async (req, res) => {
     res.json({
       totalTrips,
       totalCities,
-      totalLanguages: Math.max(totalCities * 2, 7),
-      safetyChecks: safetyChecksCount,
+      totalLanguages: Math.max(totalCities * 2, totalCities ? 4 : 0),
+      safetyChecks: safetyChecksCount + reports.length,
       modeShare,
       demandByHour,
       issueCategories,

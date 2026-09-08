@@ -94,7 +94,10 @@ export const memoryStore = {
   luggageSpots: [...seedLuggageSpots] as any[],
   luggageCheckIns: [] as any[],
   idempotencyKeys: [] as any[],
+  partnerPublishes: [] as any[],
+  issueReports: [] as any[],
 };
+
 
 export const connectDB = async () => {
   const uri = process.env.MONGODB_URI;

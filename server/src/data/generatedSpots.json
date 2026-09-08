@@ -13,7 +13,13 @@
       "nearTransport": "Light House MRTS / Chepauk MRTS",
       "lat": 13.0542,
       "lng": 80.2837,
-      "image": "/images/spots/marina-beach.jpg"
+      "image": "/images/spots/marina-beach.jpg",
+      "highlights": [
+        "Walking along India's longest natural urban beach at sunrise.",
+        "Marina Beach is a natural urban beach in Chennai along the Bay of Bengal, stretching over 12 km",
+        "Accessible via Light House MRTS / Chepauk MRTS",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Kapaleeshwarar Temple",
@@ -28,7 +34,13 @@
       "nearTransport": "Thirumayilai MRTS",
       "lat": 13.0337,
       "lng": 80.2699,
-      "image": "/images/spots/kapaleeshwarar-temple.jpg"
+      "image": "/images/spots/kapaleeshwarar-temple.jpg",
+      "highlights": [
+        "Admiring the colorful 37-meter rainbow gopuram and temple tank.",
+        "A 7th-century Hindu temple dedicated to Lord Shiva, built in classic Dravidian architectural style with a gopuram",
+        "Accessible via Thirumayilai MRTS",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Fort St. George",
@@ -43,7 +55,13 @@
       "nearTransport": "Chennai Fort Railway Station",
       "lat": 13.0797,
       "lng": 80.2869,
-      "image": "/images/spots/fort-st-george.jpg"
+      "image": "/images/spots/fort-st-george.jpg",
+      "highlights": [
+        "Exploring British East India Company relics and St. Mary's Church.",
+        "Founded in 1644, Fort St. George is the first English fortress in India, now housing the Fort Museum and St. Mary's Church",
+        "Accessible via Chennai Fort Railway Station",
+        "Entry: ₹25 Indian / ₹300 foreign"
+      ]
     },
     {
       "name": "St. Thomas Cathedral Basilica",
@@ -58,7 +76,13 @@
       "nearTransport": "Light House MRTS",
       "lat": 13.0336,
       "lng": 80.2778,
-      "image": "/images/spots/st-thomas-cathedral-basilica-chennai.jpg"
+      "image": "/images/spots/st-thomas-cathedral-basilica-chennai.jpg",
+      "highlights": [
+        "Visiting the underground tomb chamber of St. Thomas.",
+        "A minor basilica built by Portuguese explorers in the 16th century over the tomb of Saint Thomas the Apostle",
+        "Accessible via Light House MRTS",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Government Museum",
@@ -73,7 +97,13 @@
       "nearTransport": "Egmore Metro / Railway Station",
       "lat": 13.0711,
       "lng": 80.2569,
-      "image": "/images/spots/government-museum-chennai.jpg"
+      "image": "/images/spots/government-museum-chennai.jpg",
+      "highlights": [
+        "Viewing world-renowned 10th-century Chola Bronze statues.",
+        "Established in 1851, it is the second oldest museum in India, famous for its Bronze Gallery of Chola bronzes",
+        "Accessible via Egmore Metro / Railway Station",
+        "Entry: ₹15 Indian / ₹250 foreign"
+      ]
     },
     {
       "name": "Valluvar Kottam",
@@ -88,7 +118,13 @@
       "nearTransport": "Nungambakkam Railway Station",
       "lat": 13.0544,
       "lng": 80.2418,
-      "image": "/images/spots/valluvar-kottam.jpg"
+      "image": "/images/spots/valluvar-kottam.jpg",
+      "highlights": [
+        "Seeing all 1,330 Thirukkural verses engraved on granite pillars.",
+        "A modern monument dedicated to the ancient Tamil poet-philosopher Thiruvalluvar, shaped like a giant temple chariot",
+        "Accessible via Nungambakkam Railway Station",
+        "Entry: ₹3 (verify locally)"
+      ]
     },
     {
       "name": "Guindy National Park",
@@ -103,7 +139,13 @@
       "nearTransport": "Guindy Metro / Railway Station",
       "lat": 13.0036,
       "lng": 80.2293,
-      "image": "/images/spots/guindy-national-park.jpg"
+      "image": "/images/spots/guindy-national-park.jpg",
+      "highlights": [
+        "Spotting wild blackbucks and rare birds in urban green woods.",
+        "One of the few national parks situated inside a major Indian city, home to blackbucks, spotted deer, and jackals",
+        "Accessible via Guindy Metro / Railway Station",
+        "Entry: ₹20 Indian / ₹100 foreign"
+      ]
     },
     {
       "name": "Edward Elliot's Beach",
@@ -118,7 +160,13 @@
       "nearTransport": "Kasturba Nagar MRTS",
       "lat": 12.9995,
       "lng": 80.2724,
-      "image": "/images/spots/edward-elliot-s-beach.jpg"
+      "image": "/images/spots/edward-elliot-s-beach.jpg",
+      "highlights": [
+        "Unwinding near the Karl Schmidt Memorial with coastal snacks.",
+        "Popularly known as Bessie Beach, a clean and relaxed coastal promenade featuring the Karl Schmidt Memorial",
+        "Accessible via Kasturba Nagar MRTS",
+        "Entry: Free"
+      ]
     },
     {
       "name": "DakshinaChitra",
@@ -133,7 +181,13 @@
       "nearTransport": "Muttukadu Bus Stop (ECR)",
       "lat": 12.8242,
       "lng": 80.2412,
-      "image": "/images/spots/dakshinachitra.jpg"
+      "image": "/images/spots/dakshinachitra.jpg",
+      "highlights": [
+        "Walking through real traditional timber houses from 4 southern states.",
+        "A living-history heritage museum showcasing 18 authentic reconstructed historic houses of South India",
+        "Accessible via Muttukadu Bus Stop (ECR)",
+        "Entry: ₹175 Indian / ₹350 foreign"
+      ]
     },
     {
       "name": "Arignar Anna Zoological Park",
@@ -148,7 +202,13 @@
       "nearTransport": "Vandalur Railway Station",
       "lat": 12.8792,
       "lng": 80.0817,
-      "image": "/images/spots/arignar-anna-zoological-park.jpg"
+      "image": "/images/spots/arignar-anna-zoological-park.jpg",
+      "highlights": [
+        "Taking the lion & deer safari across vast natural enclosures.",
+        "Also known as Vandalur Zoo, it spans 1,490 acres and is one of the largest zoological parks in Southeast Asia",
+        "Accessible via Vandalur Railway Station",
+        "Entry: ₹200 Indian / ₹500 foreign"
+      ]
     },
     {
       "name": "Parthasarathy Temple",
@@ -163,7 +223,13 @@
       "nearTransport": "Thiruvallikeni MRTS",
       "lat": 13.0537,
       "lng": 80.2764,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Viewing the ancient Pallava stone inscriptions and ornate Gopuram.",
+        "An 8th-century Vaishnavite temple built by the Pallavas, dedicated to Lord Krishna as Parthasarathy",
+        "Accessible via Thiruvallikeni MRTS",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Birla Planetarium",
@@ -178,7 +244,13 @@
       "nearTransport": "Kotturpuram MRTS",
       "lat": 13.0097,
       "lng": 80.2372,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Watching 360-degree cosmic projection shows inside the dome.",
+        "Part of the Periyar Science and Technology Centre, featuring automated sky shows and astronomy exhibits",
+        "Accessible via Kotturpuram MRTS",
+        "Entry: ₹30 Indian (verify locally)"
+      ]
     },
     {
       "name": "Connemara Public Library",
@@ -193,7 +265,13 @@
       "nearTransport": "Egmore Metro Station",
       "lat": 13.0708,
       "lng": 80.2575,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Marveling at Victorian oak-carved reading rooms and antique books.",
+        "Established in 1896, it is one of India's four National Depository Libraries with rare century-old volumes",
+        "Accessible via Egmore Metro Station",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Ripon Building",
@@ -208,7 +286,13 @@
       "nearTransport": "Chennai Central Metro / Station",
       "lat": 13.0818,
       "lng": 80.2725,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Photographing the majestic white Greco-Roman architecture.",
+        "An iconic neoclassical white building built in 1913, serving as the headquarters of the Greater Chennai Corporation",
+        "Accessible via Chennai Central Metro / Station",
+        "Entry: Free (verify locally)"
+      ]
     },
     {
       "name": "Ashtalakshmi Temple",
@@ -223,7 +307,13 @@
       "nearTransport": "Kasturba Nagar MRTS",
       "lat": 12.9922,
       "lng": 80.2728,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Ascending the multi-level shrine with ocean waves in the background.",
+        "A multi-tiered coastal temple dedicated to goddess Lakshmi in eight forms, located right on Elliot's Beach shore",
+        "Accessible via Kasturba Nagar MRTS",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Vadapalani Murugan Temple",
@@ -238,7 +328,13 @@
       "nearTransport": "Vadapalani Metro Station",
       "lat": 13.0514,
       "lng": 80.2127,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Experiencing vibrant daily rituals and colorful Rajagopuram.",
+        "A major Hindu temple dedicated to Lord Murugan, built in the late 19th century and renowned for weddings",
+        "Accessible via Vadapalani Metro Station",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Semmozhi Poonga",
@@ -253,7 +349,13 @@
       "nearTransport": "AG-DMS Metro Station",
       "lat": 13.0483,
       "lng": 80.252,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Strolling past peaceful lily ponds and curated fern gardens.",
+        "A 20-acre botanical garden in the city center featuring over 500 species of exotic plants and a vertical garden",
+        "Accessible via AG-DMS Metro Station",
+        "Entry: ₹15 Indian (verify locally)"
+      ]
     },
     {
       "name": "Kalakshetra Foundation",
@@ -268,7 +370,13 @@
       "nearTransport": "Thiruvanmiyur MRTS",
       "lat": 12.9856,
       "lng": 80.2592,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Walking through serene banyan-shaded open-air art classrooms.",
+        "Founded in 1936 by Rukmini Devi Arundale, an internationally renowned academy for Bharatanatyam dance and music",
+        "Accessible via Thiruvanmiyur MRTS",
+        "Entry: Ticketed (verify locally)"
+      ]
     },
     {
       "name": "T. Nagar Ranganathan Street",
@@ -283,7 +391,13 @@
       "nearTransport": "Mambalam Railway Station",
       "lat": 13.0383,
       "lng": 80.2312,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Immersing in the high-energy shopping crowd for traditional silk sarees.",
+        "One of the most crowded and famous commercial shopping streets in Asia, known for silks, gold, and apparel",
+        "Accessible via Mambalam Railway Station",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Cholamandal Artists' Village",
@@ -298,7 +412,13 @@
       "nearTransport": "Injambakkam Bus Stop (ECR)",
       "lat": 12.919,
       "lng": 80.2543,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Viewing open-air contemporary bronze and granite sculptures.",
+        "India's largest artists' commune founded in 1966, displaying contemporary paintings and outdoor sculptures",
+        "Accessible via Injambakkam Bus Stop (ECR)",
+        "Entry: ₹20 Indian (verify locally)"
+      ]
     },
     {
       "name": "Express Avenue Mall",
@@ -313,7 +433,13 @@
       "nearTransport": "LIC Metro Station",
       "lat": 13.0589,
       "lng": 80.2642,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Enjoying modern shopping, dining, and indoor entertainment.",
+        "A premier retail destination built on 8 acres in Royapettah with over 200 stores and gaming centers",
+        "Accessible via LIC Metro Station",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Chetpet Eco Park",
@@ -328,7 +454,13 @@
       "nearTransport": "Chetpet Railway Station",
       "lat": 13.0728,
       "lng": 80.2415,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Boating on the serene lake right in the middle of Chetpet.",
+        "A 16-acre urban lake park featuring walking trails, angling facilities, and boating in central Chennai",
+        "Accessible via Chetpet Railway Station",
+        "Entry: ₹25 Indian (verify locally)"
+      ]
     },
     {
       "name": "Madras Crocodile Bank Trust",
@@ -343,7 +475,13 @@
       "nearTransport": "Vadanemmeli Bus Stop (ECR)",
       "lat": 12.7483,
       "lng": 80.2392,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Watching daytime crocodile feedings and venom extraction demos.",
+        "A herpetological research station founded by Romulus Whitaker, home to thousands of crocodiles, alligators, and turtles",
+        "Accessible via Vadanemmeli Bus Stop (ECR)",
+        "Entry: ₹100 Indian / ₹200 foreign"
+      ]
     },
     {
       "name": "Government Museum Art Gallery",
@@ -358,7 +496,13 @@
       "nearTransport": "Egmore Metro Station",
       "lat": 13.0715,
       "lng": 80.2562,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Admiring rare original portrait paintings by Raja Ravi Varma.",
+        "Housed inside the National Art Gallery building in Egmore, showcasing Mughal miniatures and Raja Ravi Varma paintings",
+        "Accessible via Egmore Metro Station",
+        "Entry: Included with Museum Ticket"
+      ]
     },
     {
       "name": "Marundeeswarar Temple",
@@ -373,7 +517,13 @@
       "nearTransport": "Thiruvanmiyur MRTS",
       "lat": 12.9828,
       "lng": 80.2589,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Experiencing peaceful Chola-era courtyard shrines and holy water tank.",
+        "A Chola-era temple dedicated to Lord Shiva as the divine healer, famous for its grand gateway and medicinal folklore",
+        "Accessible via Thiruvanmiyur MRTS",
+        "Entry: Free"
+      ]
     }
   ],
   "Delhi": [
@@ -390,7 +540,13 @@
       "nearTransport": "Qutab Minar Metro Station",
       "lat": 28.5245,
       "lng": 77.1855,
-      "image": "/images/spots/qutub-minar.jpg"
+      "image": "/images/spots/qutub-minar.jpg",
+      "highlights": [
+        "Standing beneath the world's tallest brick minaret and ancient Iron Pillar.",
+        "A 73-meter UNESCO World Heritage brick minaret built in 1192 by Qutb-ud-din Aibak, featuring intricate Arabic inscriptions",
+        "Accessible via Qutab Minar Metro Station",
+        "Entry: ₹40 Indian / ₹600 foreign"
+      ]
     },
     {
       "name": "Red Fort",
@@ -405,7 +561,13 @@
       "nearTransport": "Lal Quila Metro Station",
       "lat": 28.6562,
       "lng": 77.241,
-      "image": "/images/spots/red-fort.jpg"
+      "image": "/images/spots/red-fort.jpg",
+      "highlights": [
+        "Walking through Diwan-i-Aam and Lahori Gate where history unfolded.",
+        "Constructed in 1639 by Emperor Shah Jahan in red sandstone, serving as the main seat of the Mughal Empire",
+        "Accessible via Lal Quila Metro Station",
+        "Entry: ₹50 Indian / ₹600 foreign"
+      ]
     },
     {
       "name": "Humayun's Tomb",
@@ -420,7 +582,13 @@
       "nearTransport": "Jor Bagh Metro / JLN Stadium Metro",
       "lat": 28.5849,
       "lng": 77.2507,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Marveling at red sandstone Persian charbagh garden architecture.",
+        "A UNESCO site built in 1570, it is the first garden-tomb on the Indian subcontinent and inspired the Taj Mahal",
+        "Accessible via Jor Bagh Metro / JLN Stadium Metro",
+        "Entry: ₹40 Indian / ₹600 foreign"
+      ]
     },
     {
       "name": "India Gate",
@@ -435,7 +603,13 @@
       "nearTransport": "Central Secretariat Metro Station",
       "lat": 28.6129,
       "lng": 77.2295,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Strolling along Kartavya Path while India Gate glows illuminated at night.",
+        "A 42-meter high war memorial arch built in 1931 honoring 84,000 soldiers of the British Indian Army",
+        "Accessible via Central Secretariat Metro Station",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Jama Masjid",
@@ -450,7 +624,13 @@
       "nearTransport": "Jama Masjid Metro Station",
       "lat": 28.6507,
       "lng": 77.2334,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Climbing the southern minaret for breathtaking panoramic views of Old Delhi.",
+        "Built by Mughal Emperor Shah Jahan between 1644 and 1656, one of India's largest congregational mosques",
+        "Accessible via Jama Masjid Metro Station",
+        "Entry: Free (₹300 camera fee)"
+      ]
     },
     {
       "name": "Lotus Temple",
@@ -465,7 +645,13 @@
       "nearTransport": "Kalkaji Mandir Metro Station",
       "lat": 28.5535,
       "lng": 77.2588,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Experiencing complete quiet meditation inside the sunlit white marble hall.",
+        "A Bahá'í House of Worship shaped like a lotus flower with 27 free-standing marble petals, open to all faiths",
+        "Accessible via Kalkaji Mandir Metro Station",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Akshardham Temple",
@@ -480,7 +666,13 @@
       "nearTransport": "Akshardham Metro Station",
       "lat": 28.6127,
       "lng": 77.2773,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Watching the Sahaj Anand water and laser light show after sunset.",
+        "A massive Hindu temple complex carved from pink sandstone and marble, showcasing traditional Indian art and heritage",
+        "Accessible via Akshardham Metro Station",
+        "Entry: Free (Exhibitions & Water Show ticketed)"
+      ]
     },
     {
       "name": "Rashtrapati Bhavan",
@@ -495,7 +687,13 @@
       "nearTransport": "Central Secretariat Metro Station",
       "lat": 28.6143,
       "lng": 77.1994,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Viewing the 340-room grand palace and the seasonal Mughal Gardens.",
+        "The official residence of the President of India, designed by Sir Edwin Lutyens and completed in 1929",
+        "Accessible via Central Secretariat Metro Station",
+        "Entry: ₹50 (verify locally)"
+      ]
     },
     {
       "name": "Jantar Mantar",
@@ -510,7 +708,13 @@
       "nearTransport": "Janpath Metro / Rajiv Chowk Metro",
       "lat": 28.6271,
       "lng": 77.2166,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Inspecting the massive Samrat Yantra sundial accurately measuring time.",
+        "An astronomical observatory erected in 1724 by Maharaja Jai Singh II of Jaipur, housing 13 stone instruments",
+        "Accessible via Janpath Metro / Rajiv Chowk Metro",
+        "Entry: ₹25 Indian / ₹300 foreign"
+      ]
     },
     {
       "name": "Chandni Chowk",
@@ -525,7 +729,13 @@
       "nearTransport": "Chandni Chowk Metro Station",
       "lat": 28.6506,
       "lng": 77.2303,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Sampling legendary Paranthe Wali Gali flatbreads and street sweets.",
+        "One of India's oldest and busiest wholesale markets, established in the 17th century by Shah Jahan's daughter Jahanara",
+        "Accessible via Chandni Chowk Metro Station",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Lodhi Garden",
@@ -540,7 +750,13 @@
       "nearTransport": "Jor Bagh Metro Station",
       "lat": 28.5931,
       "lng": 77.2197,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Walking past 500-year-old medieval tombs surrounded by blooming flowers.",
+        "A 90-acre city park containing tombs of 15th-century Sayyid and Lodhi rulers amidst lush lawns and trees",
+        "Accessible via Jor Bagh Metro Station",
+        "Entry: Free"
+      ]
     },
     {
       "name": "National Museum",
@@ -555,7 +771,13 @@
       "nearTransport": "Janpath Metro / Central Secretariat",
       "lat": 28.6118,
       "lng": 77.2193,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Viewing the famous bronze 'Dancing Girl' statue from Mohenjo-daro.",
+        "Established in 1949, housing over 200,000 works of art spanning 5,000 years, including Harappan artifacts",
+        "Accessible via Janpath Metro / Central Secretariat",
+        "Entry: ₹20 Indian / ₹500 foreign"
+      ]
     },
     {
       "name": "Purana Qila",
@@ -570,7 +792,13 @@
       "nearTransport": "Pragati Maidan Metro / Supreme Court Metro",
       "lat": 28.6095,
       "lng": 77.2437,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Exploring the Sher Mandal octagonal library tower and lakeside lawns.",
+        "One of the oldest forts in Delhi, rebuilt by Sher Shah Suri and Emperor Humayun on the ancient mound of Indraprastha",
+        "Accessible via Pragati Maidan Metro / Supreme Court Metro",
+        "Entry: ₹25 Indian / ₹300 foreign"
+      ]
     },
     {
       "name": "Agrasen ki Baoli",
@@ -585,7 +813,13 @@
       "nearTransport": "Barakhamba Road Metro Station",
       "lat": 28.626,
       "lng": 77.225,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Descending the stone staircase of Delhi's most picturesque hidden stepwell.",
+        "A 60-meter long historical stepwell consisting of 108 steps across three levels, built in medieval times",
+        "Accessible via Barakhamba Road Metro Station",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Raj Ghat",
@@ -600,7 +834,13 @@
       "nearTransport": "Delhi Gate Metro Station",
       "lat": 28.6406,
       "lng": 77.2495,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Paying silent respects near the eternal flame at Mahatma Gandhi's memorial.",
+        "A serene black marble memorial structure marking the spot of Mahatma Gandhi's cremation in 1948",
+        "Accessible via Delhi Gate Metro Station",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Gurudwara Bangla Sahib",
@@ -615,7 +855,13 @@
       "nearTransport": "Patel Chowk Metro / Shivaji Stadium Metro",
       "lat": 28.6263,
       "lng": 77.2091,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Visiting the holy pool and partaking in the community kitchen (Langar).",
+        "One of the most prominent Sikh gurdwaras in Delhi, known for its golden dome and sacred water pool (Sarovar)",
+        "Accessible via Patel Chowk Metro / Shivaji Stadium Metro",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Dilli Haat INA",
@@ -630,7 +876,13 @@
       "nearTransport": "Dilli Haat INA Metro Station",
       "lat": 28.5732,
       "lng": 77.2074,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Tasting authentic regional dishes from Nagaland momos to Rajasthani thalis.",
+        "An open-air food plaza and craft bazaar showcasing authentic regional handicrafts and cuisine from all Indian states",
+        "Accessible via Dilli Haat INA Metro Station",
+        "Entry: ₹30 Indian / ₹100 foreign"
+      ]
     },
     {
       "name": "Safdarjung Tomb",
@@ -645,7 +897,13 @@
       "nearTransport": "Jor Bagh Metro Station",
       "lat": 28.5893,
       "lng": 77.2106,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Admiring the grand domed gateway framing symmetrical gardens.",
+        "A sandstone and marble mausoleum built in 1754 for Safdarjung, representing the late Mughal style",
+        "Accessible via Jor Bagh Metro Station",
+        "Entry: ₹25 Indian / ₹300 foreign"
+      ]
     },
     {
       "name": "Sundar Nursery",
@@ -660,7 +918,13 @@
       "nearTransport": "JL Nehru Stadium Metro Station",
       "lat": 28.5912,
       "lng": 77.2483,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Picnicking beside restored Mughal water canals and lotus ponds.",
+        "A 90-acre heritage park complex adjoining Humayun's Tomb, home to 15 UNESCO-restored Mughal monuments and rare flora",
+        "Accessible via JL Nehru Stadium Metro Station",
+        "Entry: ₹50 Indian / ₹200 foreign"
+      ]
     },
     {
       "name": "National Gallery of Modern Art",
@@ -675,7 +939,13 @@
       "nearTransport": "Central Secretariat Metro Station",
       "lat": 28.6097,
       "lng": 77.2344,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Viewing masterpieces by Amrita Sher-Gil and Rabindranath Tagore.",
+        "Housed in the former palace of the Maharaja of Jaipur, exhibiting over 17,000 works of modern Indian art",
+        "Accessible via Central Secretariat Metro Station",
+        "Entry: ₹20 Indian / ₹500 foreign"
+      ]
     },
     {
       "name": "Hauz Khas Fort & Lake",
@@ -690,7 +960,13 @@
       "nearTransport": "Hauz Khas Metro Station",
       "lat": 28.5528,
       "lng": 77.1945,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Watching sunset over the medieval lake from ancient stone pavilion ruins.",
+        "A 14th-century medieval complex consisting of a water reservoir, madrasa, tomb, and mosque built during the Delhi Sultanate",
+        "Accessible via Hauz Khas Metro Station",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Mehrauli Archaeological Park",
@@ -705,7 +981,13 @@
       "nearTransport": "Qutab Minar Metro Station",
       "lat": 28.5204,
       "lng": 77.1858,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Discovering Jamali Kamali mosque and Rajon ki Baoli stepwell.",
+        "Spanning 200 acres, it contains over 100 historically significant monuments spanning 1,000 years of continuous habitation",
+        "Accessible via Qutab Minar Metro Station",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Connaught Place",
@@ -720,7 +1002,13 @@
       "nearTransport": "Rajiv Chowk Metro Station",
       "lat": 28.6328,
       "lng": 77.2197,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Strolling through Inner Circle colonnades and central park flag.",
+        "A major financial and commercial hub built in Georgian architecture with two concentric circles of white colonnaded colonnades",
+        "Accessible via Rajiv Chowk Metro Station",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Crafts Museum",
@@ -735,7 +1023,13 @@
       "nearTransport": "Supreme Court Metro Station",
       "lat": 28.6133,
       "lng": 77.2427,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Observing rural artisans crafting pottery, textiles, and wood carvings live.",
+        "An open-air museum displaying traditional Indian village architecture, folk crafts, and live artisan demonstrations",
+        "Accessible via Supreme Court Metro Station",
+        "Entry: ₹20 Indian / ₹200 foreign"
+      ]
     },
     {
       "name": "Nizamuddin Dargah",
@@ -749,7 +1043,13 @@
       "nearTransport": "JL Nehru Stadium Metro Station",
       "lat": 28.5908,
       "lng": 77.2431,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Listening to soulful Sufi Qawwali music on Thursday evenings.",
+        "The mausoleum of Sufi saint Hazrat Nizamuddin Auliya, famous for soul-stirring evening Qawwali music performances",
+        "Accessible via JL Nehru Stadium Metro Station",
+        "Located in Nizamuddin West, Delhi"
+      ]
     }
   ],
   "Mumbai": [
@@ -766,7 +1066,13 @@
       "nearTransport": "CSMT Railway Station / Churchgate",
       "lat": 18.922,
       "lng": 72.8347,
-      "image": "/images/spots/gateway-of-india.jpg"
+      "image": "/images/spots/gateway-of-india.jpg",
+      "highlights": [
+        "Posing with the basalt arch facing the Arabian Sea and Taj Mahal Palace Hotel.",
+        "An iconic 26-meter basalt arch monument erected in 1924 to commemorate the landing of King George V and Queen Mary in 1911",
+        "Accessible via CSMT Railway Station / Churchgate",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Marine Drive",
@@ -781,7 +1087,13 @@
       "nearTransport": "Churchgate Railway Station",
       "lat": 18.944,
       "lng": 72.823,
-      "image": "/images/spots/marine-drive.jpg"
+      "image": "/images/spots/marine-drive.jpg",
+      "highlights": [
+        "Sitting on the promenade tetrapods watching the sunset and glowing arc.",
+        "A 3.6-kilometer C-shaped boulevard along the coast, known as the Queen's Necklace due to evening street lights",
+        "Accessible via Churchgate Railway Station",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Chhatrapati Shivaji Maharaj Terminus",
@@ -796,7 +1108,13 @@
       "nearTransport": "CSMT Station",
       "lat": 18.94,
       "lng": 72.8353,
-      "image": "/images/spots/chhatrapati-shivaji-terminus.jpg"
+      "image": "/images/spots/chhatrapati-shivaji-terminus.jpg",
+      "highlights": [
+        "Admiring Victorian Gothic gargoyles and glowing night illumination.",
+        "A UNESCO World Heritage Victorian Gothic historic railway station designed by F. W. Stevens and opened in 1887",
+        "Accessible via CSMT Station",
+        "Entry: Free (Station area)"
+      ]
     },
     {
       "name": "Elephanta Caves",
@@ -811,7 +1129,13 @@
       "nearTransport": "Ferry from Gateway of India",
       "lat": 18.9633,
       "lng": 72.9315,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Viewing the breathtaking 6-meter Trimurti Sadashiva rock sculpture.",
+        "A UNESCO site of rock-cut cave temples dedicated to Shiva, dating back to the 5th to 8th centuries",
+        "Accessible via Ferry from Gateway of India",
+        "Entry: ₹40 Indian / ₹600 foreign (Ferry ~₹260)"
+      ]
     },
     {
       "name": "Chhatrapati Shivaji Maharaj Vastu Sangrahalaya",
@@ -826,7 +1150,13 @@
       "nearTransport": "Churchgate / CSMT Station",
       "lat": 18.9269,
       "lng": 72.8327,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Exploring ancient Indian sculptures, natural history, and miniature art.",
+        "Formerly Prince of Wales Museum, displaying 50,000 artifacts in Indo-Saracenic architecture built in 1922",
+        "Accessible via Churchgate / CSMT Station",
+        "Entry: ₹150 Indian / ₹700 foreign"
+      ]
     },
     {
       "name": "Sanjay Gandhi National Park",
@@ -841,7 +1171,13 @@
       "nearTransport": "Borivali Railway Station",
       "lat": 19.229,
       "lng": 72.9106,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Riding bicycles through forest trails to 2,000-year-old Kanheri Caves.",
+        "A 104-sq-km protected forest area within city limits, housing Kanheri rock-cut caves and wild leopards",
+        "Accessible via Borivali Railway Station",
+        "Entry: ₹85 Indian (verify locally)"
+      ]
     },
     {
       "name": "Kanheri Caves",
@@ -856,7 +1192,13 @@
       "nearTransport": "Borivali Station",
       "lat": 19.2069,
       "lng": 72.9061,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Climbing rock stairs to ancient prayer halls and stupas.",
+        "A group of 109 Buddhist rock-cut monuments carved into basalt outcrops between 1st century BCE and 10th century CE",
+        "Accessible via Borivali Station",
+        "Entry: ₹25 Indian / ₹300 foreign"
+      ]
     },
     {
       "name": "Haji Ali Dargah",
@@ -871,7 +1213,13 @@
       "nearTransport": "Mahalaxmi Railway Station",
       "lat": 18.9827,
       "lng": 72.8089,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Walking the narrow causeway surrounded by the sea during low tide.",
+        "A 15th-century mosque and tomb built on an islet off the coast of Worli, connected by a narrow causeway",
+        "Accessible via Mahalaxmi Railway Station",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Siddhivinayak Temple",
@@ -886,7 +1234,13 @@
       "nearTransport": "Dadar Railway Station",
       "lat": 19.0169,
       "lng": 72.8304,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Joining worship rituals at Mumbai's most iconic Ganesha shrine.",
+        "A revered 1801 Hindu temple dedicated to Lord Ganesha, featuring a wooden door carved with images of Ashtavinayak",
+        "Accessible via Dadar Railway Station",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Juhu Beach",
@@ -901,7 +1255,13 @@
       "nearTransport": "Vile Parle Railway Station",
       "lat": 19.0988,
       "lng": 72.8264,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Eating spicy Pav Bhaji and Bhelpuri right by the tide line.",
+        "One of Mumbai's most celebrated beaches along the Arabian Sea, renowned for street food stalls and sunsets",
+        "Accessible via Vile Parle Railway Station",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Colaba Causeway",
@@ -916,7 +1276,13 @@
       "nearTransport": "Churchgate / CSMT Station",
       "lat": 18.9217,
       "lng": 72.8317,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Bargaining for fashion accessories and grabbing coffee at Cafe Leopold.",
+        "A bustling commercial street famous for street shopping, antique stalls, trinkets, and legendary cafes",
+        "Accessible via Churchgate / CSMT Station",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Bandra-Worli Sea Link",
@@ -931,7 +1297,13 @@
       "nearTransport": "Bandra Station / Worli",
       "lat": 19.033,
       "lng": 72.817,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Viewing the illuminated cable bridge from Bandra Fort promenade.",
+        "An 8-lane cable-stayed bridge spanning 5.6 km across the open sea, linking Mumbai's western suburbs to South Mumbai",
+        "Accessible via Bandra Station / Worli",
+        "Entry: Toll ₹85 per car (Free view from promenade)"
+      ]
     },
     {
       "name": "Bandra Fort",
@@ -946,7 +1318,13 @@
       "nearTransport": "Bandra Railway Station",
       "lat": 19.0415,
       "lng": 72.8189,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Catching sea breeze views of the Sea Link from Portuguese stone arches.",
+        "A 1640 Portuguese fort structure perched on a rocky cliff overlooking the sea and Bandra-Worli Sea Link",
+        "Accessible via Bandra Railway Station",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Bandstand Promenade",
@@ -961,7 +1339,13 @@
       "nearTransport": "Bandra Railway Station",
       "lat": 19.0475,
       "lng": 72.8197,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Strolling along the rocky coastline past Shah Rukh Khan's Mannat.",
+        "A 1.2-km long coastal walkway featuring the Walk of the Stars and home to celebrity residences like Mannat",
+        "Accessible via Bandra Railway Station",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Dr. Bhau Daji Lad Museum",
@@ -976,7 +1360,13 @@
       "nearTransport": "Byculla Railway Station",
       "lat": 18.979,
       "lng": 72.8348,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Marveling at restored 19th-century gilded Victorian decorative arches.",
+        "Mumbai's oldest museum established in 1855, showcasing city history, industrial arts, and Victorian interiors",
+        "Accessible via Byculla Railway Station",
+        "Entry: ₹10 Indian / ₹100 foreign"
+      ]
     },
     {
       "name": "Banganga Tank",
@@ -991,7 +1381,13 @@
       "nearTransport": "Grant Road Railway Station",
       "lat": 18.9458,
       "lng": 72.7937,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Experiencing ancient temple stairs and tranquil freshwater springs.",
+        "An ancient rectangular freshwater water tank built in 1127 AD by the Silhara dynasty, surrounded by temples",
+        "Accessible via Grant Road Railway Station",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Hanging Gardens",
@@ -1006,7 +1402,13 @@
       "nearTransport": "Grant Road Railway Station",
       "lat": 18.9567,
       "lng": 72.8052,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Watching sunset over Queen's Necklace from Malabar Hill peak.",
+        "Also known as Pherozeshah Mehta Gardens, featuring topiary animal hedges and sunset views over Marine Drive",
+        "Accessible via Grant Road Railway Station",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Chor Bazaar",
@@ -1021,7 +1423,13 @@
       "nearTransport": "Grant Road / Sandhurst Road Station",
       "lat": 18.9608,
       "lng": 72.8294,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Hunting for antique vinyl records, old gramophones, and brass curios.",
+        "One of the largest antique and flea markets in India, famous for vintage clocks, brass items, and curiosities",
+        "Accessible via Grant Road / Sandhurst Road Station",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Crawford Market",
@@ -1036,7 +1444,13 @@
       "nearTransport": "CSMT Railway Station",
       "lat": 18.9472,
       "lng": 72.8348,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Viewing historic relief stone carvings above the Norman arch entrance.",
+        "Officially Mahatma Jyotiba Phule Mandai, a historic 1869 market featuring friezes designed by Lockwood Kipling",
+        "Accessible via CSMT Railway Station",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Flora Fountain",
@@ -1051,7 +1465,13 @@
       "nearTransport": "Churchgate Railway Station",
       "lat": 18.9322,
       "lng": 72.8317,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Photographing the heritage stone fountain at the heart of South Mumbai.",
+        "An intricately carved 1864 Portland stone fountain depicting Roman goddess Flora, located in South Mumbai",
+        "Accessible via Churchgate Railway Station",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Nehru Science Centre",
@@ -1066,7 +1486,13 @@
       "nearTransport": "Mahalaxmi Railway Station",
       "lat": 18.9904,
       "lng": 72.8189,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Playing with interactive hands-on physics and space exhibits.",
+        "India's largest interactive science center with over 500 hands-on science exhibits and 3D science shows",
+        "Accessible via Mahalaxmi Railway Station",
+        "Entry: ₹70 Indian (verify locally)"
+      ]
     },
     {
       "name": "Global Vipassana Pagoda",
@@ -1081,7 +1507,13 @@
       "nearTransport": "Ferry from Gorai Creek / Borivali Station",
       "lat": 19.2289,
       "lng": 72.8058,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Standing inside the world's largest stone dome built without pillars.",
+        "A massive meditation dome monument near Gorai inspired by Myanmar's Shwedagon Pagoda, holding Buddha relics",
+        "Accessible via Ferry from Gorai Creek / Borivali Station",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Girgaon Chowpatty",
@@ -1096,7 +1528,13 @@
       "nearTransport": "Charni Road Railway Station",
       "lat": 18.9531,
       "lng": 72.8149,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Eating authentic Mumbai Bhel Puri and Kulfi Falooda by the beach.",
+        "A famous public beach at the northern end of Marine Drive, iconic for Ganesh Visarjan immersion ceremonies",
+        "Accessible via Charni Road Railway Station",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Babulnath Temple",
@@ -1111,7 +1549,13 @@
       "nearTransport": "Grant Road / Charni Road Station",
       "lat": 18.9567,
       "lng": 72.8108,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Riding the hill elevator or walking stone stairs to the elevated shrine.",
+        "An ancient Shiva temple situated on a hillock near Girgaon Chowpatty, dating back to 1780",
+        "Accessible via Grant Road / Charni Road Station",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Worli Sea Face",
@@ -1126,7 +1570,13 @@
       "nearTransport": "Lower Parel / Mahalaxmi Station",
       "lat": 19.0117,
       "lng": 72.8156,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Watching monsoon ocean waves crash over sea wall barriers.",
+        "A scenic coastal promenade in South-Central Mumbai known for high ocean waves during monsoon season",
+        "Accessible via Lower Parel / Mahalaxmi Station",
+        "Entry: Free"
+      ]
     }
   ],
   "Bengaluru": [
@@ -1143,7 +1593,13 @@
       "nearTransport": "Cubbon Park Metro Station",
       "lat": 12.9779,
       "lng": 77.5952,
-      "image": "/images/spots/cubbon-park.jpg"
+      "image": "/images/spots/cubbon-park.jpg",
+      "highlights": [
+        "Walking amidst bamboo groves and colonial red brick High Court building.",
+        "A 300-acre historic park in the heart of Bengaluru created in 1870, home to over 6,000 trees and red brick heritage buildings",
+        "Accessible via Cubbon Park Metro Station",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Lalbagh Botanical Garden",
@@ -1158,7 +1614,13 @@
       "nearTransport": "Lalbagh Metro Station",
       "lat": 12.9507,
       "lng": 77.5848,
-      "image": "/images/spots/lalbagh-botanical-garden.jpg"
+      "image": "/images/spots/lalbagh-botanical-garden.jpg",
+      "highlights": [
+        "Visiting the 1890 Glass House and 3-billion-year-old Lalbagh Rock.",
+        "A 240-acre botanical garden commissioned by Hyder Ali in 1760, featuring a famous glasshouse inspired by London's Crystal Palace",
+        "Accessible via Lalbagh Metro Station",
+        "Entry: ₹30 Indian (Free 6-9 AM)"
+      ]
     },
     {
       "name": "Bangalore Palace",
@@ -1173,7 +1635,13 @@
       "nearTransport": "Cantonment Railway Station / Cubbon Park Metro",
       "lat": 12.9988,
       "lng": 77.5921,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Exploring wood-carved interiors, vintage photos, and royal ballroom.",
+        "A Tudor-style royal palace built in 1887 by King Chamarajendra Wadiyar X, inspired by England's Windsor Castle",
+        "Accessible via Cantonment Railway Station / Cubbon Park Metro",
+        "Entry: ₹250 Indian / ₹490 foreign"
+      ]
     },
     {
       "name": "Tipu Sultan's Summer Palace",
@@ -1188,7 +1656,13 @@
       "nearTransport": "Krishna Rajendra Market Metro",
       "lat": 12.9593,
       "lng": 77.5737,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Admiring two-story teak pillars with intricate floral mortar paintings.",
+        "Completed in 1791, an ornate teakwood palace built by Tipu Sultan featuring carved pillars, arches, and balconies",
+        "Accessible via Krishna Rajendra Market Metro",
+        "Entry: ₹20 Indian / ₹300 foreign"
+      ]
     },
     {
       "name": "ISKCON Temple Bangalore",
@@ -1203,7 +1677,13 @@
       "nearTransport": "Mahalakshmi Metro Station",
       "lat": 13.0098,
       "lng": 77.5511,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Ascending the hilltop temple and tasting delicious prasadam.",
+        "One of the world's largest ISKCON temple complexes, opened in 1997 on Hare Krishna Hill featuring modern glass architecture",
+        "Accessible via Mahalakshmi Metro Station",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Vidhana Soudha",
@@ -1218,7 +1698,13 @@
       "nearTransport": "Vidhana Soudha Metro Station",
       "lat": 12.9797,
       "lng": 77.5907,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Photographing the illuminated grand stone facade on Sunday evenings.",
+        "Built in 1956 in Neo-Dravidian architecture, it is the seat of Karnataka's state legislature and an iconic landmark",
+        "Accessible via Vidhana Soudha Metro Station",
+        "Entry: Free (Exterior view)"
+      ]
     },
     {
       "name": "Bull Temple",
@@ -1232,7 +1718,13 @@
       "nearTransport": "National College Metro Station",
       "lat": 12.9419,
       "lng": 77.5681,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Viewing the gigantic 4.5-meter tall carved monolithic Nandi bull.",
+        "A 16th-century temple built by Kempe Gowda I housing a monolithic granite deity of Nandi the sacred bull",
+        "Accessible via National College Metro Station",
+        "Located in Basavanagudi, Bengaluru"
+      ]
     },
     {
       "name": "St. Mary's Basilica",
@@ -1247,7 +1739,13 @@
       "nearTransport": "MG Road Metro / Cubbon Park Metro",
       "lat": 12.9839,
       "lng": 77.6033,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Admiring intricate French-designed stained glass windows.",
+        "The oldest church in Bengaluru, built in 1882 in Gothic revival architecture with stained glass windows",
+        "Accessible via MG Road Metro / Cubbon Park Metro",
+        "Entry: Free"
+      ]
     },
     {
       "name": "HAL Aerospace Museum",
@@ -1262,7 +1760,13 @@
       "nearTransport": "Indiranagar Metro Station",
       "lat": 12.9567,
       "lng": 77.6656,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Seeing actual historic fighter jets and testing real flight simulators.",
+        "India's first aviation museum established in 2001, exhibiting vintage aircraft, jet engines, and flight simulators",
+        "Accessible via Indiranagar Metro Station",
+        "Entry: ₹50 Indian (verify locally)"
+      ]
     },
     {
       "name": "Visvesvaraya Industrial & Technological Museum",
@@ -1277,7 +1781,13 @@
       "nearTransport": "Cubbon Park Metro Station",
       "lat": 12.9753,
       "lng": 77.5964,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Interacting with hands-on engine gear models and Wright Brothers replica.",
+        "Established in 1962 in memory of Sir M. Visvesvaraya, featuring interactive halls on engine technology and space",
+        "Accessible via Cubbon Park Metro Station",
+        "Entry: ₹85 Indian (verify locally)"
+      ]
     },
     {
       "name": "Government Museum & Venkatappa Art Gallery",
@@ -1292,7 +1802,13 @@
       "nearTransport": "Cubbon Park Metro Station",
       "lat": 12.9758,
       "lng": 77.596,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Seeing the 450 AD Halmidi inscription, the oldest written Kannada record.",
+        "Established in 1866, it is one of the oldest museums in India, exhibiting ancient Kannada inscriptions and coins",
+        "Accessible via Cubbon Park Metro Station",
+        "Entry: ₹20 Indian (verify locally)"
+      ]
     },
     {
       "name": "Gavi Gangadhareshwara Temple",
@@ -1307,7 +1823,13 @@
       "nearTransport": "National College Metro Station",
       "lat": 12.9495,
       "lng": 77.5647,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Exploring ancient natural stone cave passages holding Shiva shrines.",
+        "A 9th-century rock-cut cave temple famous for monolith stone discs and solar alignment during Makar Sankranti",
+        "Accessible via National College Metro Station",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Jawaharlal Nehru Planetarium",
@@ -1322,7 +1844,13 @@
       "nearTransport": "Dr. B.R. Ambedkar Metro / Vidhana Soudha Metro",
       "lat": 12.9847,
       "lng": 77.5892,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Watching fulldome digital space projection shows in the planetarium.",
+        "Established in 1989, offering sky theater shows, science parks, and astronomy exhibits for all ages",
+        "Accessible via Dr. B.R. Ambedkar Metro / Vidhana Soudha Metro",
+        "Entry: ₹70 Indian (verify locally)"
+      ]
     },
     {
       "name": "Sankey Tank",
@@ -1337,7 +1865,13 @@
       "nearTransport": "Mantri Square Sampige Road Metro",
       "lat": 13.0078,
       "lng": 77.5756,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Walking the paved lakeside track surrounded by old trees and birds.",
+        "A man-made lake built in 1875 by Richard Hieram Sankey to meet Bengaluru's water supply needs, surrounded by gardens",
+        "Accessible via Mantri Square Sampige Road Metro",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Ulsoor Lake",
@@ -1352,7 +1886,13 @@
       "nearTransport": "Trinity Metro / Halasuru Metro",
       "lat": 12.9818,
       "lng": 77.6186,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Relaxing along the tree-lined shoreline watching boats on the lake.",
+        "One of the largest lakes in Bengaluru, constructed by Kempe Gowda II in the 16th century with several islands",
+        "Accessible via Trinity Metro / Halasuru Metro",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Commercial Street",
@@ -1367,7 +1907,13 @@
       "nearTransport": "MG Road Metro Station",
       "lat": 12.9822,
       "lng": 77.6083,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Exploring narrow lanes for colorful street fashion and silver trinkets.",
+        "A legendary shopping hub famous for clothing, footwear, jewelry, and bustling bazaar lanes",
+        "Accessible via MG Road Metro Station",
+        "Entry: Free"
+      ]
     },
     {
       "name": "National Gallery of Modern Art",
@@ -1382,7 +1928,13 @@
       "nearTransport": "Vidhana Soudha Metro Station",
       "lat": 12.9897,
       "lng": 77.5889,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Enjoying art exhibits inside a peaceful heritage garden mansion.",
+        "Set inside a restored 100-year-old colonial mansion surrounded by gardens, displaying modern Indian art",
+        "Accessible via Vidhana Soudha Metro Station",
+        "Entry: ₹20 Indian / ₹500 foreign"
+      ]
     },
     {
       "name": "Bannerghatta Biological Park",
@@ -1397,7 +1949,13 @@
       "nearTransport": "Jayanagar Metro + BMTC Bus",
       "lat": 12.8009,
       "lng": 77.5777,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Riding the protected jungle bus safari to see lions and tigers.",
+        "A 260-sq-km national park featuring a zoo, butterfly park, and tiger-lion jungle safari 22 km south of Bengaluru",
+        "Accessible via Jayanagar Metro + BMTC Bus",
+        "Entry: ₹100 Entry / ₹350 Safari (verify locally)"
+      ]
     },
     {
       "name": "VV Puram Food Street",
@@ -1412,7 +1970,13 @@
       "nearTransport": "National College Metro Station",
       "lat": 12.9525,
       "lng": 77.5772,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Tasting piping hot Ghee Masala Dosa and Holige from street stalls.",
+        "Bengaluru's famous vegetarian food street offering local delicacies like Dosa, Holige, and Akki Roti",
+        "Accessible via National College Metro Station",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Church Street",
@@ -1427,7 +1991,13 @@
       "nearTransport": "MG Road Metro Station",
       "lat": 12.9744,
       "lng": 77.6067,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Browsing vintage books at Blossom Book House and street music.",
+        "A famous pedestrian-friendly granite-paved avenue lined with bookstores, cafes, art murals, and street performers",
+        "Accessible via MG Road Metro Station",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Kote Venkataramana Temple",
@@ -1442,7 +2012,13 @@
       "nearTransport": "KR Market Metro Station",
       "lat": 12.959,
       "lng": 77.5744,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Viewing ornate Vijayanagara-style stone pillars and Gopuram.",
+        "A 1689 Dravidian Hindu temple built by King Chikka Devaraja Wodeyar adjoining Tipu Sultan's Summer Palace",
+        "Accessible via KR Market Metro Station",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Nandi Hills",
@@ -1457,7 +2033,13 @@
       "nearTransport": "KSR Bengaluru Station (or Bus)",
       "lat": 13.3702,
       "lng": 77.6835,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Watching early morning sunrise over sea-of-clouds from hill cliff.",
+        "An ancient hill fortress 60 km north of Bengaluru at 1,478 meters altitude, famous for sunrise views above clouds",
+        "Accessible via KSR Bengaluru Station (or Bus)",
+        "Entry: ₹20 Indian (verify locally)"
+      ]
     },
     {
       "name": "Someshwara Temple Halasuru",
@@ -1472,7 +2054,13 @@
       "nearTransport": "Swami Vivekananda Road Metro",
       "lat": 12.9769,
       "lng": 77.62,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Inspecting Chola and Vijayanagara carved stone pillars.",
+        "One of the oldest temples in Bengaluru, dating back to the Chola period with major additions by Kempe Gowda",
+        "Accessible via Swami Vivekananda Road Metro",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Freedom Park",
@@ -1487,7 +2075,13 @@
       "nearTransport": "KSR Bengaluru Metro Station",
       "lat": 12.9786,
       "lng": 77.5786,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Walking through preserved historic prison watchtowers and barracks.",
+        "Located on the site of the former Central Jail built in 1867, transformed into a 21-acre public park and monument",
+        "Accessible via KSR Bengaluru Metro Station",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Bangalore Fort",
@@ -1502,7 +2096,13 @@
       "nearTransport": "KR Market Metro Station",
       "lat": 12.9628,
       "lng": 77.5756,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Viewing the preserved Delhi Gate stone bastion and carved arches.",
+        "Originally built as a mud fort in 1537 by Kempe Gowda I and converted into stone by Hyder Ali in 1761",
+        "Accessible via KR Market Metro Station",
+        "Entry: ₹20 Indian / ₹300 foreign"
+      ]
     }
   ],
   "Hyderabad": [
@@ -1519,7 +2119,13 @@
       "nearTransport": "MGBS Metro / Charminar Bus Station",
       "lat": 17.3616,
       "lng": 78.4747,
-      "image": "/images/spots/charminar.jpg"
+      "image": "/images/spots/charminar.jpg",
+      "highlights": [
+        "Climbing to upper balcony arches framing Old City bazaar views.",
+        "A 1591 mosque and monument built by Muhammad Quli Qutb Shah with four 56-meter tall ornamental minarets",
+        "Accessible via MGBS Metro / Charminar Bus Station",
+        "Entry: ₹25 Indian / ₹300 foreign"
+      ]
     },
     {
       "name": "Golconda Fort",
@@ -1534,7 +2140,13 @@
       "nearTransport": "Peddamma Gudi Metro (5 km) / Bus",
       "lat": 17.3833,
       "lng": 78.4011,
-      "image": "/images/spots/golconda-fort.jpg"
+      "image": "/images/spots/golconda-fort.jpg",
+      "highlights": [
+        "Experiencing the famous acoustic hand-clap echo from Fateh Darwaza to hilltop palace.",
+        "A medieval fortress citadel built by the Qutb Shahi dynasty, famous for acoustics, palaces, and diamond vaults",
+        "Accessible via Peddamma Gudi Metro (5 km) / Bus",
+        "Entry: ₹25 Indian / ₹300 foreign"
+      ]
     },
     {
       "name": "Hussain Sagar Lake",
@@ -1549,7 +2161,13 @@
       "nearTransport": "Khairatabad Metro Station",
       "lat": 17.4239,
       "lng": 78.4738,
-      "image": "/images/spots/hussain-sagar-lake.jpg"
+      "image": "/images/spots/hussain-sagar-lake.jpg",
+      "highlights": [
+        "Taking a boat ride to the monolithic Buddha statue at center of the lake.",
+        "Built in 1563 by Ibrahim Quli Qutb Shah, a heart-shaped lake featuring an 18-meter monolithic Buddha statue",
+        "Accessible via Khairatabad Metro Station",
+        "Entry: Free (Boating ticketed)"
+      ]
     },
     {
       "name": "Chowmahalla Palace",
@@ -1564,7 +2182,13 @@
       "nearTransport": "Charminar Bus / MGBS Metro",
       "lat": 17.3581,
       "lng": 78.4717,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Viewing 19 Belgian crystal chandeliers inside Khilwat Mubarak durbar hall.",
+        "The official palace seat of the Nizams of Hyderabad, built between 1750 and 1869, featuring grand courtyards",
+        "Accessible via Charminar Bus / MGBS Metro",
+        "Entry: ₹100 Indian / ₹400 foreign"
+      ]
     },
     {
       "name": "Qutb Shahi Tombs",
@@ -1579,7 +2203,13 @@
       "nearTransport": "Peddamma Gudi Metro / Bus",
       "lat": 17.3956,
       "lng": 78.3964,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Walking amidst magnificent domed stone tombs surrounded by gardens.",
+        "A landscaped heritage park containing domed mausoleums and mosques of the seven Qutb Shahi rulers",
+        "Accessible via Peddamma Gudi Metro / Bus",
+        "Entry: ₹20 Indian / ₹100 foreign"
+      ]
     },
     {
       "name": "Salar Jung Museum",
@@ -1594,7 +2224,13 @@
       "nearTransport": "MGBS Metro Station",
       "lat": 17.3714,
       "lng": 78.4804,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Watching the famous 19th-century musical bracket clock strike every hour.",
+        "One of India's three National Museums, holding the personal collection of Salar Jung III with 43,000 artifacts",
+        "Accessible via MGBS Metro Station",
+        "Entry: ₹50 Indian / ₹500 foreign"
+      ]
     },
     {
       "name": "Birla Mandir",
@@ -1609,7 +2245,13 @@
       "nearTransport": "Lakdi-ka-pul Metro Station",
       "lat": 17.4062,
       "lng": 78.4691,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Enjoying white marble carving art and hilltop views of Hussain Sagar Lake.",
+        "A Hindu temple built of 2,000 tons of pure white Rajasthani marble atop Naubat Pahad hill overlooking the lake",
+        "Accessible via Lakdi-ka-pul Metro Station",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Ramoji Film City",
@@ -1624,7 +2266,13 @@
       "nearTransport": "LB Nagar Metro + Bus",
       "lat": 17.2543,
       "lng": 78.6808,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Touring live cinema sets, stunt shows, and thematic gardens.",
+        "Certified by Guinness World Records as the world's largest film studio complex, spanning 2,000 acres",
+        "Accessible via LB Nagar Metro + Bus",
+        "Entry: Ticketed (verify locally)"
+      ]
     },
     {
       "name": "Mecca Masjid",
@@ -1639,7 +2287,13 @@
       "nearTransport": "MGBS Metro / Charminar Bus",
       "lat": 17.3606,
       "lng": 78.4736,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Viewing the massive granite arches and historic Nizam royal tombs.",
+        "One of India's oldest and largest mosques, commissioned in 1614 with central arches built from bricks brought from Mecca",
+        "Accessible via MGBS Metro / Charminar Bus",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Laad Bazaar",
@@ -1654,7 +2308,13 @@
       "nearTransport": "MGBS Metro / Charminar Bus",
       "lat": 17.3622,
       "lng": 78.4722,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Watching artisans hand-craft glittering glass and lacquer bangles.",
+        "A historic market operating since Qutb Shahi times, famous for traditional lacquer bangles and wedding jewelry",
+        "Accessible via MGBS Metro / Charminar Bus",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Falaknuma Palace",
@@ -1669,7 +2329,13 @@
       "nearTransport": "Falaknuma Railway Station",
       "lat": 17.3314,
       "lng": 78.4678,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Marveling at the 101-seat dining table and Venetian chandeliers.",
+        "Built in 1893 by Nawab Vikar-ul-Umra, a rare Italian marble palace that served as the Nizam's guest residence",
+        "Accessible via Falaknuma Railway Station",
+        "Entry: Ticketed (verify locally)"
+      ]
     },
     {
       "name": "Nehru Zoological Park",
@@ -1684,7 +2350,13 @@
       "nearTransport": "Charminar Metro / Station",
       "lat": 17.3503,
       "lng": 78.4514,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Riding the safari bus to spot Asiatic lions and Bengal tigers.",
+        "A 380-acre zoo established in 1963, housing over 1,500 species of wild animals in natural enclosures",
+        "Accessible via Charminar Metro / Station",
+        "Entry: ₹70 Indian / ₹100 foreign"
+      ]
     },
     {
       "name": "Lumbini Park",
@@ -1699,7 +2371,13 @@
       "nearTransport": "Khairatabad Metro Station",
       "lat": 17.4117,
       "lng": 78.4744,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Watching evening laser light shows dancing over water fountains.",
+        "A small urban park on the banks of Hussain Sagar Lake featuring laser shows, musical fountains, and boat rides",
+        "Accessible via Khairatabad Metro Station",
+        "Entry: ₹20 Indian (verify locally)"
+      ]
     },
     {
       "name": "NTR Gardens",
@@ -1714,7 +2392,13 @@
       "nearTransport": "Khairatabad Metro Station",
       "lat": 17.4125,
       "lng": 78.4719,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Riding the mini toy train around landscaped gardens and fountains.",
+        "A 34-acre urban park built in memory of N. T. Rama Rao, featuring toy train rides and giant machan structures",
+        "Accessible via Khairatabad Metro Station",
+        "Entry: ₹20 Indian (verify locally)"
+      ]
     },
     {
       "name": "Taramati Baradari",
@@ -1729,7 +2413,13 @@
       "nearTransport": "Peddamma Gudi Metro / Bus",
       "lat": 17.3792,
       "lng": 78.3822,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Ascending stone arches for views of Golconda Fort at sunset.",
+        "A 17th-century music pavilion with 12 doorways built by Abdullah Qutb Shah for his legendary singer Taramati",
+        "Accessible via Peddamma Gudi Metro / Bus",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Shilparamam",
@@ -1744,7 +2434,13 @@
       "nearTransport": "HITEC City Metro Station",
       "lat": 17.4525,
       "lng": 78.3808,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Browsing traditional artisan stalls amidst ethnic rural cottages.",
+        "An 65-acre arts and crafts village created in 1992 to preserve rural Indian crafts, folk dance, and handlooms",
+        "Accessible via HITEC City Metro Station",
+        "Entry: ₹60 Indian (verify locally)"
+      ]
     },
     {
       "name": "Durgam Cheruvu & Cable Bridge",
@@ -1759,7 +2455,13 @@
       "nearTransport": "Durgam Cheruvu Metro Station",
       "lat": 17.4389,
       "lng": 78.3833,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Walking the pedestrian cable bridge as multi-colored LED lights glow.",
+        "A scenic freshwater lake featuring an iconic 233-meter cable-stayed bridge spanning across Madhapur and Jubilee Hills",
+        "Accessible via Durgam Cheruvu Metro Station",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Purani Haveli",
@@ -1774,7 +2476,13 @@
       "nearTransport": "MGBS Metro Station",
       "lat": 17.3664,
       "lng": 78.4831,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Viewing the 240-foot long hand-carved mahogany double-decker wardrobe.",
+        "The official palace residence of the 5th Nizam, housing the famous Nizam's Museum and world's longest wooden wardrobe",
+        "Accessible via MGBS Metro Station",
+        "Entry: ₹80 Indian (verify locally)"
+      ]
     },
     {
       "name": "KBR National Park",
@@ -1789,7 +2497,13 @@
       "nearTransport": "Jubilee Hills Check Post Metro",
       "lat": 17.4208,
       "lng": 78.4183,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Walking the shaded outer jungle track with peacocks roaming freely.",
+        "Kasu Brahmananda Reddy National Park covers 390 acres of urban forest habitat holding Chiran Palace and wild peacocks",
+        "Accessible via Jubilee Hills Check Post Metro",
+        "Entry: ₹40 Indian (verify locally)"
+      ]
     },
     {
       "name": "BM Birla Science Centre",
@@ -1804,7 +2518,13 @@
       "nearTransport": "Lakdi-ka-pul Metro Station",
       "lat": 17.4042,
       "lng": 78.4708,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Seeing the authentic 160-million-year-old Kotasaurus dinosaur skeleton.",
+        "Features a modern planetarium, dinosaur museum with a 160-million-year-old Kotasaurus fossil, and interactive science halls",
+        "Accessible via Lakdi-ka-pul Metro Station",
+        "Entry: ₹160 Indian (verify locally)"
+      ]
     },
     {
       "name": "Telangana State Archaeology Museum",
@@ -1819,7 +2539,13 @@
       "nearTransport": "Nampally Metro Station",
       "lat": 17.3972,
       "lng": 78.4675,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Viewing the 4,000-year-old Egyptian mummy of Princess Naishu.",
+        "Hyderabad's oldest museum located in Public Gardens, famous for its ancient Egyptian mummy dating back to 2500 BCE",
+        "Accessible via Nampally Metro Station",
+        "Entry: ₹10 Indian (verify locally)"
+      ]
     },
     {
       "name": "Peddamma Temple",
@@ -1834,7 +2560,13 @@
       "nearTransport": "Peddamma Gudi Metro Station",
       "lat": 17.4333,
       "lng": 78.4069,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Experiencing traditional floral Bonalu festival rituals and Gopuram.",
+        "A popular Hindu temple dedicated to Goddess Santhanam (Peddamma), attracting thousands during Bonalu festival",
+        "Accessible via Peddamma Gudi Metro Station",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Chilkur Balaji Temple",
@@ -1849,7 +2581,13 @@
       "nearTransport": "Mehdipatnam Bus Station",
       "lat": 17.3556,
       "lng": 78.2725,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Performing 11 pradakshinas around the shrine without VIP queues.",
+        "An ancient 500-year-old Venkateswara temple popularly known as 'Visa Balaji', famous for accepting no monetary donations",
+        "Accessible via Mehdipatnam Bus Station",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Sanjeevaiah Park",
@@ -1864,7 +2602,13 @@
       "nearTransport": "Sanjeevaiah Park Railway Station",
       "lat": 17.4339,
       "lng": 78.4831,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Viewing the 308-foot national flag mast standing over the lake.",
+        "A 99-acre public park on the northern banks of Hussain Sagar Lake featuring a rose garden and national flag mast",
+        "Accessible via Sanjeevaiah Park Railway Station",
+        "Entry: ₹20 Indian (verify locally)"
+      ]
     },
     {
       "name": "Spanish Mosque",
@@ -1879,7 +2623,13 @@
       "nearTransport": "Prakash Nagar Metro / Begumpet Metro",
       "lat": 17.4447,
       "lng": 78.4719,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Admiring rare Moorish stone minarets reminiscent of Cordoba Cathedral.",
+        "Built in 1906 by Nawab Viqar-ul-Umra in unique Moorish and Hispanic-Islamic architecture featuring spire minarets",
+        "Accessible via Prakash Nagar Metro / Begumpet Metro",
+        "Entry: Free"
+      ]
     }
   ],
   "Jaipur": [
@@ -1896,7 +2646,13 @@
       "nearTransport": "Jaipur Junction (12 km) / Bus",
       "lat": 26.9855,
       "lng": 75.8513,
-      "image": "/images/spots/amber-fort.jpg"
+      "image": "/images/spots/amber-fort.jpg",
+      "highlights": [
+        "Marveling at the intricate convex glass mirror work in Sheesh Mahal.",
+        "A majestic hilltop UNESCO fortress constructed in 1592 by Raja Man Singh I using red sandstone and marble",
+        "Accessible via Jaipur Junction (12 km) / Bus",
+        "Entry: ₹100 Indian / ₹500 foreign"
+      ]
     },
     {
       "name": "Hawa Mahal",
@@ -1911,7 +2667,13 @@
       "nearTransport": "Badi Chaupar Metro Station",
       "lat": 26.9239,
       "lng": 75.8267,
-      "image": "/images/spots/hawa-mahal.jpg"
+      "image": "/images/spots/hawa-mahal.jpg",
+      "highlights": [
+        "Viewing the 953 honeycomb windows designed for royal women to observe street processions.",
+        "Built in 1799 by Maharaja Sawai Pratap Singh, a 5-story pink sandstone palace with 953 carved jharokha windows",
+        "Accessible via Badi Chaupar Metro Station",
+        "Entry: ₹50 Indian / ₹200 foreign"
+      ]
     },
     {
       "name": "City Palace Jaipur",
@@ -1926,7 +2688,13 @@
       "nearTransport": "Badi Chaupar Metro Station",
       "lat": 26.9258,
       "lng": 75.8236,
-      "image": "/images/spots/city-palace-jaipur.jpg"
+      "image": "/images/spots/city-palace-jaipur.jpg",
+      "highlights": [
+        "Admiring the Peacock Gate inside Pritam Niwas Chowk.",
+        "Established in 1727 by Maharaja Sawai Jai Singh II, a royal palace complex blending Rajput, Mughal, and European architecture",
+        "Accessible via Badi Chaupar Metro Station",
+        "Entry: ₹300 Indian / ₹700 foreign"
+      ]
     },
     {
       "name": "Jantar Mantar",
@@ -1941,7 +2709,13 @@
       "nearTransport": "Badi Chaupar Metro Station",
       "lat": 26.9247,
       "lng": 75.8246,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Seeing Vrihat Samrat Yantra, the world's largest stone sundial measuring time to 2-second accuracy.",
+        "A UNESCO World Heritage astronomical monument completed in 1734 by Sawai Jai Singh II, holding 19 stone instruments",
+        "Accessible via Badi Chaupar Metro Station",
+        "Entry: ₹50 Indian / ₹200 foreign"
+      ]
     },
     {
       "name": "Nahargarh Fort",
@@ -1956,7 +2730,13 @@
       "nearTransport": "Jaipur Junction Railway Station",
       "lat": 26.9378,
       "lng": 75.8156,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Watching sunset over the entire Pink City cityscape from stone battlements.",
+        "Built in 1734 by Maharaja Sawai Jai Singh II atop Aravalli hills, offering sweeping sunset views of Jaipur",
+        "Accessible via Jaipur Junction Railway Station",
+        "Entry: ₹50 Indian / ₹200 foreign"
+      ]
     },
     {
       "name": "Jal Mahal",
@@ -1971,7 +2751,13 @@
       "nearTransport": "Jaipur Railway Station (8 km) / Bus",
       "lat": 26.9534,
       "lng": 75.8462,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Photographing the glowing palace reflecting on lake waters at dusk.",
+        "A 5-story red sandstone palace submerged in the center of Man Sagar Lake, renovated by Maharaja Jai Singh II",
+        "Accessible via Jaipur Railway Station (8 km) / Bus",
+        "Entry: Free (Exterior view)"
+      ]
     },
     {
       "name": "Albert Hall Museum",
@@ -1986,7 +2772,13 @@
       "nearTransport": "MI Road / Badi Chaupar Metro",
       "lat": 26.9116,
       "lng": 75.8194,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Viewing 16th-century Persian carpets and nighttime lit facade.",
+        "The oldest museum in Rajasthan, built in 1887 in Indo-Saracenic style, showcasing carpet collections and Egyptian mummies",
+        "Accessible via MI Road / Badi Chaupar Metro",
+        "Entry: ₹40 Indian / ₹300 foreign"
+      ]
     },
     {
       "name": "Jaigarh Fort",
@@ -2001,7 +2793,13 @@
       "nearTransport": "Jaipur Junction (14 km) / Bus",
       "lat": 26.9958,
       "lng": 75.8475,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Inspecting the massive 50-ton Jaivana cannon resting on iron wheels.",
+        "Built in 1726 by Jai Singh II to protect Amber Fort, holding Jaivana, the world's largest cannon on wheels",
+        "Accessible via Jaipur Junction (14 km) / Bus",
+        "Entry: ₹100 Indian / ₹200 foreign"
+      ]
     },
     {
       "name": "Galtaji Temple",
@@ -2016,7 +2814,13 @@
       "nearTransport": "Jaipur Junction Railway Station",
       "lat": 26.9178,
       "lng": 75.8592,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Exploring pink stone temple pavilions surrounding natural spring pools.",
+        "An ancient Hindu pilgrimage site in a narrow mountain pass, featuring natural holy water kunds and friendly monkeys",
+        "Accessible via Jaipur Junction Railway Station",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Panna Meena ka Kund",
@@ -2031,7 +2835,13 @@
       "nearTransport": "Amer Bus Stop",
       "lat": 26.9939,
       "lng": 75.8497,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Photographing the stunning symmetrical crisscross stone stairs.",
+        "A 16th-century symmetrical geometric stepwell featuring crisscross stone staircases leading down to natural groundwater",
+        "Accessible via Amer Bus Stop",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Birla Mandir Jaipur",
@@ -2046,7 +2856,13 @@
       "nearTransport": "Jaipur Railway Station (5 km)",
       "lat": 26.8926,
       "lng": 75.8153,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Viewing intricate marble relief carvings depicting philosophers and gods.",
+        "Also known as Laxmi Narayan Temple, a modern Hindu temple built in 1988 of pure white Rajasthani marble",
+        "Accessible via Jaipur Railway Station (5 km)",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Johari Bazaar",
@@ -2061,7 +2877,13 @@
       "nearTransport": "Badi Chaupar Metro Station",
       "lat": 26.9208,
       "lng": 75.8267,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Shopping for authentic Kundan jewelry and Rajasthani tie-dye fabrics.",
+        "Jaipur's famous traditional bazaar known worldwide for handmade Kundan jewelry, precious gemstones, and sarees",
+        "Accessible via Badi Chaupar Metro Station",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Bapu Bazaar",
@@ -2076,7 +2898,13 @@
       "nearTransport": "Chandpole Metro / Badi Chaupar Metro",
       "lat": 26.9189,
       "lng": 75.8208,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Bargaining for colorful camel leather Mojari shoes and block prints.",
+        "A famous market located in the Pink City walls, popular for traditional Mojari leather shoes and block-print textiles",
+        "Accessible via Chandpole Metro / Badi Chaupar Metro",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Sisodia Rani Garden",
@@ -2091,7 +2919,13 @@
       "nearTransport": "Jaipur Junction Railway Station",
       "lat": 26.8972,
       "lng": 75.8672,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Strolling multi-level terraced gardens decorated with Radha-Krishna murals.",
+        "Built in 1728 for the queen of Maharaja Sawai Jai Singh II, featuring multi-tiered terraced gardens and fountains",
+        "Accessible via Jaipur Junction Railway Station",
+        "Entry: ₹50 Indian / ₹200 foreign"
+      ]
     },
     {
       "name": "Kanak Vrindavan",
@@ -2106,7 +2940,13 @@
       "nearTransport": "Jaipur Junction Railway Station",
       "lat": 26.9639,
       "lng": 75.8472,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Walking past white marble fountains framed by Aravalli hill views.",
+        "A manicured garden complex nestled in a valley below Nahargarh hill, resembling Vrindavan gardens",
+        "Accessible via Jaipur Junction Railway Station",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Govind Dev Ji Temple",
@@ -2121,7 +2961,13 @@
       "nearTransport": "Badi Chaupar Metro Station",
       "lat": 26.9286,
       "lng": 75.8247,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Participating in energetic morning Aarti prayers with local devotees.",
+        "A sacred 1735 Hindu temple inside the City Palace complex holding the deity of Lord Krishna brought from Vrindavan",
+        "Accessible via Badi Chaupar Metro Station",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Chokhi Dhani",
@@ -2136,7 +2982,13 @@
       "nearTransport": "Jaipur Junction / Airport",
       "lat": 26.7686,
       "lng": 75.8344,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Enjoying authentic Rajasthani Dal Baati Churma thali and Kalbelia dance.",
+        "A 5-star ethnic village resort depicting traditional Rajasthani rural culture, puppet shows, folk dance, and dining",
+        "Accessible via Jaipur Junction / Airport",
+        "Entry: Ticketed (verify locally)"
+      ]
     },
     {
       "name": "Anokhi Museum of Hand Printing",
@@ -2151,7 +3003,13 @@
       "nearTransport": "Amer Bus Stop",
       "lat": 26.9903,
       "lng": 75.8492,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Trying hands-on wooden block printing on fabric with master artisans.",
+        "Located in a restored 16th-century mansion near Amber Fort, dedicated to preserving hand block printing heritage",
+        "Accessible via Amer Bus Stop",
+        "Entry: ₹30 Indian / ₹100 foreign"
+      ]
     },
     {
       "name": "Patrika Gate",
@@ -2166,7 +3024,13 @@
       "nearTransport": "Jaipur Airport / Durgapura Railway Station",
       "lat": 26.8286,
       "lng": 75.8061,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Walking through hand-painted colorful archways depicting Rajasthan history.",
+        "A vibrant multi-arched gate at Jawahar Circle garden, hand-painted with colorful murals depicting Rajasthani culture",
+        "Accessible via Jaipur Airport / Durgapura Railway Station",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Jawahar Circle Garden",
@@ -2181,7 +3045,13 @@
       "nearTransport": "Durgapura Railway Station",
       "lat": 26.8278,
       "lng": 75.8056,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Watching the evening musical water fountain show.",
+        "Claimed to be the largest circular park in Asia, featuring jogging tracks, musical fountains, and Patrika Gate",
+        "Accessible via Durgapura Railway Station",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Central Park Jaipur",
@@ -2196,7 +3066,13 @@
       "nearTransport": "Jaipur Junction Railway Station",
       "lat": 26.9039,
       "lng": 75.8083,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Jogging along lush green lawns beside India's 206-foot national flag.",
+        "Jaipur's largest public park created by the Jaipur Development Authority, featuring a 5-km running track and 206-ft flag mast",
+        "Accessible via Jaipur Junction Railway Station",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Maharani Ki Chhatriyan",
@@ -2211,7 +3087,13 @@
       "nearTransport": "Badi Chaupar Metro Station",
       "lat": 26.9389,
       "lng": 75.8422,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Admiring intricately carved white marble domes and cenotaph pillars.",
+        "The funeral site holding exquisite carved marble cenotaphs of royal women of the Jaipur royal family",
+        "Accessible via Badi Chaupar Metro Station",
+        "Entry: ₹30 Indian (verify locally)"
+      ]
     },
     {
       "name": "Gaitore ki Chhatriyan",
@@ -2226,7 +3108,13 @@
       "nearTransport": "Jaipur Junction Railway Station",
       "lat": 26.9406,
       "lng": 75.8286,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Viewing the magnificent carved marble cenotaph of Maharaja Sawai Jai Singh II.",
+        "The royal crematorium ground for the Kachwaha Rajput kings, featuring delicately carved marble chhatris",
+        "Accessible via Jaipur Junction Railway Station",
+        "Entry: ₹30 Indian / ₹100 foreign"
+      ]
     },
     {
       "name": "MI Road",
@@ -2241,7 +3129,13 @@
       "nearTransport": "Chandpole Metro / Railway Station",
       "lat": 26.9167,
       "lng": 75.8111,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Drinking thick creamy kulhad lassi at legendary Lassiwala (est. 1944).",
+        "Jaipur's main arterial shopping avenue lined with heritage shops, brassware stores, and iconic lassi shops",
+        "Accessible via Chandpole Metro / Railway Station",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Chandpole Gate",
@@ -2256,7 +3150,13 @@
       "nearTransport": "Chandpole Metro Station",
       "lat": 26.9242,
       "lng": 75.8106,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Photographing the historic pink arched city gate during golden hour.",
+        "One of the seven historic high gates built into the Pink City wall in 1727, marking the western city entrance",
+        "Accessible via Chandpole Metro Station",
+        "Entry: Free"
+      ]
     }
   ],
   "Varanasi": [
@@ -2273,7 +3173,13 @@
       "nearTransport": "Varanasi Junction (4 km) / Auto",
       "lat": 25.3072,
       "lng": 83.0104,
-      "image": "/images/spots/dashashwamedh-ghat.jpg"
+      "image": "/images/spots/dashashwamedh-ghat.jpg",
+      "highlights": [
+        "Watching priests perform the grand Ganga Aarti with brass lamps at dusk.",
+        "The main and most historic ghat on the Ganges River in Varanasi, world-famous for its daily evening Ganga Aarti ceremony",
+        "Accessible via Varanasi Junction (4 km) / Auto",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Kashi Vishwanath Temple",
@@ -2288,7 +3194,13 @@
       "nearTransport": "Varanasi Junction (4 km)",
       "lat": 25.3109,
       "lng": 83.0107,
-      "image": "/images/spots/kashi-vishwanath-temple.jpg"
+      "image": "/images/spots/kashi-vishwanath-temple.jpg",
+      "highlights": [
+        "Experiencing the spiritual energy and golden spire inside Kashi Vishwanath Corridor.",
+        "One of the twelve sacred Jyotirlinga Shiva temples, rebuilt by Ahilyabai Holkar in 1780 with a 15.5-meter golden spire",
+        "Accessible via Varanasi Junction (4 km)",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Sarnath Sacred Site",
@@ -2303,7 +3215,13 @@
       "nearTransport": "Sarnath Railway Station (1 km) / Auto",
       "lat": 25.3811,
       "lng": 83.0228,
-      "image": "/images/spots/sarnath-sacred-site.jpg"
+      "image": "/images/spots/sarnath-sacred-site.jpg",
+      "highlights": [
+        "Standing before the massive 43.6-meter Dhamek Stupa built by Emperor Ashoka.",
+        "Located 10 km northeast of Varanasi, where Lord Buddha gave his first sermon after attaining enlightenment",
+        "Accessible via Sarnath Railway Station (1 km) / Auto",
+        "Entry: ₹25 Indian / ₹300 foreign"
+      ]
     },
     {
       "name": "Manikarnika Ghat",
@@ -2318,7 +3236,13 @@
       "nearTransport": "Varanasi Junction (4 km)",
       "lat": 25.3108,
       "lng": 83.0142,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Observing sacred funeral traditions and ancient Manikarnika Kund.",
+        "The principal sacred cremation ghat on the Ganges, where funeral pyres burn continuously 24 hours a day",
+        "Accessible via Varanasi Junction (4 km)",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Assi Ghat",
@@ -2333,7 +3257,13 @@
       "nearTransport": "Varanasi Junction (5 km) / BHU",
       "lat": 25.2886,
       "lng": 82.9997,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Experiencing morning Subah-e-Banaras classical music and sunrise yoga.",
+        "The southernmost major ghat where the Assi River meets the Ganges, famous for morning Subah-e-Banaras concerts and yoga",
+        "Accessible via Varanasi Junction (5 km) / BHU",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Sarnath Archaeological Museum",
@@ -2348,7 +3278,13 @@
       "nearTransport": "Sarnath Railway Station",
       "lat": 25.3789,
       "lng": 83.0244,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Viewing the original 3rd-century BCE Lion Capital of Ashoka.",
+        "Established in 1910, housing the original Lion Capital of Ashoka (India's national emblem) carved in sandstone",
+        "Accessible via Sarnath Railway Station",
+        "Entry: ₹5 Indian (verify locally)"
+      ]
     },
     {
       "name": "Banaras Hindu University",
@@ -2363,7 +3299,13 @@
       "nearTransport": "Varanasi Junction (7 km) / Auto",
       "lat": 25.2677,
       "lng": 82.9913,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Driving along tree-lined avenues to New Vishwanath Temple and Bharat Kala Bhavan.",
+        "Founded in 1916 by Pandit Madan Mohan Malaviya, one of Asia's largest residential universities spanning 1,300 acres",
+        "Accessible via Varanasi Junction (7 km) / Auto",
+        "Entry: Free"
+      ]
     },
     {
       "name": "New Vishwanath Temple",
@@ -2378,7 +3320,13 @@
       "nearTransport": "BHU Gate Lanka",
       "lat": 25.2658,
       "lng": 82.9878,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Viewing Gita verses inscribed on internal marble walls of the towering shrine.",
+        "Located inside BHU campus, a 77-meter marble temple tower built by the Birla family, taller than Qutub Minar",
+        "Accessible via BHU Gate Lanka",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Ramnagar Fort",
@@ -2393,7 +3341,13 @@
       "nearTransport": "Varanasi Junction (10 km) / Auto",
       "lat": 25.2831,
       "lng": 83.0239,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Viewing royal vintage car collection, swords, and astronomical clocks.",
+        "An 18th-century cream-colored sandstone fort on the eastern bank of the Ganges, ancestral home of the Kashi Naresh",
+        "Accessible via Varanasi Junction (10 km) / Auto",
+        "Entry: ₹80 Indian (verify locally)"
+      ]
     },
     {
       "name": "Bharat Kala Bhavan",
@@ -2408,7 +3362,13 @@
       "nearTransport": "BHU Gate Lanka",
       "lat": 25.2661,
       "lng": 82.9914,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Viewing rare Mughal miniature paintings and ancient palm-leaf manuscripts.",
+        "An university museum inside BHU established in 1920, exhibiting miniature paintings, sculptures, and textiles",
+        "Accessible via BHU Gate Lanka",
+        "Entry: ₹20 Indian (verify locally)"
+      ]
     },
     {
       "name": "Tulsi Manas Mandir",
@@ -2423,7 +3383,13 @@
       "nearTransport": "Varanasi Junction (5 km)",
       "lat": 25.2908,
       "lng": 82.9994,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Reading Ramcharitmanas verses engraved on marble walls across 2 floors.",
+        "A white marble temple built in 1964 where Goswami Tulsidas composed the epic Ramcharitmanas",
+        "Accessible via Varanasi Junction (5 km)",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Durga Kund Temple",
@@ -2438,7 +3404,13 @@
       "nearTransport": "Varanasi Junction (5 km)",
       "lat": 25.2917,
       "lng": 82.9986,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Admiring Nagara multi-tiered red stone spires framing Durga Kund tank.",
+        "An 18th-century red sandstone temple dedicated to Goddess Durga, adjoining a rectangular water tank (Kund)",
+        "Accessible via Varanasi Junction (5 km)",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Sankat Mochan Hanuman Temple",
@@ -2453,7 +3425,13 @@
       "nearTransport": "Varanasi Junction (6 km)",
       "lat": 25.2858,
       "lng": 82.9989,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Listening to evening Hanuman Chalisa chants and partaking in sweet Besan Ladoo.",
+        "Established by saint Goswami Tulsidas in the 16th century, dedicated to Lord Hanuman for removing troubles",
+        "Accessible via Varanasi Junction (6 km)",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Harishchandra Ghat",
@@ -2468,7 +3446,13 @@
       "nearTransport": "Varanasi Junction (4 km)",
       "lat": 25.2978,
       "lng": 83.0072,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Observing historic riverfront stone steps and ancient rituals.",
+        "One of the two ancient cremation ghats, named after King Harishchandra who worked here for truth and virtue",
+        "Accessible via Varanasi Junction (4 km)",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Scindia Ghat",
@@ -2483,7 +3467,13 @@
       "nearTransport": "Varanasi Junction (4 km)",
       "lat": 25.3117,
       "lng": 83.0147,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Photographing the partially submerged stone temple leaning in river waters.",
+        "Famous for its partially submerged Shiva temple which collapsed into the Ganges riverbed under its own weight in 1830",
+        "Accessible via Varanasi Junction (4 km)",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Darbhanga Ghat",
@@ -2498,7 +3488,13 @@
       "nearTransport": "Varanasi Junction (4 km)",
       "lat": 25.3061,
       "lng": 83.01,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Marveling at the carved Greek pillar balcony framing the Ganges.",
+        "Features a majestic 1812 sandstone palace built by the royal family of Bihar, now restored into a heritage hotel",
+        "Accessible via Varanasi Junction (4 km)",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Chet Singh Ghat",
@@ -2513,7 +3509,13 @@
       "nearTransport": "Varanasi Junction (4 km)",
       "lat": 25.2939,
       "lng": 83.0044,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Viewing the massive stone fort bastions rising straight out of the Ganges.",
+        "A fortified 18th-century stone riverfront fortress ghat where Maharaja Chet Singh fought Warren Hastings in 1781",
+        "Accessible via Varanasi Junction (4 km)",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Panchganga Ghat",
@@ -2528,7 +3530,13 @@
       "nearTransport": "Varanasi Junction (4 km)",
       "lat": 25.315,
       "lng": 83.0175,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Viewing Alamgir Mosque soaring high above steep riverfront stone stairs.",
+        "The sacred confluence where five mythical rivers meet, crowned by Emperor Aurangzeb's Alamgir Mosque",
+        "Accessible via Varanasi Junction (4 km)",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Kedar Ghat",
@@ -2543,7 +3551,13 @@
       "nearTransport": "Varanasi Junction (4 km)",
       "lat": 25.2994,
       "lng": 83.0078,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Walking the bold red-and-white painted stone steps down to the river.",
+        "Distinctive for its red-and-white striped steps leading to Ketareshwar Shiva Temple, built in South Indian style",
+        "Accessible via Varanasi Junction (4 km)",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Bharat Mata Mandir",
@@ -2558,7 +3572,13 @@
       "nearTransport": "Varanasi Junction Railway Station (1 km)",
       "lat": 25.3181,
       "lng": 82.9864,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Viewing the 3D relief topographical map of India carved in marble.",
+        "Inaugurated by Mahatma Gandhi in 1936, housing a relief map of undivided India carved out of marble",
+        "Accessible via Varanasi Junction Railway Station (1 km)",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Godowlia Market",
@@ -2573,7 +3593,13 @@
       "nearTransport": "Varanasi Junction Railway Station (3.5 km)",
       "lat": 25.3089,
       "lng": 83.0075,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Shopping for hand-woven Banarasi silk brocade sarees and wooden toys.",
+        "Varanasi's busiest traditional market near Dashashwamedh Ghat, famous for Banarasi silk sarees and brassware",
+        "Accessible via Varanasi Junction Railway Station (3.5 km)",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Chaukhandi Stupa",
@@ -2588,7 +3614,13 @@
       "nearTransport": "Sarnath Railway Station",
       "lat": 25.3756,
       "lng": 83.0231,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Climbing the green mound to view the 16th-century Mughal octagonal tower.",
+        "A 5th-century Gupta-era terraced brick stupa in Sarnath, modified in 1588 with an octagonal tower by Govardhan",
+        "Accessible via Sarnath Railway Station",
+        "Entry: ₹25 Indian / ₹300 foreign"
+      ]
     },
     {
       "name": "Thai Temple Sarnath",
@@ -2603,7 +3635,13 @@
       "nearTransport": "Sarnath Railway Station",
       "lat": 25.3808,
       "lng": 83.0256,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Viewing the 80-foot standing golden-colored Buddha statue amidst lotus gardens.",
+        "A serene monastery built in traditional Thai architecture, housing an 80-foot standing Buddha statue in gardens",
+        "Accessible via Sarnath Railway Station",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Tibetan Temple Sarnath",
@@ -2618,7 +3656,13 @@
       "nearTransport": "Sarnath Railway Station",
       "lat": 25.38,
       "lng": 83.0236,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Spinning brass Tibetan prayer wheels along the peaceful courtyard.",
+        "Built in 1955, a traditional Tibetan Buddhist monastery housing a statue of Shakyamuni Buddha and prayer wheels",
+        "Accessible via Sarnath Railway Station",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Shri Satyanarayan Tulsi Manas Temple",
@@ -2633,7 +3677,13 @@
       "nearTransport": "Varanasi Junction (5 km)",
       "lat": 25.291,
       "lng": 82.999,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Viewing animated mechanical puppet displays of Ramayana epics.",
+        "Adjoining Tulsi Manas Mandir, featuring manicured gardens depicting scenes from the Ramayana with mechanical statues",
+        "Accessible via Varanasi Junction (5 km)",
+        "Entry: Free"
+      ]
     }
   ],
   "Kochi": [
@@ -2650,7 +3700,13 @@
       "nearTransport": "Ernakulam Town / Junction",
       "lat": 10.0489,
       "lng": 76.2417,
-      "image": "/images/spots/veeranpuzha.jpg"
+      "image": "/images/spots/veeranpuzha.jpg",
+      "highlights": [
+        "Boating through Pokkali wetland backwaters and watching bird life.",
+        "Veeranpuzha is a northern extension of Vembanad Lake in Kochi, famous for Pokkali rice-fish farming wetlands",
+        "Accessible via Ernakulam Town / Junction",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Indo-Portuguese Museum",
@@ -2665,7 +3721,13 @@
       "nearTransport": "Fort Kochi Bus Stand / Ferry",
       "lat": 9.9625,
       "lng": 76.2412,
-      "image": "/images/spots/indo-portuguese-museum.jpg"
+      "image": "/images/spots/indo-portuguese-museum.jpg",
+      "highlights": [
+        "Viewing 16th-century teak altarpieces and silver processional crosses.",
+        "Located in the compound of the Bishop's House in Fort Kochi, showcasing Portuguese Christian art and artifacts",
+        "Accessible via Fort Kochi Bus Stand / Ferry",
+        "Entry: ₹20 Indian / ₹100 foreign"
+      ]
     },
     {
       "name": "Kerala Folklore Museum",
@@ -2680,7 +3742,13 @@
       "nearTransport": "Ernakulam Junction Railway Station (4 km)",
       "lat": 9.9328,
       "lng": 76.3006,
-      "image": "/images/spots/kerala-museum.jpg"
+      "image": "/images/spots/kerala-museum.jpg",
+      "highlights": [
+        "Exploring 4,000 authentic Theyyam masks, costumes, and ancient weapons.",
+        "A 3-story architectural marvel constructed from wood and stone holding 4,000 folklore and dance artifacts",
+        "Accessible via Ernakulam Junction Railway Station (4 km)",
+        "Entry: ₹100 Indian / ₹200 foreign"
+      ]
     },
     {
       "name": "Kochi-Muziris Biennale",
@@ -2695,7 +3763,13 @@
       "nearTransport": "Fort Kochi Ferry Jetty",
       "lat": 9.9678,
       "lng": 76.2442,
-      "image": "/images/spots/kochi-muziris-biennale.jpg"
+      "image": "/images/spots/kochi-muziris-biennale.jpg",
+      "highlights": [
+        "Viewing contemporary installation art inside 19th-century pepper warehouses.",
+        "India's largest contemporary international art exhibition held across heritage sea warehouses in Fort Kochi",
+        "Accessible via Fort Kochi Ferry Jetty",
+        "Entry: Ticketed (verify locally)"
+      ]
     },
     {
       "name": "Thrikkakara Temple",
@@ -2710,7 +3784,13 @@
       "nearTransport": "Edapally Metro Station",
       "lat": 10.0347,
       "lng": 76.3289,
-      "image": "/images/spots/thrikkakara-temple.jpg"
+      "image": "/images/spots/thrikkakara-temple.jpg",
+      "highlights": [
+        "Experiencing the spiritual center of Onam celebrations and Kerala murals.",
+        "An ancient Hindu temple dedicated to Lord Vamana, central to the origin story of Kerala's Onam festival",
+        "Accessible via Edapally Metro Station",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Chinese Fishing Nets",
@@ -2725,7 +3805,13 @@
       "nearTransport": "Fort Kochi Ferry Jetty",
       "lat": 9.9676,
       "lng": 76.2284,
-      "image": "/images/spots/chinese-fishing-nets.jpg"
+      "image": "/images/spots/chinese-fishing-nets.jpg",
+      "highlights": [
+        "Helping fishermen lift giant wooden cantilever nets against sunset skies.",
+        "Fixed shore-operated cantilever fishing structures introduced by Chinese traders in the 14th century",
+        "Accessible via Fort Kochi Ferry Jetty",
+        "Entry: Free (Tip to operate: ₹50)"
+      ]
     },
     {
       "name": "Mattancherry Palace",
@@ -2740,7 +3826,13 @@
       "nearTransport": "Mattancherry Jetty / Bus",
       "lat": 9.9583,
       "lng": 76.2597,
-      "image": "/images/spots/mattancherry-palace.jpg"
+      "image": "/images/spots/mattancherry-palace.jpg",
+      "highlights": [
+        "Viewing detailed 16th-century royal bedroom murals painted in tempera.",
+        "Built by the Portuguese in 1555 and presented to the King of Cochin, famed for 16th-century Ramayana mural paintings",
+        "Accessible via Mattancherry Jetty / Bus",
+        "Entry: ₹5 Indian (verify locally)"
+      ]
     },
     {
       "name": "Fort Kochi Beach",
@@ -2755,7 +3847,13 @@
       "nearTransport": "Fort Kochi Bus Stand",
       "lat": 9.9658,
       "lng": 76.2421,
-      "image": "/images/spots/fort-kochi-beach.jpg"
+      "image": "/images/spots/fort-kochi-beach.jpg",
+      "highlights": [
+        "Strolling the beach walkway at dusk past cargo ships entering Kochi port.",
+        "A scenic historic beach promenade framed by giant rain trees, colonial bungalows, and sea cargo views",
+        "Accessible via Fort Kochi Bus Stand",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Paradesi Synagogue",
@@ -2770,7 +3868,13 @@
       "nearTransport": "Mattancherry Jetty",
       "lat": 9.9575,
       "lng": 76.2594,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Viewing hand-painted 18th-century Chinese porcelain floor tiles and Belgian glass chandeliers.",
+        "Built in 1568 by Sephardic Jewish immigrants, it is the oldest active synagogue in the Commonwealth of Nations",
+        "Accessible via Mattancherry Jetty",
+        "Entry: ₹10 Indian (verify locally)"
+      ]
     },
     {
       "name": "Jew Town Bazaar",
@@ -2785,7 +3889,13 @@
       "nearTransport": "Mattancherry Jetty",
       "lat": 9.9572,
       "lng": 76.259,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Shopping for spices, antique carved wooden doors, and vintage brassware.",
+        "A famous antique shopping street leading to the Paradesi Synagogue, packed with spice stores and carved furniture",
+        "Accessible via Mattancherry Jetty",
+        "Entry: Free"
+      ]
     },
     {
       "name": "St. Francis Church",
@@ -2800,7 +3910,13 @@
       "nearTransport": "Fort Kochi Bus Stand",
       "lat": 9.9669,
       "lng": 76.2403,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Standing before the original tombstone of Portuguese explorer Vasco da Gama.",
+        "Built by Portuguese Franciscans in 1503, it is the oldest European-built church in India where Vasco da Gama was buried",
+        "Accessible via Fort Kochi Bus Stand",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Santa Cruz Cathedral Basilica",
@@ -2815,7 +3931,13 @@
       "nearTransport": "Fort Kochi Bus Stand",
       "lat": 9.9644,
       "lng": 76.2417,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Admiring ceiling frescoes depicting 'The Last Supper' painted in Italian style.",
+        "One of eight basilicas in Kerala, built by Portuguese in 1505 featuring Gothic spires and ceiling frescoes",
+        "Accessible via Fort Kochi Bus Stand",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Marine Drive Kochi",
@@ -2830,7 +3952,13 @@
       "nearTransport": "MG Road Metro Station",
       "lat": 9.9789,
       "lng": 76.2758,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Walking Rainbow Bridge at night watching harbor vessel lights.",
+        "A popular waterfront promenade facing the backwaters of Kochi, featuring Rainbow Bridge and boat jetties",
+        "Accessible via MG Road Metro Station",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Bolgatty Palace & Island",
@@ -2845,7 +3973,13 @@
       "nearTransport": "High Court Jetty Ferry",
       "lat": 9.9867,
       "lng": 76.2678,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Walking the island heritage lawns overlooking Kochi container port.",
+        "A Dutch palace built in 1744 on Bolgatty Island by Dutch traders, surrounded by golf greens and backwaters",
+        "Accessible via High Court Jetty Ferry",
+        "Entry: Free (Resort areas ticketed)"
+      ]
     },
     {
       "name": "Willingdon Island",
@@ -2860,7 +3994,13 @@
       "nearTransport": "Ernakulam Junction / Ferry",
       "lat": 9.9483,
       "lng": 76.2672,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Watching naval ships and international cargo liners enter port.",
+        "A man-made island created in 1936 by Lord Willingdon from dredged backwater soil, seat of Southern Naval Command",
+        "Accessible via Ernakulam Junction / Ferry",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Mangalavanam Bird Sanctuary",
@@ -2875,7 +4015,13 @@
       "nearTransport": "MG Road Metro Station",
       "lat": 9.9861,
       "lng": 76.2789,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Spotting migratory waterbirds inside lush urban mangrove woods.",
+        "A 2.74-hectare mangrove forest sanctuary in central Ernakulam, known as the green lungs of Kochi",
+        "Accessible via MG Road Metro Station",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Cherai Beach",
@@ -2890,7 +4036,13 @@
       "nearTransport": "Vypin Ferry + Bus",
       "lat": 10.1417,
       "lng": 76.1786,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Walking seashell-lined sands where sea and backwaters run side-by-side.",
+        "A 10-km sandy beach on Vypin Island where calm sea waters meet serene backwater lagoons",
+        "Accessible via Vypin Ferry + Bus",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Hill Palace Museum",
@@ -2905,7 +4057,13 @@
       "nearTransport": "Tripunithura Metro Station",
       "lat": 9.9531,
       "lng": 76.3608,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Viewing the 1.7-kg 200-diamond golden crown of Cochin Maharajas.",
+        "Built in 1865, Kerala's largest archaeological museum spanning 54 acres with 49 traditional buildings",
+        "Accessible via Tripunithura Metro Station",
+        "Entry: ₹30 Indian / ₹300 foreign"
+      ]
     },
     {
       "name": "Subhash Bose Park",
@@ -2920,7 +4078,13 @@
       "nearTransport": "Maharajas College Metro Station",
       "lat": 9.9719,
       "lng": 76.2814,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Relaxing on lakeside benches watching evening ferry boat crossings.",
+        "A 12-acre waterfront park facing Vembanad Lake in central Ernakulam, featuring paved walkways and musical fountains",
+        "Accessible via Maharajas College Metro Station",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Ernakulam Shiva Temple",
@@ -2935,7 +4099,13 @@
       "nearTransport": "Maharajas College Metro Station",
       "lat": 9.9686,
       "lng": 76.2847,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Experiencing classic Kerala temple architecture and Panchavadyam drumming.",
+        "A major ancient Hindu temple in Ernakulam city center dedicated to Shiva as Ernakulathappan",
+        "Accessible via Maharajas College Metro Station",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Chottanikkara Bhagavathy Temple",
@@ -2950,7 +4120,13 @@
       "nearTransport": "Tripunithura Railway / Metro Station",
       "lat": 9.9328,
       "lng": 76.3922,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Experiencing powerful evening Guruthi pujas inside the sacred lower shrine.",
+        "A famous Mother Goddess temple where the deity is worshipped as Saraswati in morning, Bhadrakali at noon, and Lakshmi in evening",
+        "Accessible via Tripunithura Railway / Metro Station",
+        "Entry: Free"
+      ]
     },
     {
       "name": "Museum of Kerala History",
@@ -2965,7 +4141,13 @@
       "nearTransport": "Pathadipalam Metro Station",
       "lat": 10.0267,
       "lng": 76.3139,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Watching the animated light and sound historical diorama show.",
+        "Founded by R. Madhavan Nayar, featuring light-and-sound shows depicting 2,000 years of Kerala history through life-size statues",
+        "Accessible via Pathadipalam Metro Station",
+        "Entry: ₹50 Indian (verify locally)"
+      ]
     },
     {
       "name": "Vypin Island & Lighthouse",
@@ -2980,7 +4162,13 @@
       "nearTransport": "Fort Kochi to Vypin Ferry",
       "lat": 9.9983,
       "lng": 76.2208,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Climbing Puthuvype Lighthouse for panoramic views of the Arabian Sea.",
+        "A 27-km long barrier island holding the 46-meter high Puthuvype Lighthouse offering ocean views",
+        "Accessible via Fort Kochi to Vypin Ferry",
+        "Entry: ₹20 Indian (verify locally)"
+      ]
     },
     {
       "name": "Aspinwall House",
@@ -2995,7 +4183,13 @@
       "nearTransport": "Fort Kochi Ferry Jetty",
       "lat": 9.9686,
       "lng": 76.2436,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Walking long historic wooden sea-facing verandahs.",
+        "A 19th-century seafront trading property established by John Aspinwall in 1867 for timber, pepper, and coconut oil",
+        "Accessible via Fort Kochi Ferry Jetty",
+        "Entry: Free (Ticketed during Biennale)"
+      ]
     },
     {
       "name": "Sree Poornathrayeesa Temple",
@@ -3010,7 +4204,13 @@
       "nearTransport": "Tripunithura Metro Station",
       "lat": 9.9489,
       "lng": 76.3478,
-      "image": ""
+      "image": "",
+      "highlights": [
+        "Viewing traditional gold-gilded temple structures and elephant festival processions.",
+        "The ancestral temple of the Royal Family of Cochin, dedicated to Lord Vishnu resting on Anantha",
+        "Accessible via Tripunithura Metro Station",
+        "Entry: Free"
+      ]
     }
   ]
 }

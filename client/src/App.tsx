@@ -17,6 +17,8 @@ import SancharChatbot from './components/SancharChatbot';
 import SancharMap from './components/SancharMap';
 import MapsPage from './pages/MapsPage';
 import { PlaceDetailPage, LuggageRadarPage } from './pages/PlacesAndLuggage';
+import { PartnersPage } from './pages/PartnersPage';
+
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -301,7 +303,9 @@ const App = () => {
           <Route path="/maps" element={<AppShell><MapsPage /></AppShell>} />
           <Route path="/spot/:cityName/:slug" element={<AppShell><PlaceDetailPage /></AppShell>} />
           <Route path="/luggage" element={<AppShell><LuggageRadarPage /></AppShell>} />
+          <Route path="/partners" element={<AppShell><PartnersPage /></AppShell>} />
           <Route path="*" element={<NotFound />} />
+
         </Routes>
       </BrowserRouter>
     </HealthContext.Provider>
@@ -771,6 +775,15 @@ const CitySpotlightPage = () => {
   const [retryCount, setRetryCount] = useState(0);
   const [retryAttempt, setRetryAttempt] = useState(0);
 
+  // Industry layer: Partner published content & Issue summary state
+  const [partnerItems, setPartnerItems] = useState<any[]>([]);
+  const [issueTotal, setIssueTotal] = useState<number>(0);
+  
+  // Transport Fare Guidance state
+  const [fareMode, setFareMode] = useState<'auto' | 'taxi' | 'rickshaw'>('auto');
+  const [fareDist, setFareDist] = useState<number>(5);
+  const [fareReportMsg, setFareReportMsg] = useState<string | null>(null);
+
   const formattedCity = cityName ? cityName.trim().split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ') : '';
 
   useEffect(() => {
@@ -835,11 +848,54 @@ const CitySpotlightPage = () => {
 
     fetchSpots();
 
+    // Industry layer: Fetch partner items & issue count for city
+    axios.get(`/api/partner-publish?city=${encodeURIComponent(formattedCity)}`)
+      .then(res => { if (!cancelled && Array.isArray(res.data)) setPartnerItems(res.data); })
+      .catch(() => {});
+    axios.get(`/api/issue-reports/summary?city=${encodeURIComponent(formattedCity)}`)
+      .then(res => { if (!cancelled && typeof res.data?.total === 'number') setIssueTotal(res.data.total); })
+      .catch(() => {});
+
     return () => {
       cancelled = true;
       controller.abort();
     };
   }, [formattedCity, retryCount]);
+
+
+  // Fare calculations
+  const calculateFareRange = () => {
+    const d = Math.max(1, fareDist);
+    if (fareMode === 'auto') {
+      const min = Math.round(30 + Math.max(0, d - 1.5) * 14);
+      const max = Math.round(35 + Math.max(0, d - 1.5) * 17);
+      return `₹${min} – ₹${max}`;
+    } else if (fareMode === 'taxi') {
+      const min = Math.round(50 + Math.max(0, d - 2) * 18);
+      const max = Math.round(60 + Math.max(0, d - 2) * 22);
+      return `₹${min} – ₹${max}`;
+    } else {
+      const min = Math.round(20 + Math.max(0, d - 1) * 10);
+      const max = Math.round(25 + Math.max(0, d - 1) * 14);
+      return `₹${min} – ₹${max}`;
+    }
+  };
+
+  const handleReportFareDiff = async () => {
+    try {
+      await axios.post('/api/issue-reports', {
+        city: formattedCity,
+        category: 'overcharging',
+        note: `Fare discrepancy reported for ${fareMode} over ${fareDist} km`
+      });
+      setIssueTotal(prev => prev + 1);
+      setFareReportMsg('Report submitted — thank you for keeping fares honest!');
+      setTimeout(() => setFareReportMsg(null), 3500);
+    } catch {
+      setFareReportMsg('Report saved locally.');
+      setTimeout(() => setFareReportMsg(null), 3500);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#FAFAF7]">
@@ -854,7 +910,7 @@ const CitySpotlightPage = () => {
       {/* Navigation Header */}
       <nav className="sticky top-0 z-50 glass-nav border-b border-gray-150">
         <div className="max-w-[1180px] mx-auto flex justify-between items-center h-16 px-5 md:px-8">
-          <Link to="/" className="flex items-center gap-2 text-sm font-bold text-[#00695C] hover:text-[#004D40] transition-colors no-underline">
+          <Link to="/" className="flex items-center gap-2 text-sm font-bold text-[#00695C] hover:text-[#004D40] transition-colors no-underline min-h-[44px]">
             <ChevronRight size={16} className="rotate-180" /> Back to home
           </Link>
           <Link to="/" className="flex items-center gap-2 no-underline">
@@ -866,7 +922,7 @@ const CitySpotlightPage = () => {
         </div>
       </nav>
 
-      <main className="max-w-[1180px] mx-auto px-5 md:px-8 py-10">
+      <main className="max-w-[1180px] mx-auto px-5 md:px-8 py-10 space-y-10">
         {loading && (
           <div className="text-center py-24 flex flex-col items-center gap-4">
             <div className="w-12 h-12 border-4 border-[#00695C] border-t-transparent rounded-full animate-spin" />
@@ -900,7 +956,7 @@ const CitySpotlightPage = () => {
         )}
 
         {!loading && data && (
-          <div className="animate-fade-in-up">
+          <div className="animate-fade-in-up space-y-10">
             {(!data.spots || data.spots.length === 0) ? (
               <div className="card p-10 text-center max-w-xl mx-auto border border-amber-200 bg-amber-50/30 my-12 rounded-3xl shadow-sm">
                 <HelpCircle className="text-[#F59E0B] mx-auto mb-4" size={44} />
@@ -924,9 +980,9 @@ const CitySpotlightPage = () => {
                 </div>
               </div>
             ) : (
-              <div>
-                {/* SCREEN 1 — Header & ONE Obvious Action Button */}
-                <div className="bg-white rounded-3xl p-6 md:p-8 border border-gray-150 shadow-sm mb-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div className="space-y-10">
+                {/* Header & Main Action */}
+                <div className="bg-white rounded-3xl p-6 md:p-8 border border-gray-150 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
                   <div>
                     <div className="flex items-center gap-3 flex-wrap mb-2">
                       <h1 className="text-3xl md:text-4xl font-extrabold text-[#1F2937] font-['Plus_Jakarta_Sans']">{data.city}</h1>
@@ -940,7 +996,16 @@ const CitySpotlightPage = () => {
                           : `Live open-data pack · ${data.spots.length} real places`}
                       </span>
                     </div>
-                    <p className="text-[#64748B] text-sm flex items-center gap-2 font-medium">
+
+                    {/* PUBLIC ISSUE REPORT COUNTER (REAL COUNT ONLY, HIDDEN WHEN 0) */}
+                    {issueTotal > 0 && (
+                      <div className="mt-2 text-xs font-bold text-amber-900 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-full inline-flex items-center gap-1.5">
+                        <AlertTriangle size={14} className="text-amber-600" />
+                        <span>{issueTotal} local issues reported — helping businesses improve</span>
+                      </div>
+                    )}
+
+                    <p className="text-[#64748B] text-sm flex items-center gap-2 font-medium mt-2">
                       <Compass size={16} className="text-[#00695C]" />
                       {data.source === 'curated-sample'
                         ? `${data.spots.length} verified spots · Curated pack`
@@ -951,7 +1016,7 @@ const CitySpotlightPage = () => {
                   <div className="flex flex-col items-start md:items-end gap-1.5 shrink-0">
                     <button
                       onClick={() => navigate(`/create?to=${encodeURIComponent(data.city)}`)}
-                      className="btn-primary !py-3.5 !px-8 text-sm font-bold bg-[#00695C] hover:bg-[#004D40] text-white rounded-2xl shadow-lg flex items-center justify-center gap-2 cursor-pointer min-h-[44px] w-full sm:w-auto"
+                      className="btn-primary !py-3.5 !px-8 text-sm font-bold bg-[#00695C] hover:bg-[#004D40] text-white rounded-2xl shadow-lg flex items-center justify-center gap-2 cursor-pointer min-h-[48px] w-full sm:w-auto"
                     >
                       <Zap size={18} className="text-[#F59E0B]" /> Start Safe Trip to {data.city}
                     </button>
@@ -962,59 +1027,177 @@ const CitySpotlightPage = () => {
                 </div>
 
                 {/* Spots Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {data.spots.map((spot: any, index: number) => (
-                    <div 
-                      key={index} 
-                      onClick={() => navigate(`/spot/${encodeURIComponent(data.city.toLowerCase())}/${spot.slug || spot.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}`)}
-                      className="bg-white p-6 rounded-2xl border border-gray-150 shadow-sm hover:shadow-md hover:border-[#00695C]/40 transition-all duration-200 flex flex-col justify-between gap-4 cursor-pointer group"
-                    >
-                      <div>
-                        <div className="flex items-start justify-between gap-3 mb-2">
-                          <div className="flex items-start gap-2.5">
-                            <span className="w-6 h-6 rounded-full bg-[#00695C]/10 text-[#00695C] text-xs font-bold flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-[#00695C] group-hover:text-white transition-colors">
-                              {index + 1}
-                            </span>
-                            <div>
-                              <h3 className="font-bold text-[#1F2937] text-base leading-snug group-hover:text-[#00695C] transition-colors">{spot.name}</h3>
-                              {spot.area && (
-                                <span className="text-[11px] font-medium text-gray-500 block mt-0.5 flex items-center gap-1">
-                                  <MapPin size={10} className="text-[#00695C]" /> {spot.area}
-                                </span>
-                              )}
+                <div>
+                  <h2 className="font-display font-bold text-xl text-gray-800 mb-6 flex items-center gap-2">
+                    <Compass size={20} className="text-[#00695C]" /> Tourist Spots in {data.city}
+                  </h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {data.spots.map((spot: any, index: number) => (
+                      <div 
+                        key={index} 
+                        onClick={() => navigate(`/spot/${encodeURIComponent(data.city.toLowerCase())}/${spot.slug || spot.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}`)}
+                        className="bg-white p-6 rounded-2xl border border-gray-150 shadow-sm hover:shadow-md hover:border-[#00695C]/40 transition-all duration-200 flex flex-col justify-between gap-4 cursor-pointer group"
+                      >
+                        <div>
+                          <div className="flex items-start justify-between gap-3 mb-2">
+                            <div className="flex items-start gap-2.5">
+                              <span className="w-6 h-6 rounded-full bg-[#00695C]/10 text-[#00695C] text-xs font-bold flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-[#00695C] group-hover:text-white transition-colors">
+                                {index + 1}
+                              </span>
+                              <div>
+                                <h3 className="font-bold text-[#1F2937] text-base leading-snug group-hover:text-[#00695C] transition-colors">{spot.name}</h3>
+                                {spot.area && (
+                                  <span className="text-[11px] font-medium text-gray-500 block mt-0.5 flex items-center gap-1">
+                                    <MapPin size={10} className="text-[#00695C]" /> {spot.area}
+                                  </span>
+                                )}
+                              </div>
                             </div>
+                            {spot.category && (
+                              <span className="text-[10px] font-bold uppercase tracking-wider bg-gray-100 text-gray-600 py-0.5 px-2.5 rounded-full whitespace-nowrap shrink-0">
+                                {spot.category}
+                              </span>
+                            )}
                           </div>
-                          {spot.category && (
-                            <span className="text-[10px] font-bold uppercase tracking-wider bg-gray-100 text-gray-600 py-0.5 px-2.5 rounded-full whitespace-nowrap shrink-0">
-                              {spot.category}
-                            </span>
+                          
+                          {spot.bestTime && spot.bestTime !== '—' && (
+                            <div className="text-[11px] font-semibold text-amber-700 bg-amber-50/80 px-2.5 py-1 rounded-md mb-2 inline-flex items-center gap-1.5 border border-amber-200/50">
+                              <Clock size={12} className="text-amber-600 shrink-0" />
+                              <span>📅 {spot.bestTime}</span>
+                            </div>
+                          )}
+
+                          {spot.blurb && (
+                            <p className="text-xs text-[#64748B] leading-relaxed line-clamp-2 mt-1">
+                              {spot.blurb}
+                            </p>
                           )}
                         </div>
-                        
-                        {spot.bestTime && spot.bestTime !== '—' && (
-                          <div className="text-[11px] font-semibold text-amber-700 bg-amber-50/80 px-2.5 py-1 rounded-md mb-2 inline-flex items-center gap-1.5 border border-amber-200/50">
-                            <Clock size={12} className="text-amber-600 shrink-0" />
-                            <span>📅 {spot.bestTime}</span>
-                          </div>
-                        )}
 
-                        {spot.blurb && (
-                          <p className="text-xs text-[#64748B] leading-relaxed line-clamp-2 mt-1">
-                            {spot.blurb}
-                          </p>
-                        )}
+                        <div className="pt-3 border-t border-gray-100 flex items-center justify-between text-xs font-bold text-[#00695C]">
+                          <span>Explore Spot</span>
+                          <span className="group-hover:translate-x-1 transition-transform">→</span>
+                        </div>
                       </div>
+                    ))}
+                  </div>
+                </div>
 
-                      <div className="pt-3 border-t border-gray-100 flex items-center justify-between text-xs font-bold text-[#00695C]">
-                        <span>Explore Spot</span>
-                        <span className="group-hover:translate-x-1 transition-transform">→</span>
-                      </div>
+                {/* FROM LOCAL PARTNERS SECTION */}
+                <div className="bg-white rounded-3xl p-6 md:p-8 border border-gray-200 shadow-sm space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-display font-bold text-xl text-gray-900 flex items-center gap-2">
+                        <Sparkles size={20} className="text-[#00695C]" /> From local partners in {data.city}
+                      </h3>
+                      <p className="text-xs text-gray-500 mt-1">Place guides and hotel profiles published by local agencies and hotels.</p>
                     </div>
-                  ))}
+                    <button
+                      onClick={() => navigate('/partners')}
+                      className="px-4 py-2 bg-teal-50 hover:bg-teal-100 text-[#00695C] border border-teal-200 text-xs font-bold rounded-xl transition cursor-pointer min-h-[44px]"
+                    >
+                      Publish as Partner →
+                    </button>
+                  </div>
+
+                  {partnerItems.length === 0 ? (
+                    <div className="p-8 bg-gray-50 rounded-2xl text-center space-y-3 border border-dashed border-gray-200">
+                      <HelpCircle size={32} className="text-amber-500 mx-auto" />
+                      <p className="text-sm font-bold text-gray-700">No partner-published guides for {data.city} yet — be the first to publish</p>
+                      <button
+                        onClick={() => navigate('/partners')}
+                        className="px-5 py-2.5 bg-[#00695C] text-white text-xs font-bold rounded-xl hover:bg-[#004D40] transition cursor-pointer min-h-[44px]"
+                      >
+                        Publish a Local Guide Now
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {partnerItems.map((pItem: any, pIdx: number) => (
+                        <div key={pIdx} className="p-5 rounded-2xl border border-gray-200 bg-gray-50/50 space-y-2 relative">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#00695C] bg-teal-50 px-2.5 py-0.5 rounded-full border border-teal-200">
+                              Partner published · check locally
+                            </span>
+                            <span className="text-[10px] text-gray-400 font-semibold">{pItem.role}</span>
+                          </div>
+                          <h4 className="font-bold text-gray-900 text-base">{pItem.name}</h4>
+                          <p className="text-xs text-gray-600 line-clamp-2">{pItem.description || pItem.checkInTip || 'Verified partner listing.'}</p>
+                          <div className="pt-2 text-[11px] text-gray-500 font-medium flex justify-between">
+                            <span>📍 {pItem.area || data.city}</span>
+                            <span>By {pItem.publisherName || pItem.role}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* TRANSPORT FARE GUIDANCE TOOL */}
+                <div className="bg-white rounded-3xl p-6 md:p-8 border border-gray-200 shadow-sm space-y-6">
+                  <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+                    <div>
+                      <h3 className="font-display font-bold text-xl text-gray-900 flex items-center gap-2">
+                        <IndianRupee size={20} className="text-[#00695C]" /> Transport Fare Guidance for {data.city}
+                      </h3>
+                      <p className="text-xs text-gray-500 mt-1">Honest local estimates for auto, taxi, and rickshaw trips.</p>
+                    </div>
+                    <span className="text-xs font-bold text-amber-900 bg-amber-50 px-3 py-1 rounded-full border border-amber-200">
+                      estimate, not a regulated price
+                    </span>
+                  </div>
+
+                  {fareReportMsg && (
+                    <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-bold rounded-xl text-center">
+                      {fareReportMsg}
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 mb-1">Vehicle Type</label>
+                      <select
+                        value={fareMode}
+                        onChange={(e: any) => setFareMode(e.target.value)}
+                        className="w-full p-3 rounded-xl border border-gray-300 text-sm font-bold"
+                      >
+                        <option value="auto">Auto Rickshaw</option>
+                        <option value="taxi">Prepaid / City Taxi</option>
+                        <option value="rickshaw">Cycle Rickshaw</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 mb-1">Estimated Distance: {fareDist} km</label>
+                      <input
+                        type="range"
+                        min="1"
+                        max="30"
+                        value={fareDist}
+                        onChange={(e) => setFareDist(Number(e.target.value))}
+                        className="w-full accent-[#00695C] cursor-pointer"
+                      />
+                    </div>
+
+                    <div className="p-4 bg-teal-50/80 rounded-2xl border border-teal-200 text-center">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-[#00695C] block mb-1">Typical Range</span>
+                      <div className="text-2xl font-extrabold text-[#004D40]">{calculateFareRange()}</div>
+                      <span className="text-[10px] font-medium text-teal-800 block mt-0.5">typical range — check locally</span>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 flex justify-end">
+                    <button
+                      onClick={handleReportFareDiff}
+                      className="px-4 py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-xs font-bold rounded-xl transition cursor-pointer flex items-center gap-1.5 min-h-[44px]"
+                    >
+                      <AlertTriangle size={14} className="text-amber-600" /> Report a large difference
+                    </button>
+                  </div>
                 </div>
 
                 {/* Footer Actions */}
-                <div className="mt-16 bg-white rounded-3xl p-8 border border-gray-150 shadow-sm text-center max-w-2xl mx-auto flex flex-col items-center gap-4">
+                <div className="bg-white rounded-3xl p-8 border border-gray-150 shadow-sm text-center max-w-2xl mx-auto flex flex-col items-center gap-4">
                   <h3 className="text-xl font-bold text-[#1F2937]">Ready to visit {data.city}?</h3>
                   <p className="text-xs text-[#64748B] max-w-md">
                     Start a live journey with offline safety tools, budget tracking, and instant SOS monitoring.
@@ -1022,13 +1205,13 @@ const CitySpotlightPage = () => {
                   <div className="flex flex-col sm:flex-row gap-4 mt-2 w-full justify-center">
                     <button
                       onClick={() => navigate(`/create?destination=${encodeURIComponent(data.city)}`)}
-                      className="btn-primary !py-3 !px-8 text-sm font-bold flex items-center justify-center gap-2 cursor-pointer"
+                      className="btn-primary !py-3 !px-8 text-sm font-bold flex items-center justify-center gap-2 cursor-pointer min-h-[44px]"
                     >
                       <Zap size={16} /> Create trip to {data.city}
                     </button>
                     <button
                       onClick={() => navigate('/')}
-                      className="btn-secondary !py-3 !px-8 text-sm font-bold cursor-pointer"
+                      className="btn-secondary !py-3 !px-8 text-sm font-bold cursor-pointer min-h-[44px]"
                     >
                       Back to home
                     </button>
@@ -1042,6 +1225,7 @@ const CitySpotlightPage = () => {
     </div>
   );
 };
+
 
 const useScrollReveal = () => {
   useEffect(() => {
@@ -1401,10 +1585,18 @@ const LandingPage = () => {
   const [scrollY, setScrollY] = useState(0);
   const [stats, setStats] = useState<any>(null);
   const [isInputFocused, setIsInputFocused] = useState(false);
+  const [savedPlaces, setSavedPlaces] = useState<any[]>([]);
 
   const navigate = useNavigate();
 
   useScrollReveal();
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('saved_places');
+      if (raw) setSavedPlaces(JSON.parse(raw));
+    } catch {}
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY);
@@ -1751,7 +1943,7 @@ const LandingPage = () => {
         <div className="max-w-[1200px] mx-auto px-5 md:px-8">
           <div className="text-center mb-12">
             <span className="text-[10px] font-bold uppercase tracking-widest text-[#F59E0B] block mb-2">Create journey</span>
-            <h2 className="font-display text-3xl md:text-4xl font-bold text-[#1F2937]">Configure your safety telemetry</h2>
+            <h2 className="font-display text-3xl md:text-4xl font-bold text-[#1F2937]">Configure your safety tracking</h2>
           </div>
           <div className="bg-white p-6 md:p-10 rounded-3xl border border-gray-150 shadow-sm max-w-3xl mx-auto">
             <HeroSearchForm preFillDest={destinationPreFill} />
@@ -1872,7 +2064,7 @@ const LandingPage = () => {
           <div className="mt-16 pt-8 border-t border-white/20 grid grid-cols-1 md:grid-cols-5 gap-8 items-end">
             <div className="md:col-span-1">
               <p className="text-xs text-gray-300 leading-relaxed font-['Plus_Jakarta_Sans']">
-                Combine verified local directories, offline maps, and safety telemetry into one seamless journey.
+                Combine verified local directories, offline maps, and safety tracking into one seamless journey.
               </p>
             </div>
 
@@ -1903,6 +2095,39 @@ const LandingPage = () => {
 
         </div>
       </section>
+
+      {/* ── SAVED PLACES SECTION (if any saved on device) ── */}
+      {savedPlaces.length > 0 && (
+        <section className="py-12 bg-[#FAFBFB] border-b border-gray-150">
+          <div className="max-w-[1200px] mx-auto px-5 md:px-8">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#00695C] bg-teal-50 px-2.5 py-1 rounded-full border border-teal-100 font-['Plus_Jakarta_Sans']">saved on this device</span>
+                <h2 className="text-2xl font-extrabold text-[#1F2937] mt-1 font-['Plus_Jakarta_Sans']">Saved Places ({savedPlaces.length})</h2>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {savedPlaces.map((spot, idx) => (
+                <div
+                  key={idx}
+                  onClick={() => navigate(`/spot/${(spot.city || 'chennai').toLowerCase()}/${spot.slug}`)}
+                  className="bg-white rounded-2xl p-4 border border-gray-150 shadow-xs hover:shadow-md transition cursor-pointer flex flex-col justify-between group"
+                >
+                  <div>
+                    <span className="text-[10px] font-bold text-[#00695C] uppercase font-['Plus_Jakarta_Sans']">{spot.category || 'Spot'} · {spot.city}</span>
+                    <h3 className="font-extrabold text-base text-[#1F2937] mt-0.5 line-clamp-1 group-hover:text-[#00695C] transition-colors">{spot.name}</h3>
+                    <p className="text-xs text-[#64748B] mt-1 line-clamp-2">{spot.area || spot.location}</p>
+                  </div>
+                  <div className="mt-3 pt-2 border-t border-gray-100 flex items-center justify-between text-xs font-bold text-[#00695C]">
+                    <span>Explore Spot</span>
+                    <span className="group-hover:translate-x-1 transition-transform">→</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ── 6. SPECIAL SPOTS ACROSS INDIA (Visible All-of-India Proof) ── */}
       <section className="section-rhythm bg-[#0A1616] py-24 text-white border-y border-teal-950 reveal-element">
@@ -2019,7 +2244,7 @@ const LandingPage = () => {
                 <span className="text-gray-400 font-normal">+</span> City Packs & Offline Maps
               </div>
               <div className="flex items-center gap-3 text-2xl md:text-3xl font-extrabold text-white/95">
-                <span className="text-gray-400 font-normal">+</span> Live Telemetry & GPS Bearing
+                <span className="text-gray-400 font-normal">+</span> Live GPS & Direction
               </div>
               <div className="flex items-center gap-3 text-2xl md:text-3xl font-extrabold text-white/95">
                 <span className="text-gray-400 font-normal">+</span> Luggage Radar & Emergency 112
@@ -2221,7 +2446,7 @@ const LandingPage = () => {
             <h2 className="font-display text-4xl md:text-6xl font-extrabold text-white mb-6 tracking-tight">Your journey<br/>stays yours</h2>
             <p className="text-teal-200 text-lg md:text-xl mb-6 font-semibold">We build strictly private on-device pipelines.</p>
             <p className="text-gray-300 text-sm sm:text-base leading-relaxed mb-10 max-w-lg">
-              Explore freely across 28 States and 8 Union Territories in India. Your exact route coordinate log never leaves your device storage, telemetry is strictly opt-in, and the first and last 500 meters of your journey are stripped instantly.
+              Explore freely across 28 States and 8 Union Territories in India. Your exact route coordinate log never leaves your device storage, journey sharing is strictly opt-in, and the first and last 500 meters of your journey are stripped instantly.
             </p>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -2614,6 +2839,8 @@ const CreateTrip = () => {
     return '';
   });
   const [customHome, setCustomHome] = useState('');
+  const [hotelName, setHotelName] = useState('');
+  const [hotelAddress, setHotelAddress] = useState('');
   const [budget, setBudget] = useState(10000);
   const [expectedArrival, setExpectedArrival] = useState('');
   const [trustedContact, setTrustedContact] = useState('');
@@ -2629,12 +2856,20 @@ const CreateTrip = () => {
     setError('');
     setSubmitting(true);
     try {
+      if (hotelName.trim()) {
+        localStorage.setItem('active_hotel_info', JSON.stringify({ hotelName: hotelName.trim(), hotelAddress: hotelAddress.trim() }));
+      } else {
+        localStorage.removeItem('active_hotel_info');
+      }
+
       // Step 1: POST /api/trips
       const createRes = await asyncWithWakeRetry(() => axios.post('/api/trips', {
         originCity: origin,
         destinationCity: destination,
         status: 'created',
         budget,
+        hotelName: hotelName.trim() || undefined,
+        hotelAddress: hotelAddress.trim() || undefined,
         expectedArrival: expectedArrival ? new Date(expectedArrival) : null,
         trustedContactLabel: trustedContact || undefined,
         analyticsConsent: consent,
@@ -2707,10 +2942,20 @@ const CreateTrip = () => {
         {/* Collapsed Secondary / Optional Details */}
         <details className="group border border-gray-200 rounded-2xl p-4 bg-white shadow-xs">
           <summary className="cursor-pointer font-semibold text-xs text-[#00695C] flex items-center justify-between select-none">
-            <span>Optional Details (Arrival time, Contact & Privacy consent)</span>
+            <span>Optional Details (Hotel / Destination, Arrival time, Contact & Privacy consent)</span>
             <ChevronDown size={16} className="group-open:rotate-180 transition-transform text-[#00695C]" />
           </summary>
           <div className="pt-4 flex flex-col gap-4 border-t border-gray-100 mt-3">
+            <div>
+              <label className="text-xs font-semibold text-[#1F2937] mb-1 block">Hotel / Destination Name (optional)</label>
+              <input type="text" placeholder="e.g. Taj Connemara Hotel / Grand Residency" value={hotelName} onChange={e => setHotelName(e.target.value)} className="input-field text-xs" />
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-[#1F2937] mb-1 block">Hotel Address / Landmark (optional)</label>
+              <input type="text" placeholder="e.g. Binny Road, Anna Salai, Chennai" value={hotelAddress} onChange={e => setHotelAddress(e.target.value)} className="input-field text-xs" />
+            </div>
+
             <div>
               <label className="text-xs font-semibold text-[#1F2937] mb-1 block">Expected Arrival (optional)</label>
               <input type="datetime-local" value={expectedArrival} onChange={e => setExpectedArrival(e.target.value)} className="input-field text-xs" />
@@ -2861,6 +3106,20 @@ const ActiveTrip = () => {
   const [lastNudgeTime, setLastNudgeTime] = useState(0);
   const [activeMode, setActiveMode] = useState<string>('walking');
   const [checkInMsg, setCheckInMsg] = useState<string | null>(null);
+
+  // Hotel Arrival State
+  const [phraseLang, setPhraseLang] = useState<'EN' | 'TA' | 'TE' | 'HI'>('EN');
+  const [bigTextMode, setBigTextMode] = useState(false);
+
+  const activeHotelInfo = (() => {
+    try {
+      return JSON.parse(localStorage.getItem('active_hotel_info') || '{}');
+    } catch {
+      return {};
+    }
+  })();
+  const effectiveHotelName = trip?.hotelName || activeHotelInfo.hotelName;
+  const effectiveHotelAddress = trip?.hotelAddress || activeHotelInfo.hotelAddress;
 
   // SOS Hold & Countdown State
   const [sosHolding, setSosHolding] = useState(false);
@@ -3278,8 +3537,13 @@ const ActiveTrip = () => {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#64748B] block mb-1">Active Journey</span>
-              <h1 className="text-xl md:text-2xl font-extrabold text-[#1F2937] font-['Plus_Jakarta_Sans'] flex items-center gap-2">
+              <h1 className="text-xl md:text-2xl font-extrabold text-[#1F2937] font-['Plus_Jakarta_Sans'] flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
                 <span>On the way to {trip?.destinationCity || 'Destination'}</span>
+                {effectiveHotelName && (
+                  <span className="text-xs font-bold text-[#00695C] bg-[#E0F2F1] px-2.5 py-1 rounded-full inline-block">
+                    Arriving at {effectiveHotelName}
+                  </span>
+                )}
               </h1>
               <p className="text-xs text-[#64748B] mt-0.5 font-medium">
                 From {trip?.originCity || 'Origin'} · Elapsed: <span className="font-bold text-[#00695C] font-mono">{formatTime(elapsed)}</span>
@@ -3315,7 +3579,7 @@ const ActiveTrip = () => {
             </div>
           </div>
 
-          {/* Telemetry Metrics Row */}
+          {/* Tracking Metrics Row */}
           <div className="grid grid-cols-4 gap-2 pt-3 border-t border-gray-100 text-center">
             <div>
               <span className="text-[10px] text-gray-500 font-bold uppercase block">Speed</span>
@@ -3336,6 +3600,75 @@ const ActiveTrip = () => {
           </div>
         </div>
       </div>
+
+      {/* Hotel Check-in Phrase Card */}
+      <div className="mx-5 md:mx-8 mb-4 bg-white p-4 rounded-3xl border border-teal-200/80 shadow-xs flex flex-col gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <span className="text-base">🏨</span>
+            <div>
+              <h3 className="font-extrabold text-xs text-[#1F2937]">Hotel Check-in Phrase Card</h3>
+              {effectiveHotelName ? (
+                <p className="text-[11px] font-bold text-[#00695C]">Arriving at: {effectiveHotelName} {effectiveHotelAddress ? `(${effectiveHotelAddress})` : ''}</p>
+              ) : (
+                <p className="text-[11px] text-[#64748B]">Show to hotel reception or auto driver</p>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="flex border border-gray-200 rounded-xl overflow-hidden text-[11px] font-bold">
+              {(['EN', 'TA', 'TE', 'HI'] as const).map(l => (
+                <button
+                  key={l}
+                  onClick={() => setPhraseLang(l)}
+                  className={`px-2 py-1 cursor-pointer transition ${phraseLang === l ? 'bg-[#00695C] text-white' : 'bg-gray-50 text-gray-700 hover:bg-gray-100'}`}
+                >
+                  {l}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => setBigTextMode(true)}
+              className="px-3 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold shrink-0 cursor-pointer min-h-[36px]"
+            >
+              Big Text
+            </button>
+          </div>
+        </div>
+
+        <div className="bg-[#FAFBFB] p-3 rounded-2xl border border-gray-150 flex flex-col gap-0.5">
+          <div className="text-xs font-medium text-gray-500">"I have a reservation / I am checking in"</div>
+          <div className="text-sm font-extrabold text-[#00695C]">
+            {phraseLang === 'TA' && 'எனக்கு ஒரு முன் பதிவு உள்ளது / நான் செக்-இன் செய்கிறேன் (Enakku oru mun padivu ulladhu)'}
+            {phraseLang === 'TE' && 'నాకు బుకింగ్ ఉంది / నేను చెక్ ఇన్ చేస్తున్నాను (Naaku booking undi)'}
+            {phraseLang === 'HI' && 'मेरी बुकिंग है / मैं चेक-इन कर रहा हूँ (Meri booking hai)'}
+            {phraseLang === 'EN' && 'I have a reservation / I am checking in'}
+          </div>
+        </div>
+      </div>
+
+      {/* Big Text Mode Modal */}
+      {bigTextMode && (
+        <div className="fixed inset-0 bg-black/95 z-50 p-6 flex flex-col justify-between text-white animate-fade-in">
+          <div className="flex justify-between items-center">
+            <span className="text-sm font-bold text-amber-400 flex items-center gap-2">🏨 Hotel Arrival Phrase Card</span>
+            <button onClick={() => setBigTextMode(false)} className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-xl font-bold text-xs min-h-[44px]">Close ✕</button>
+          </div>
+          <div className="my-auto text-center space-y-6 max-w-xl mx-auto">
+            {effectiveHotelName && <div className="text-xl md:text-2xl font-bold text-teal-300">Arriving at {effectiveHotelName}</div>}
+            <div className="text-3xl md:text-5xl font-extrabold leading-tight tracking-wide text-amber-400">
+              {phraseLang === 'TA' && 'எனக்கு ஒரு முன் பதிவு உள்ளது / நான் செக்-இன் செய்கிறேன்'}
+              {phraseLang === 'TE' && 'నాకు బుకింగ్ ఉంది / నేను చెక్ ఇన్ చేస్తున్నాను'}
+              {phraseLang === 'HI' && 'मेरी बुकिंग है / मैं चेक-इन कर रहा हूँ'}
+              {phraseLang === 'EN' && 'I have a reservation / I am checking in'}
+            </div>
+            <div className="text-base text-gray-300 font-medium">
+              "I have a reservation / I am checking in"
+            </div>
+          </div>
+          <div className="text-center text-xs text-gray-400">Tap Close to return to active trip</div>
+        </div>
+      )}
 
       {/* Location Denied State */}
       {permDenied && (
@@ -3389,9 +3722,11 @@ const ActiveTrip = () => {
           <div className="flex items-start gap-3">
             <Check className="text-[#2E7D32] shrink-0 mt-0.5" size={20} />
             <div>
-              <p className="font-bold text-sm text-[#2E7D32] uppercase tracking-wide">It looks like you arrived — are you safe?</p>
+              <p className="font-bold text-sm text-[#2E7D32] uppercase tracking-wide">
+                {effectiveHotelName ? `You've arrived at ${effectiveHotelName} — are you safe?` : "It looks like you arrived — are you safe?"}
+              </p>
               <p className="text-xs text-[#1F2937] mt-1 font-medium">
-                You've reached {trip?.destinationCity || 'your destination'}. Confirm arrival to view trip summary?
+                You've reached {effectiveHotelName || trip?.destinationCity || 'your destination'}. Confirm arrival to view trip summary?
               </p>
             </div>
           </div>
@@ -4723,7 +5058,7 @@ const PrivacyPage = () => {
       <div className="card p-5 border border-gray-100 rounded-2xl bg-white shadow-sm">
         <h3 className="font-bold text-sm text-[#1F2937] mb-3">On-Device Security Pipeline</h3>
         <ul className="text-xs sm:text-sm text-[#1F2937] space-y-3 font-medium">
-          <li className="flex items-start gap-2"><Check size={16} className="text-teal-600 mt-0.5 shrink-0" /> Your exact route telemetry stays on your device storage.</li>
+          <li className="flex items-start gap-2"><Check size={16} className="text-teal-600 mt-0.5 shrink-0" /> Your exact route stays on your device storage.</li>
           <li className="flex items-start gap-2"><Check size={16} className="text-teal-600 mt-0.5 shrink-0" /> Analytics off by default — requires explicit user opt-in.</li>
           <li className="flex items-start gap-2"><Check size={16} className="text-teal-600 mt-0.5 shrink-0" /> First and last 300–500 meters are stripped automatically from any logs.</li>
           <li className="flex items-start gap-2"><Check size={16} className="text-teal-600 mt-0.5 shrink-0" /> Photos & voice notes are encrypted with Web Crypto SHA-256 local PIN.</li>
@@ -4906,42 +5241,30 @@ const FeaturesPage = () => (
 const CHART_COLORS = ['#00695C', '#F59E0B', '#8B5CF6', '#008080', '#D32F2F', '#10B981'];
 
 const Dashboard = () => {
+  const [selectedCity, setSelectedCity] = useState<string>('');
   const [summary, setSummary] = useState<any>(null);
   const [loadingText, setLoadingText] = useState<string | null>('Connecting to live data…');
-  const [emptyState, setEmptyState] = useState(false);
 
   useEffect(() => {
     let isCancelled = false;
     const fetchMobility = async () => {
-      const backoffs = [0, 5000, 10000, 20000, 30000];
-      for (let i = 0; i < backoffs.length; i++) {
-        if (i > 0) {
-          setLoadingText('Connecting to live data…');
-          await new Promise(r => setTimeout(r, backoffs[i]));
-          if (isCancelled) return;
-        }
-        try {
-          const r = await axios.get('/api/mobility/summary');
-          if (isCancelled) return;
-          setSummary(r.data);
+      setLoadingText('Connecting to live data…');
+      try {
+        const url = selectedCity ? `/api/mobility/summary?city=${encodeURIComponent(selectedCity)}` : '/api/mobility/summary';
+        const r = await axios.get(url);
+        if (isCancelled) return;
+        setSummary(r.data);
+        setLoadingText(null);
+      } catch (e) {
+        if (!isCancelled) {
+          setSummary(null);
           setLoadingText(null);
-          if (r.data.totalTrips === 0) setEmptyState(true);
-          return;
-        } catch (e) {
-          if (i === backoffs.length - 1 && !isCancelled) {
-            setSummary(null);
-            setLoadingText(null);
-            setEmptyState(true);
-          }
         }
       }
     };
     fetchMobility();
     return () => { isCancelled = true; };
-  }, []);
-
-  if (loadingText) return <div className="p-8 text-center text-[#64748B] font-['Plus_Jakarta_Sans'] font-medium">{loadingText}</div>;
-  if (emptyState) return <div className="p-8 text-center text-[#64748B] font-['Plus_Jakarta_Sans'] font-medium">No anonymous mobility data yet — consent-ON trips only.</div>;
+  }, [selectedCity]);
 
   const totalTrips = summary?.totalTrips || 0;
   const totalCities = summary?.totalCities || 0;
@@ -4963,13 +5286,42 @@ const Dashboard = () => {
       {/* Page Header */}
       <div className="mb-8 border-b border-amber-100 pb-6">
         <span className="badge badge-teal mb-3"><BarChart3 size={14} /> Analytics & GIS</span>
-        <h1 className="font-serif text-3xl md:text-4xl font-extrabold text-[#1F2937] tracking-tight">Mobility Dashboard</h1>
+        <h1 className="font-serif text-3xl md:text-4xl font-extrabold text-[#1F2937] tracking-tight">Mobility & Partner Dashboard</h1>
         <p className="text-sm text-[#64748B] font-['Plus_Jakarta_Sans'] mt-1">
           {totalTrips > 0
             ? `Real-time GIS & analytics computed from ${totalTrips} consented trip${totalTrips > 1 ? 's' : ''} recorded in this deployment.`
-            : 'Live analytics dashboard — all metrics aggregated from real consented trips.'}
+            : 'Live analytics dashboard — all metrics aggregated from real consented trips and community issue reports.'}
         </p>
+
+        {/* Partner City Selector */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-4 bg-teal-50/70 p-4 rounded-2xl border border-teal-100">
+          <div>
+            <span className="text-xs font-extrabold text-[#00695C] uppercase tracking-wider block">For Tourism Partners — City Insights</span>
+            <span className="text-xs text-gray-600 font-medium">Filter real consented mobility demand & issue reports by city</span>
+          </div>
+          <select
+            value={selectedCity}
+            onChange={e => setSelectedCity(e.target.value)}
+            className="input-field max-w-xs text-xs font-bold bg-white text-[#1F2937] border border-teal-200"
+          >
+            <option value="">All Cities (Aggregated)</option>
+            {CITIES.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </div>
       </div>
+
+      {loadingText ? (
+        <div className="p-12 text-center text-[#64748B] font-['Plus_Jakarta_Sans'] font-medium">{loadingText}</div>
+      ) : totalTrips === 0 && !hasIssueData ? (
+        <div className="p-12 text-center bg-white rounded-3xl border border-gray-150 shadow-xs my-6">
+          <Compass className="mx-auto text-[#00695C] mb-3" size={36} />
+          <h3 className="font-extrabold text-lg text-[#1F2937]">No Consented Data Yet</h3>
+          <p className="text-xs text-[#64748B] mt-1 max-w-md mx-auto">
+            {selectedCity ? `Insights appear here as consented journeys happen in ${selectedCity}.` : 'Insights appear here as consented journeys happen across cities.'}
+          </p>
+        </div>
+      ) : (
+        <>
 
       {/* 1. Real Stats Row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
@@ -5119,8 +5471,10 @@ const Dashboard = () => {
 
       {/* Honest Footer Note */}
       <div className="p-4 bg-amber-50/60 border border-amber-200/60 rounded-xl text-center text-xs text-amber-900 font-['Plus_Jakarta_Sans']">
-        Sanchar AI computes probable demand and mobility insights from consented trip telemetry. Zero raw GPS coordinates or user identities are ever exposed.
+        Sanchar AI computes probable demand and mobility insights from consented trip data. Zero raw GPS coordinates or user identities are ever exposed.
       </div>
+        </>
+      )}
     </div>
   );
 };

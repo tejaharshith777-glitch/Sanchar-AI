@@ -331,3 +331,62 @@ const userSchema = new Schema<IUser>({
 });
 
 export const User = mongoose.model<IUser>('User', userSchema);
+
+// --- PARTNER PUBLISH ---
+export interface IPartnerPublish extends Document {
+  role: 'Travel Agency' | 'Hotel' | 'Local Business';
+  city: string;
+  type: 'place_guide' | 'hotel';
+  name: string;
+  category?: string;
+  area?: string;
+  hours?: string;
+  cost?: string;
+  description?: string;
+  photo?: string;
+  checkInTip?: string;
+  contact?: string;
+  bestWayToArrive?: string;
+  publishedAt: Date;
+  publisherName: string;
+}
+
+const partnerPublishSchema = new Schema<IPartnerPublish>({
+  role: { type: String, enum: ['Travel Agency', 'Hotel', 'Local Business'], required: true },
+  city: { type: String, required: true, index: true },
+  type: { type: String, enum: ['place_guide', 'hotel'], required: true },
+  name: { type: String, required: true },
+  category: String,
+  area: String,
+  hours: String,
+  cost: String,
+  description: String,
+  photo: String,
+  checkInTip: String,
+  contact: String,
+  bestWayToArrive: String,
+  publishedAt: { type: Date, default: Date.now },
+  publisherName: { type: String, default: 'Partner' }
+});
+
+export const PartnerPublish = mongoose.model<IPartnerPublish>('PartnerPublish', partnerPublishSchema);
+
+// --- ISSUE REPORTS ---
+export interface IIssueReport extends Document {
+  city: string;
+  category: 'language barrier' | 'overcharging' | 'poor signage' | 'low connectivity' | 'other';
+  note?: string;
+  spotSlug?: string;
+  createdAt: Date;
+}
+
+const issueReportSchema = new Schema<IIssueReport>({
+  city: { type: String, required: true, index: true },
+  category: { type: String, enum: ['language barrier', 'overcharging', 'poor signage', 'low connectivity', 'other'], required: true },
+  note: String,
+  spotSlug: String,
+  createdAt: { type: Date, default: Date.now }
+});
+
+export const IssueReport = mongoose.model<IIssueReport>('IssueReport', issueReportSchema);
+

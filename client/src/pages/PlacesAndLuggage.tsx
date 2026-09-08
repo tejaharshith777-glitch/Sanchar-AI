@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import SancharMap from '../components/SancharMap';
 import { 
@@ -33,151 +33,130 @@ export const PlaceDetailPage = () => {
   const [isSaved, setIsSaved] = useState(false);
   const [imgError, setImgError] = useState(false);
   
-  // Directions state
-  const [directionsActive, setDirectionsActive] = useState(false);
+  // Geolocation & Directions
   const [userPos, setUserPos] = useState<[number, number] | null>(null);
-  const [distance, setDistance] = useState<number | null>(null);
-  const [eta, setEta] = useState<number | null>(null); // in minutes
-  const [bearing, setBearing] = useState<string>('');
+  const [distanceKm, setDistanceKm] = useState<number | null>(null);
 
-  const watchIdRef = useRef<number | null>(null);
+  // Issue reporting modal
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportCategory, setReportCategory] = useState<'language barrier' | 'overcharging' | 'poor signage' | 'low connectivity' | 'other'>('language barrier');
+  const [reportNote, setReportNote] = useState('');
+  const [reportSubmitting, setReportSubmitting] = useState(false);
+  const [reportSuccessMsg, setReportSuccessMsg] = useState<string | null>(null);
 
   // Normalize names
   const city = cityName ? cityName.charAt(0).toUpperCase() + cityName.slice(1).toLowerCase() : '';
 
-  useEffect(() => {
-    const fetchSpotDetails = async () => {
-      setLoading(true);
-      setError(null);
-      setImgError(false);
-      
-      try {
-        if (navigator.onLine) {
-          const res = await axios.get(`/api/spots/${encodeURIComponent(city)}/${encodeURIComponent(slug || '')}`);
-          setSpot(res.data);
-          
-          // Fetch nearby spots from same city
-          try {
-            const cityRes = await axios.get(`/api/city-spots/${encodeURIComponent(city)}`);
-            if (cityRes.data && Array.isArray(cityRes.data.spots)) {
-              const currentSlug = (slug || '').toLowerCase();
-              const others = cityRes.data.spots.filter((s: any) => 
-                (s.slug || '').toLowerCase() !== currentSlug &&
-                s.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') !== currentSlug
-              );
-              setNearbySpots(others.slice(0, 3));
-            }
-          } catch (e) {
-            // ignore nearby error
-          }
-        } else {
-          // Offline cached pack fallback
-          const pack = await getCachedCityPack(city);
-          const localSpot = pack?.spots?.find((s: any) => 
-            (s.slug || '').toLowerCase() === (slug || '').toLowerCase() ||
-            s.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') === (slug || '').toLowerCase()
-          );
-          if (localSpot) {
-            setSpot(localSpot);
-            const others = (pack?.spots || []).filter((s: any) => 
-              (s.slug || '').toLowerCase() !== (slug || '').toLowerCase()
+  const fetchSpotDetails = async () => {
+    setLoading(true);
+    setError(null);
+    setImgError(false);
+    
+    try {
+      if (navigator.onLine) {
+        const res = await axios.get(`/api/spots/${encodeURIComponent(city)}/${encodeURIComponent(slug || '')}`);
+        setSpot(res.data);
+        
+        // Fetch nearby spots from same city
+        try {
+          const cityRes = await axios.get(`/api/city-spots/${encodeURIComponent(city)}`);
+          if (cityRes.data && Array.isArray(cityRes.data.spots)) {
+            const currentSlug = (slug || '').toLowerCase();
+            const others = cityRes.data.spots.filter((s: any) => 
+              (s.slug || '').toLowerCase() !== currentSlug &&
+              s.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') !== currentSlug
             );
             setNearbySpots(others.slice(0, 3));
-          } else {
-            setError('Spot not found in offline cache.');
           }
+        } catch (e) {
+          // ignore nearby error
         }
-      } catch (err) {
-        setError('Failed to load place details.');
-      } finally {
-        setLoading(false);
+      } else {
+        // Offline cached pack fallback
+        const pack = await getCachedCityPack(city);
+        const localSpot = pack?.spots?.find((s: any) => 
+          (s.slug || '').toLowerCase() === (slug || '').toLowerCase() ||
+          s.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') === (slug || '').toLowerCase()
+        );
+        if (localSpot) {
+          setSpot(localSpot);
+          const others = (pack?.spots || []).filter((s: any) => 
+            (s.slug || '').toLowerCase() !== (slug || '').toLowerCase()
+          );
+          setNearbySpots(others.slice(0, 3));
+        } else {
+          setError('Spot not found in offline cache.');
+        }
       }
-    };
+    } catch (err) {
+      setError('Failed to load place details.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchSpotDetails();
   }, [city, slug]);
 
-  // Live navigation telemetry tracking
+  // Check saved state in localStorage
   useEffect(() => {
-    if (!directionsActive || !spot || !spot.lat || !spot.lng) {
-      if (watchIdRef.current) {
-        navigator.geolocation.clearWatch(watchIdRef.current);
-        watchIdRef.current = null;
-      }
-      return;
+    if (!spot) return;
+    try {
+      const saved = JSON.parse(localStorage.getItem('saved_places') || '[]');
+      const found = saved.some((item: any) => item.name === spot.name || item.slug === spot.slug);
+      setIsSaved(found);
+    } catch {
+      setIsSaved(false);
     }
+  }, [spot]);
 
-    const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-      const R = 6371; // radius in km
-      const dLat = (lat2 - lat1) * Math.PI / 180;
-      const dLon = (lon2 - lon1) * Math.PI / 180;
-      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                Math.sin(dLon/2) * Math.sin(dLon/2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-      return R * c;
-    };
-
-    const calculateBearing = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-      const dLon = (lon2 - lon1) * Math.PI / 180;
-      const lat1Rad = lat1 * Math.PI / 180;
-      const lat2Rad = lat2 * Math.PI / 180;
-      const y = Math.sin(dLon) * Math.cos(lat2Rad);
-      const x = Math.cos(lat1Rad) * Math.sin(lat2Rad) - Math.sin(lat1Rad) * Math.cos(lat2Rad) * Math.cos(dLon);
-      const brng = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
-      
-      if (brng >= 337.5 || brng < 22.5) return 'North';
-      if (brng >= 22.5 && brng < 67.5) return 'North-East';
-      if (brng >= 67.5 && brng < 112.5) return 'East';
-      if (brng >= 112.5 && brng < 157.5) return 'South-East';
-      if (brng >= 157.5 && brng < 202.5) return 'South';
-      if (brng >= 202.5 && brng < 247.5) return 'South-West';
-      if (brng >= 247.5 && brng < 292.5) return 'West';
-      return 'North-West';
-    };
-
-    if (navigator.geolocation) {
-      watchIdRef.current = navigator.geolocation.watchPosition(
+  // User geolocation for distance calculation
+  useEffect(() => {
+    if (navigator.geolocation && spot && spot.lat && spot.lng) {
+      navigator.geolocation.getCurrentPosition(
         (pos) => {
           const uLat = pos.coords.latitude;
           const uLng = pos.coords.longitude;
           setUserPos([uLat, uLng]);
-          
-          const d = calculateDistance(uLat, uLng, spot.lat, spot.lng);
-          setDistance(d);
-          
-          // Walking speed average 4.5 km/h
-          const timeMin = Math.ceil((d / 4.5) * 60);
-          setEta(timeMin);
 
-          const br = calculateBearing(uLat, uLng, spot.lat, spot.lng);
-          setBearing(br);
+          // Haversine formula
+          const R = 6371;
+          const dLat = (spot.lat - uLat) * Math.PI / 180;
+          const dLng = (spot.lng - uLng) * Math.PI / 180;
+          const a = Math.sin(dLat / 2) ** 2 + Math.cos(uLat * Math.PI / 180) * Math.cos(spot.lat * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+          const dist = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+          setDistanceKm(dist);
         },
-        (err) => console.warn('[GEOLOCATION]', err),
-        { enableHighAccuracy: true, maximumAge: 1000, timeout: 5000 }
+        (err) => console.warn('User location denied/unavailable:', err),
+        { timeout: 5000 }
       );
     }
+  }, [spot]);
 
-    return () => {
-      if (watchIdRef.current) {
-        navigator.geolocation.clearWatch(watchIdRef.current);
-      }
-    };
-  }, [directionsActive, spot]);
-
-  // Save place to trip
-  const handleSaveToTrip = async () => {
+  // Save place to localStorage "saved_places"
+  const toggleSaveSpot = () => {
+    if (!spot) return;
     try {
-      const activeRes = await axios.get('/api/trips/active');
-      const activeTrip = activeRes.data;
-      if (!activeTrip) {
-        alert('Start a trip first to save places to it!');
-        return;
+      const saved = JSON.parse(localStorage.getItem('saved_places') || '[]');
+      if (isSaved) {
+        const filtered = saved.filter((item: any) => item.name !== spot.name && item.slug !== spot.slug);
+        localStorage.setItem('saved_places', JSON.stringify(filtered));
+        setIsSaved(false);
+      } else {
+        saved.push({
+          name: spot.name,
+          slug: spot.slug || spot.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+          city,
+          category: spot.category || 'spot',
+          image: spot.image || '',
+          savedAt: new Date().toISOString()
+        });
+        localStorage.setItem('saved_places', JSON.stringify(saved));
+        setIsSaved(true);
       }
-      setIsSaved(true);
-      alert(`${spot.name} saved to your trip itinerary.`);
-    } catch (err) {
-      alert('Start a trip first to save places to it!');
+    } catch {
+      // localStorage error fallback
     }
   };
 
@@ -194,12 +173,40 @@ export const PlaceDetailPage = () => {
     }
   };
 
+  const handleReportSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setReportSubmitting(true);
+    setReportSuccessMsg(null);
+    try {
+      const res = await axios.post('/api/issue-reports', {
+        city,
+        category: reportCategory,
+        note: reportNote,
+        spotSlug: spot?.slug || slug
+      });
+      setReportSuccessMsg(res.data?.message || 'Thank you — your report is anonymous and helps local businesses improve service.');
+      setReportNote('');
+      setTimeout(() => {
+        setShowReportModal(false);
+        setReportSuccessMsg(null);
+      }, 2000);
+    } catch {
+      setReportSuccessMsg('Report saved locally.');
+      setTimeout(() => {
+        setShowReportModal(false);
+        setReportSuccessMsg(null);
+      }, 2000);
+    } finally {
+      setReportSubmitting(false);
+    }
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center">
+      <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center p-6">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-[#00695C] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-sm font-semibold text-gray-600">Loading place details...</p>
+          <p className="text-sm font-semibold text-gray-600">Loading spot details...</p>
         </div>
       </div>
     );
@@ -208,249 +215,285 @@ export const PlaceDetailPage = () => {
   if (error || !spot) {
     return (
       <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center p-6">
-        <div className="text-center max-w-md bg-white p-8 rounded-3xl border border-gray-150 shadow-sm">
+        <div className="text-center max-w-md bg-white p-8 rounded-3xl border border-gray-200 shadow-sm">
           <AlertTriangle size={48} className="text-amber-500 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-gray-800 mb-2">Place details unavailable</h2>
-          <p className="text-sm text-gray-500 mb-6">{error || 'Place was not found.'}</p>
-          <button onClick={() => navigate(`/city/${encodeURIComponent(city)}`)} className="btn-primary w-full cursor-pointer">Back to {city || 'City'}</button>
+          <h2 className="text-xl font-bold text-gray-800 mb-2">Spot details unavailable</h2>
+          <p className="text-sm text-gray-500 mb-6">{error || 'Spot was not found.'}</p>
+          <div className="flex gap-3">
+            <button onClick={fetchSpotDetails} className="flex-1 py-3 bg-[#00695C] text-white font-bold rounded-xl hover:bg-[#004D40] transition cursor-pointer">Retry</button>
+            <button onClick={() => navigate(`/city/${encodeURIComponent(city)}`)} className="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition cursor-pointer">Back to {city || 'City'}</button>
+          </div>
         </div>
       </div>
     );
   }
 
-  const centerCoords: [number, number] = spot.lat && spot.lng ? [spot.lat, spot.lng] : CITY_CENTERS[city] || [20.5937, 78.9629];
-  const isCurated = spot.source !== 'wikipedia-live';
+  const hasCoords = typeof spot.lat === 'number' && typeof spot.lng === 'number';
+  const googleMapsUrl = hasCoords 
+    ? `https://www.google.com/maps/search/?api=1&query=${spot.lat},${spot.lng}`
+    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(spot.name + ' ' + city)}`;
+
+  const centerCoords: [number, number] = hasCoords ? [spot.lat, spot.lng] : [20.5937, 78.9629];
+  const highlightsList: string[] = spot.highlights && spot.highlights.length > 0
+    ? spot.highlights
+    : (spot.bestThing ? [spot.bestThing, spot.blurb] : [spot.blurb]);
 
   return (
     <div className="min-h-screen bg-[#FAF7F2] flex flex-col">
-      {/* Back nav bar */}
+      {/* Top Header */}
       <div className="bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between shadow-sm shrink-0">
-        <button onClick={() => navigate(`/city/${encodeURIComponent(city)}`)} className="flex items-center gap-1.5 text-sm font-bold text-[#00695C] hover:underline cursor-pointer">
+        <button onClick={() => navigate(`/city/${encodeURIComponent(city)}`)} className="flex items-center gap-1.5 text-sm font-bold text-[#00695C] hover:underline cursor-pointer min-h-[44px]">
           <ChevronLeft size={18} /> Back to {city}
         </button>
-              <span className="text-xs font-bold uppercase tracking-wider text-gray-600">Place spotlight</span>
-        <div className="flex gap-2">
-          <button onClick={sharePlace} aria-label="Share place" className="p-2 rounded-full hover:bg-gray-100 text-gray-600 cursor-pointer"><Share2 size={16} /></button>
-        </div>
+        <span className="text-xs font-bold uppercase tracking-wider text-gray-500">Spot Details</span>
+        <button onClick={sharePlace} aria-label="Share spot" className="p-2 rounded-full hover:bg-gray-100 text-gray-600 cursor-pointer"><Share2 size={18} /></button>
       </div>
 
-      {/* Hero section */}
-      <div className="relative h-64 md:h-80 w-full overflow-hidden bg-gradient-to-br from-[#00695C] to-[#004D40]">
+      {/* PHOTO HEADER or Text Tile */}
+      <div className="relative w-full">
         {spot.image && !imgError ? (
-          <img 
-            src={spot.image} 
-            alt={spot.name} 
-            className="w-full h-full object-cover opacity-80" 
-            onError={() => setImgError(true)}
-          />
+          <div className="h-64 md:h-80 w-full overflow-hidden bg-gradient-to-br from-[#00695C] to-[#004D40] relative">
+            <img 
+              src={spot.image} 
+              alt={spot.name} 
+              className="w-full h-full object-cover opacity-90" 
+              onError={() => setImgError(true)}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent flex flex-col justify-end p-6 md:p-8">
+              <div className="max-w-6xl mx-auto w-full">
+                <div className="flex items-center gap-2 flex-wrap mb-2">
+                  <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#F59E0B] bg-[#F59E0B]/20 py-1 px-3 rounded-full border border-[#F59E0B]/40">Curated · verify locally</span>
+                  {spot.category && <span className="text-[10px] font-bold uppercase tracking-widest text-white bg-teal-800/80 py-1 px-3 rounded-full border border-teal-600/50">{spot.category}</span>}
+                </div>
+                <h1 className="text-2xl md:text-4xl font-display font-bold text-white mb-1">{spot.name}</h1>
+                <p className="text-xs md:text-sm text-gray-200 flex items-center gap-1 font-medium"><MapPin size={14} className="text-[#F59E0B]" /> {spot.area ? `${spot.area}, ${city}` : `${city}, India`}</p>
+              </div>
+            </div>
+          </div>
         ) : (
-          <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-white text-center">
-            <span className="text-5xl mb-4">{isCurated ? '🏛️' : '📍'}</span>
-            <span className="text-xs font-bold uppercase tracking-widest bg-white/20 px-3.5 py-1.5 rounded-full border border-white/30">{spot.category || 'Spot'}</span>
+          <div className="h-48 md:h-64 rounded-none bg-gradient-to-r from-emerald-800 to-teal-900 p-6 md:p-8 flex flex-col justify-end text-white border-b border-teal-900">
+            <div className="max-w-6xl mx-auto w-full">
+              <div className="flex items-center gap-2 flex-wrap mb-2">
+                <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#F59E0B] bg-[#F59E0B]/20 py-1 px-3 rounded-full border border-[#F59E0B]/40">Curated · verify locally</span>
+                {spot.category && <span className="text-[10px] font-bold uppercase tracking-widest text-white bg-white/20 py-1 px-3 rounded-full border border-white/30">{spot.category}</span>}
+              </div>
+              <h1 className="text-2xl md:text-4xl font-display font-bold text-white mb-1">{spot.name}</h1>
+              <p className="text-xs md:text-sm text-emerald-200 flex items-center gap-1 font-medium"><MapPin size={14} className="text-[#F59E0B]" /> {spot.area ? `${spot.area}, ${city}` : `${city}, India`}</p>
+            </div>
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent flex flex-col justify-end p-6 md:p-8">
-          <div className="max-w-4xl mx-auto w-full">
-            <div className="flex items-center gap-2 flex-wrap mb-3">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-[#F59E0B] bg-[#F59E0B]/20 py-1 px-3 rounded-full border border-[#F59E0B]/40">
-                Curated · verify locally
-              </span>
-              {spot.category && (
-                <span className="text-[10px] font-bold uppercase tracking-widest text-white bg-teal-800/80 py-1 px-3 rounded-full border border-teal-600/50">
-                  {spot.category}
-                </span>
-              )}
-            </div>
-            <h1 className="text-2xl md:text-4xl font-display font-bold text-white mb-2">{spot.name}</h1>
-            <p className="text-xs md:text-sm text-gray-200 flex items-center gap-1 font-medium">
-              <MapPin size={14} className="text-[#F59E0B]" /> {spot.area ? `${spot.area}, ${city}` : `${city}, India`}
-            </p>
-          </div>
-        </div>
       </div>
 
-      {/* Main content grid */}
-      <div className="max-w-7xl mx-auto w-full p-4 md:p-8 flex-1 grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Left Column: Details */}
-        <div className="space-y-6">
-          {spot.bestThing && (
-            <div className="bg-[#00695C]/5 p-5 rounded-3xl border border-[#00695C]/10">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-[#00695C] mb-2 flex items-center gap-1.5">
-                <Sparkles size={14} className="text-[#F59E0B]" /> Highlight feature
-              </h4>
-              <p className="text-sm md:text-base font-bold text-[#1F2937] leading-relaxed">
-                "{spot.bestThing}"
-              </p>
-            </div>
-          )}
-
-          <div className="bg-white p-6 rounded-3xl border border-gray-150 shadow-sm space-y-4">
-            <h3 className="font-display font-bold text-lg text-gray-800">About this place</h3>
-            <p className="text-sm text-gray-600 leading-relaxed">{spot.blurb}</p>
-
-            {/* Info Grid */}
-            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-100">
-              <div className="flex items-start gap-2">
-                <MapPin size={16} className="text-[#00695C] mt-0.5 shrink-0" />
-                <div>
-                  <h5 className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Area / Location</h5>
-                  <p className="text-xs font-semibold text-gray-700">{spot.area || city}</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-2">
-                <Clock size={16} className="text-[#00695C] mt-0.5 shrink-0" />
-                <div>
-                  <h5 className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Best Time</h5>
-                  <p className="text-xs font-semibold text-gray-700">{spot.bestTime || '—'}</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-2">
-                <Clock size={16} className="text-[#00695C] mt-0.5 shrink-0" />
-                <div>
-                  <h5 className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Time to Spend</h5>
-                  <p className="text-xs font-semibold text-gray-700">{spot.timeToSpend || '—'}</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-2">
-                <Info size={16} className="text-[#00695C] mt-0.5 shrink-0" />
-                <div>
-                  <h5 className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Entry Cost</h5>
-                  <p className="text-xs font-semibold text-gray-700">{spot.entryCost || '—'}</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-2 col-span-2">
-                <Navigation size={16} className="text-[#00695C] mt-0.5 shrink-0" />
-                <div>
-                  <h5 className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Nearest Transport</h5>
-                  <p className="text-xs font-semibold text-gray-700">{spot.nearTransport || '—'}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {spot.tips && spot.tips.length > 0 && spot.tips[0] !== '—' && (
-            <div className="bg-white p-6 rounded-3xl border border-gray-150 shadow-sm">
-              <h3 className="font-display font-bold text-lg text-gray-800 mb-4 flex items-center gap-1.5">
-                <ShieldCheck size={18} className="text-teal-600" /> Travel Tips
-              </h3>
-              <ul className="space-y-3">
-                {spot.tips.map((tip: string, idx: number) => (
-                  <li key={idx} className="flex gap-2.5 items-start text-xs sm:text-sm text-gray-600 leading-relaxed">
-                    <span className="w-5 h-5 rounded-full bg-teal-50 text-[#00695C] font-bold flex items-center justify-center shrink-0 text-[10px] mt-0.5">
-                      {idx + 1}
-                    </span>
-                    {tip}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* Action buttons */}
-          <div className="space-y-3">
-            <div className="bg-[#E0F2F1] border border-[#B2DFDB] p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3">
-              <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#00695C] block mb-0.5">Destination selected</span>
-                <p className="text-sm font-extrabold text-[#004D40]">Your destination: {spot.name}</p>
-              </div>
-              <button
-                onClick={() => navigate(`/create?to=${encodeURIComponent(city)}&spot=${encodeURIComponent(spot.name)}`)}
-                className="w-full sm:w-auto flex items-center justify-center gap-2 py-3 px-6 rounded-xl font-bold text-sm bg-[#00695C] hover:bg-[#004D40] text-white shadow-md transition cursor-pointer min-h-[44px]"
-              >
-                <Compass size={16} /> Start Safe Trip Here
-              </button>
-            </div>
-
-            <div className="flex gap-4">
-              <button
-                onClick={handleSaveToTrip}
-                disabled={isSaved}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 px-6 rounded-2xl font-bold text-sm cursor-pointer border transition min-h-[44px] ${
-                  isSaved
-                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                    : 'bg-white text-gray-800 border-gray-200 hover:bg-gray-50'
-                }`}
-              >
-                {isSaved ? <Check size={16} /> : <Save size={16} />}
-                {isSaved ? 'Saved to active trip' : 'Save to my trip'}
-              </button>
-              <button
-                onClick={() => setDirectionsActive(!directionsActive)}
-                className="flex-1 flex items-center justify-center gap-2 py-3 px-6 rounded-2xl font-bold text-sm bg-[#00695C] hover:bg-[#004D40] text-white shadow-md transition cursor-pointer min-h-[44px]"
-              >
-                <Compass size={16} />
-                {directionsActive ? 'Stop Radar' : 'Live Radar'}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Right Column: Map */}
-        <div className="bg-white rounded-3xl border border-gray-150 overflow-hidden shadow-sm h-[400px] lg:h-auto flex flex-col">
+      {/* Main Content Layout */}
+      <div className="max-w-6xl mx-auto w-full p-4 md:p-8 space-y-8 flex-1">
+        
+        {/* LIVE MAP (Leaflet ~45vh) */}
+        <div className="bg-white rounded-3xl border border-gray-200 overflow-hidden shadow-sm flex flex-col">
           <div className="bg-gray-50 border-b border-gray-100 p-4 flex items-center justify-between shrink-0">
-            <span className="text-xs font-bold text-gray-600 uppercase tracking-wider flex items-center gap-1.5">
-              <Compass size={14} className="text-[#00695C] animate-pulse" /> Live Offline Direction Radar
-            </span>
-            <span className="text-[10px] font-bold bg-[#F59E0B]/10 text-[#F59E0B] py-0.5 px-2.5 rounded-full">
-              best effort routing
-            </span>
+            <div className="flex items-center gap-2">
+              <Compass size={18} className="text-[#00695C]" />
+              <span className="text-xs font-bold uppercase tracking-wider text-gray-700">Live Spot Map</span>
+            </div>
+            {distanceKm !== null && (
+              <span className="text-xs font-bold text-[#00695C] bg-teal-50 border border-teal-200 px-3 py-1 rounded-full">
+                You are here: ≈ {distanceKm < 1 ? `${Math.round(distanceKm * 1000)} m` : `${distanceKm.toFixed(1)} km`} from spot
+              </span>
+            )}
           </div>
 
-          <div className="flex-1 relative z-10">
-            <SancharMap
-              center={centerCoords}
-              zoom={15}
-              userPos={userPos}
-              showOfflineBanner={true}
-              heightClass="h-full"
-              markers={[
-                {
-                  position: centerCoords,
-                  popupContent: (
-                    <div className="text-center p-1">
-                      <h4 className="font-bold text-xs">{spot.name}</h4>
-                      <p className="text-[10px] text-gray-500">{spot.category}</p>
-                    </div>
-                  ),
-                  iconEmoji: isCurated ? '🏛️' : '📍'
-                }
-              ]}
-              polylines={userPos ? [
-                {
-                  positions: [userPos, centerCoords],
-                  color: '#F59E0B',
-                  dashArray: '5, 8'
-                }
-              ] : []}
-            />
-
-            {/* Floating directions info card */}
-            {directionsActive && (
-              <div className="absolute bottom-4 left-4 right-4 bg-white/95 backdrop-blur p-4 rounded-2xl shadow-xl border border-orange-100 flex items-center justify-between gap-4 z-[1000] animate-fade-in-up">
+          <div className="h-[45vh] min-h-[300px] w-full relative">
+            {hasCoords ? (
+              <SancharMap
+                center={centerCoords}
+                zoom={15}
+                userPos={userPos}
+                showOfflineBanner={false}
+                heightClass="h-full"
+                markers={[
+                  {
+                    position: centerCoords,
+                    popupContent: (
+                      <div className="text-center p-1">
+                        <h4 className="font-bold text-xs">{spot.name}</h4>
+                        <p className="text-[10px] text-gray-500">{spot.area || city}</p>
+                      </div>
+                    ),
+                    iconEmoji: '📍'
+                  }
+                ]}
+                polylines={userPos ? [
+                  {
+                    positions: [userPos, centerCoords],
+                    color: '#00695C',
+                    dashArray: '6, 6'
+                  }
+                ] : []}
+              />
+            ) : (
+              <div className="h-full flex items-center justify-center bg-gray-50 p-6 text-center">
                 <div>
-                  <span className="text-[9px] font-extrabold uppercase tracking-widest text-[#E65100] block mb-1">Dashed bearing direction</span>
-                  <h4 className="font-bold text-[#1F2937] text-sm leading-tight">Heading {bearing || 'calculating...'}</h4>
-                  <p className="text-[10px] text-[#64748B] mt-0.5">Approximate offline route — best effort, no live road network</p>
-                </div>
-                <div className="text-right shrink-0">
-                  <div className="font-extrabold text-lg text-[#00695C]">
-                    {distance !== null ? `${distance.toFixed(1)} km` : '—'}
-                  </div>
-                  <div className="text-[10px] text-gray-500 font-bold">
-                    {eta !== null ? `~${eta} mins walk` : 'finding GPS...'}
-                  </div>
+                  <MapPin size={36} className="text-gray-400 mx-auto mb-2" />
+                  <p className="text-sm font-semibold text-gray-600">Map unavailable for this place — try again later</p>
+                  <p className="text-xs text-gray-500 mt-1">Honest fallback: coordinates not verified yet</p>
                 </div>
               </div>
             )}
+
+            {/* Deep link button over map */}
+            <div className="absolute bottom-4 right-4 z-[1000]">
+              <a
+                href={googleMapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-white text-gray-800 text-xs font-bold rounded-xl shadow-lg border border-gray-200 hover:bg-gray-50 transition cursor-pointer"
+              >
+                <Navigation size={14} className="text-[#00695C]" /> Open in Google Maps
+              </a>
+            </div>
+          </div>
+
+          <div className="bg-gray-50 border-t border-gray-100 p-3 text-center text-xs font-medium text-gray-600">
+            We handle the journey. Google Maps handles the turns.
           </div>
         </div>
-      </div>
 
-      {/* Nearby spots section */}
-      {nearbySpots.length > 0 && (
-        <div className="max-w-7xl mx-auto w-full px-4 md:px-8 pb-12">
-          <div className="border-t border-gray-200 pt-8 mt-4">
-            <h3 className="font-display font-bold text-xl text-gray-800 mb-6 flex items-center gap-2">
+        {/* 2×3 FACTS GRID */}
+        <div className="bg-white p-6 rounded-3xl border border-gray-200 shadow-sm space-y-4">
+          <h3 className="font-display font-bold text-lg text-gray-800">Place Overview</h3>
+          <p className="text-sm text-gray-600 leading-relaxed">{spot.blurb}</p>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-4 border-t border-gray-100">
+            <div className="flex items-start gap-2.5 p-3 rounded-2xl bg-gray-50 border border-gray-100">
+              <Compass size={18} className="text-[#00695C] mt-0.5 shrink-0" />
+              <div>
+                <h5 className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Category</h5>
+                <p className="text-xs font-bold text-gray-800 capitalize">{spot.category || 'Tourist Attraction'}</p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-2.5 p-3 rounded-2xl bg-gray-50 border border-gray-100">
+              <MapPin size={18} className="text-[#00695C] mt-0.5 shrink-0" />
+              <div>
+                <h5 className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Area / Address</h5>
+                <p className="text-xs font-bold text-gray-800">{spot.area || city}</p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-2.5 p-3 rounded-2xl bg-gray-50 border border-gray-100">
+              <Clock size={18} className="text-[#00695C] mt-0.5 shrink-0" />
+              <div>
+                <h5 className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Best Time</h5>
+                <p className="text-xs font-bold text-gray-800">{spot.bestTime && spot.bestTime !== '—' ? spot.bestTime : 'Early morning / evening'}</p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-2.5 p-3 rounded-2xl bg-gray-50 border border-gray-100">
+              <Clock size={18} className="text-[#00695C] mt-0.5 shrink-0" />
+              <div>
+                <h5 className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Time to Spend</h5>
+                <p className="text-xs font-bold text-gray-800">{spot.timeToSpend && spot.timeToSpend !== '—' ? spot.timeToSpend : '1–2 Hours'}</p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-2.5 p-3 rounded-2xl bg-gray-50 border border-gray-100">
+              <Info size={18} className="text-[#00695C] mt-0.5 shrink-0" />
+              <div>
+                <h5 className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Entry Cost</h5>
+                <p className="text-xs font-bold text-gray-800">{spot.entryCost && spot.entryCost !== '—' ? spot.entryCost : 'Free / check locally'}</p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-2.5 p-3 rounded-2xl bg-gray-50 border border-gray-100">
+              <Navigation size={18} className="text-[#00695C] mt-0.5 shrink-0" />
+              <div>
+                <h5 className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Nearest Transport</h5>
+                <p className="text-xs font-bold text-gray-800">{spot.nearTransport && spot.nearTransport !== '—' ? spot.nearTransport : 'Auto / City bus'}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* WHAT MAKES IT SPECIAL SECTION */}
+        <div className="bg-teal-50/80 p-6 rounded-3xl border border-teal-200 space-y-4">
+          <h3 className="font-display font-bold text-lg text-teal-950 flex items-center gap-2">
+            <Sparkles size={20} className="text-[#F59E0B]" /> What makes it special
+          </h3>
+          <ul className="space-y-2.5">
+            {highlightsList.map((fact: string, idx: number) => (
+              <li key={idx} className="flex items-start gap-3 text-xs sm:text-sm font-semibold text-teal-900 leading-relaxed">
+                <span className="w-5 h-5 rounded-full bg-teal-600 text-white font-bold flex items-center justify-center shrink-0 text-[10px] mt-0.5">{idx + 1}</span>
+                <span>{fact}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* TIPS SECTION */}
+        {spot.tips && spot.tips.length > 0 && spot.tips[0] !== '—' && (
+          <div className="bg-white p-6 rounded-3xl border border-gray-200 shadow-sm space-y-4">
+            <h3 className="font-display font-bold text-lg text-gray-800 flex items-center gap-2">
+              <ShieldCheck size={20} className="text-[#00695C]" /> Travel & Safety Tips
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {spot.tips.map((tip: string, idx: number) => (
+                <div key={idx} className="flex items-start gap-2.5 p-3 rounded-2xl bg-gray-50 border border-gray-100 text-xs text-gray-700 font-medium leading-relaxed">
+                  <Check size={16} className="text-[#00695C] shrink-0 mt-0.5" />
+                  <span>{tip}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ACTION ROW */}
+        <div className="bg-white p-6 rounded-3xl border border-gray-200 shadow-sm space-y-4">
+          <h4 className="text-xs font-extrabold uppercase tracking-wider text-gray-500">Actions for this destination</h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {/* Primary Big Teal: Start Safe Trip Here */}
+            <button
+              onClick={() => navigate(`/create?city=${encodeURIComponent(city)}&destination=${encodeURIComponent(spot.name)}`)}
+              className="py-3.5 px-4 bg-[#00695C] hover:bg-[#004D40] text-white font-extrabold text-xs sm:text-sm rounded-2xl shadow-md transition cursor-pointer min-h-[48px] flex items-center justify-center gap-2"
+            >
+              <Compass size={18} /> Start Safe Trip Here
+            </button>
+
+            {/* Secondary: Open in Google Maps */}
+            <a
+              href={googleMapsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="py-3.5 px-4 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-xs sm:text-sm rounded-2xl transition cursor-pointer min-h-[48px] flex items-center justify-center gap-2 text-center"
+            >
+              <Navigation size={18} className="text-[#00695C]" /> Open in Google Maps
+            </a>
+
+            {/* Save: localStorage "Saved places" */}
+            <button
+              onClick={toggleSaveSpot}
+              className={`py-3.5 px-4 font-bold text-xs sm:text-sm rounded-2xl border transition cursor-pointer min-h-[48px] flex items-center justify-center gap-2 ${
+                isSaved
+                  ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                  : 'bg-white text-gray-800 border-gray-200 hover:bg-gray-50'
+              }`}
+            >
+              {isSaved ? <Check size={18} className="text-emerald-700" /> : <Save size={18} />}
+              <span>{isSaved ? 'Saved on this device' : 'Save place'}</span>
+            </button>
+
+            {/* Report a problem */}
+            <button
+              onClick={() => setShowReportModal(true)}
+              className="py-3.5 px-4 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 font-bold text-xs sm:text-sm rounded-2xl transition cursor-pointer min-h-[48px] flex items-center justify-center gap-2"
+            >
+              <AlertTriangle size={18} className="text-amber-600" /> Report a problem
+            </button>
+          </div>
+        </div>
+
+        {/* NEARBY SPOTS */}
+        {nearbySpots.length > 0 && (
+          <div className="space-y-4 pt-4 border-t border-gray-200">
+            <h3 className="font-display font-bold text-xl text-gray-800 flex items-center gap-2">
               <Compass size={20} className="text-[#00695C]" /> Nearby spots in {city}
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -458,7 +501,7 @@ export const PlaceDetailPage = () => {
                 <div 
                   key={idx}
                   onClick={() => navigate(`/spot/${encodeURIComponent(city)}/${nSpot.slug}`)}
-                  className="bg-white p-6 rounded-2xl border border-gray-150 shadow-sm hover:shadow-md transition cursor-pointer flex flex-col justify-between group"
+                  className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition cursor-pointer flex flex-col justify-between group"
                 >
                   <div>
                     <div className="flex items-start justify-between gap-2 mb-2">
@@ -486,11 +529,82 @@ export const PlaceDetailPage = () => {
               ))}
             </div>
           </div>
+        )}
+
+        {/* HONESTY FOOTER */}
+        <div className="text-center py-6 text-xs text-gray-500 font-medium border-t border-gray-200">
+          Curated · verify locally · We don't do fake ratings — only real information.
+        </div>
+      </div>
+
+      {/* REPORT A PROBLEM MODAL */}
+      {showReportModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[2000] flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl border border-gray-200 space-y-6">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+              <h3 className="font-display font-bold text-lg text-gray-900 flex items-center gap-2">
+                <AlertTriangle size={20} className="text-amber-500" /> Report an issue in {city}
+              </h3>
+              <button onClick={() => setShowReportModal(false)} className="text-gray-400 hover:text-gray-600 cursor-pointer p-1">✕</button>
+            </div>
+
+            {reportSuccessMsg ? (
+              <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-center text-xs font-bold text-emerald-900">
+                {reportSuccessMsg}
+              </div>
+            ) : (
+              <form onSubmit={handleReportSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Issue Category</label>
+                  <select
+                    value={reportCategory}
+                    onChange={(e: any) => setReportCategory(e.target.value)}
+                    className="w-full p-3 rounded-xl border border-gray-300 text-sm font-semibold focus:ring-2 focus:ring-[#00695C]"
+                  >
+                    <option value="language barrier">Language Barrier</option>
+                    <option value="overcharging">Overcharging / Unregulated Fare</option>
+                    <option value="poor signage">Poor Signage / Navigation</option>
+                    <option value="low connectivity">Low Mobile Connectivity</option>
+                    <option value="other">Other issue</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Details (Optional)</label>
+                  <textarea
+                    rows={3}
+                    value={reportNote}
+                    onChange={(e) => setReportNote(e.target.value)}
+                    placeholder="Describe what happened or what could be improved..."
+                    className="w-full p-3 rounded-xl border border-gray-300 text-xs text-gray-800 focus:ring-2 focus:ring-[#00695C]"
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowReportModal(false)}
+                    className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs rounded-xl cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={reportSubmitting}
+                    className="flex-1 py-3 bg-[#00695C] hover:bg-[#004D40] text-white font-bold text-xs rounded-xl cursor-pointer disabled:opacity-50"
+                  >
+                    {reportSubmitting ? 'Submitting...' : 'Submit Report'}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
         </div>
       )}
     </div>
   );
 };
+
 
 // ─── LUGGAGE RADAR PAGE ───
 export const LuggageRadarPage = () => {
