@@ -333,7 +333,8 @@ const userSchema = new Schema<IUser>({
 export const User = mongoose.model<IUser>('User', userSchema);
 
 // --- PARTNER PUBLISH ---
-export interface IPartnerPublish extends Document {
+export interface IPartnerPublish extends Omit<Document, '_id'> {
+  _id: string;
   role: 'Travel Agency' | 'Hotel' | 'Local Business';
   city: string;
   type: 'place_guide' | 'hotel';
@@ -352,6 +353,7 @@ export interface IPartnerPublish extends Document {
 }
 
 const partnerPublishSchema = new Schema<IPartnerPublish>({
+  _id: { type: String, required: true },
   role: { type: String, enum: ['Travel Agency', 'Hotel', 'Local Business'], required: true },
   city: { type: String, required: true, index: true },
   type: { type: String, enum: ['place_guide', 'hotel'], required: true },
@@ -367,12 +369,13 @@ const partnerPublishSchema = new Schema<IPartnerPublish>({
   bestWayToArrive: String,
   publishedAt: { type: Date, default: Date.now },
   publisherName: { type: String, default: 'Partner' }
-});
+}, { _id: false });
 
 export const PartnerPublish = mongoose.model<IPartnerPublish>('PartnerPublish', partnerPublishSchema);
 
 // --- ISSUE REPORTS ---
-export interface IIssueReport extends Document {
+export interface IIssueReport extends Omit<Document, '_id'> {
+  _id: string;
   city: string;
   category: 'language barrier' | 'overcharging' | 'poor signage' | 'low connectivity' | 'other';
   note?: string;
@@ -381,12 +384,13 @@ export interface IIssueReport extends Document {
 }
 
 const issueReportSchema = new Schema<IIssueReport>({
+  _id: { type: String, required: true },
   city: { type: String, required: true, index: true },
   category: { type: String, enum: ['language barrier', 'overcharging', 'poor signage', 'low connectivity', 'other'], required: true },
   note: String,
   spotSlug: String,
   createdAt: { type: Date, default: Date.now }
-});
+}, { _id: false });
 
 export const IssueReport = mongoose.model<IIssueReport>('IssueReport', issueReportSchema);
 
