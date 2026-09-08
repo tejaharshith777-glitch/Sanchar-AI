@@ -154,17 +154,20 @@ export const connectDB = async () => {
     console.error('Error seeding CityPacks:', err?.message || err);
   }
 
-  // Idempotent auto-seed CitySpot if empty
+  // Idempotent auto-seed/sync CitySpot
   try {
     const { CitySpot } = await import('../models');
-    const spotCount = await CitySpot.countDocuments();
-    if (spotCount === 0) {
-      console.log('CitySpot collection is empty. Auto-seeding curated places...');
-      await CitySpot.insertMany(seededSpots);
-      console.log('Curated CitySpots seeded successfully.');
+    console.log('Syncing curated CitySpots...');
+    for (const spotDoc of seededSpots) {
+      await CitySpot.updateOne(
+        { city: new RegExp(`^${spotDoc.city}$`, 'i') },
+        { $set: spotDoc },
+        { upsert: true }
+      );
     }
+    console.log('Curated CitySpots synced successfully.');
   } catch (err: any) {
-    console.error('Error seeding CitySpots:', err?.message || err);
+    console.error('Error syncing CitySpots:', err?.message || err);
   }
 
   // Idempotent auto-seed/update LuggageSpot

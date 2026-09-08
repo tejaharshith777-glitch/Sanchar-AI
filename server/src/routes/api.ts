@@ -458,9 +458,6 @@ async function getOrCreateCitySpots(cityName: string): Promise<any> {
       spot.lat = coords.lat;
       spot.lng = coords.lng;
       spot.coords = coords;
-    } else {
-      spot.lat = center[0] + (Math.random() - 0.5) * 0.04;
-      spot.lng = center[1] + (Math.random() - 0.5) * 0.04;
     }
   }
 

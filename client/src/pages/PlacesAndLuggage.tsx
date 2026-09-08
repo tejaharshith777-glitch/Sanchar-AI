@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import SancharMap from '../components/SancharMap';
 import { 
@@ -6,11 +6,7 @@ import {
   ChevronLeft, Check, Save, Share2, Sparkles
 } from 'lucide-react';
 import axios from 'axios';
-import { getCachedCityPack } from '../store/db';
-
-
-
-const CITY_CENTERS: Record<string, [number, number]> = {
+import { getCachedCityPack } from '../store/db';const CITY_CENTERS: Record<string, [number, number]> = {
   Chennai: [13.0827, 80.2707],
   Kochi: [9.9312, 76.2673],
   Bengaluru: [12.9716, 77.5946],
@@ -21,8 +17,41 @@ const CITY_CENTERS: Record<string, [number, number]> = {
   Jaipur: [26.9124, 75.7873],
 };
 
-// ─── PLACE DETAIL PAGE ───
-export const PlaceDetailPage = () => {
+class SpotErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch(err: any) {
+    console.error('SpotErrorBoundary caught error:', err);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center p-6 font-['Plus_Jakarta_Sans']">
+          <div className="text-center max-w-md bg-white p-8 rounded-3xl border border-gray-200 shadow-sm">
+            <AlertTriangle size={48} className="text-amber-500 mx-auto mb-4" />
+            <h2 className="text-xl font-bold text-gray-800 mb-2">Place details unavailable</h2>
+            <p className="text-sm text-gray-500 mb-6 font-medium">An unexpected error occurred while loading this place.</p>
+            <button
+              onClick={() => { this.setState({ hasError: false }); window.location.reload(); }}
+              className="w-full py-3.5 bg-[#00695C] text-white font-bold rounded-xl hover:bg-[#004D40] transition cursor-pointer min-h-[44px]"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+// ─── PLACE DETAIL PAGE INNER ───
+const PlaceDetailPageInner = () => {
   const { cityName, slug } = useParams<{ cityName: string; slug: string }>();
   const navigate = useNavigate();
 
@@ -36,6 +65,7 @@ export const PlaceDetailPage = () => {
   // Geolocation & Directions
   const [userPos, setUserPos] = useState<[number, number] | null>(null);
   const [distanceKm, setDistanceKm] = useState<number | null>(null);
+  const [geocodedCoords, setGeocodedCoords] = useState<[number, number] | null>(null);
 
   // Issue reporting modal
   const [showReportModal, setShowReportModal] = useState(false);
@@ -54,8 +84,26 @@ export const PlaceDetailPage = () => {
     
     try {
       if (navigator.onLine) {
-        const res = await axios.get(`/api/spots/${encodeURIComponent(city)}/${encodeURIComponent(slug || '')}`);
-        setSpot(res.data);
+        try {
+          const res = await axios.get(`/api/spots/${encodeURIComponent(city)}/${encodeURIComponent(slug || '')}`);
+          if (res.data && (res.data.name || res.data.title)) {
+            setSpot(res.data);
+          } else {
+            throw new Error('Empty spot data');
+          }
+        } catch {
+          // Fallback to offline cached pack
+          const pack = await getCachedCityPack(city);
+          const localSpot = pack?.spots?.find((s: any) => 
+            (s.slug || '').toLowerCase() === (slug || '').toLowerCase() ||
+            s.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') === (slug || '').toLowerCase()
+          );
+          if (localSpot) {
+            setSpot(localSpot);
+          } else {
+            setError('Place details unavailable right now. Please check network and retry.');
+          }
+        }
         
         // Fetch nearby spots from same city
         try {
@@ -64,11 +112,11 @@ export const PlaceDetailPage = () => {
             const currentSlug = (slug || '').toLowerCase();
             const others = cityRes.data.spots.filter((s: any) => 
               (s.slug || '').toLowerCase() !== currentSlug &&
-              s.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') !== currentSlug
+              s.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') !== currentSlug
             );
             setNearbySpots(others.slice(0, 3));
           }
-        } catch (e) {
+        } catch {
           // ignore nearby error
         }
       } else {
@@ -76,7 +124,7 @@ export const PlaceDetailPage = () => {
         const pack = await getCachedCityPack(city);
         const localSpot = pack?.spots?.find((s: any) => 
           (s.slug || '').toLowerCase() === (slug || '').toLowerCase() ||
-          s.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') === (slug || '').toLowerCase()
+          s.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') === (slug || '').toLowerCase()
         );
         if (localSpot) {
           setSpot(localSpot);
@@ -85,11 +133,11 @@ export const PlaceDetailPage = () => {
           );
           setNearbySpots(others.slice(0, 3));
         } else {
-          setError('Spot not found in offline cache.');
+          setError('Place details unavailable in offline cache. Connect to internet and retry.');
         }
       }
     } catch (err) {
-      setError('Failed to load place details.');
+      setError('Place details unavailable right now. Click Retry to reload.');
     } finally {
       setLoading(false);
     }
@@ -98,6 +146,25 @@ export const PlaceDetailPage = () => {
   useEffect(() => {
     fetchSpotDetails();
   }, [city, slug]);
+
+  // Live Nominatim geocoding fallback when coordinates are absent
+  useEffect(() => {
+    if (spot && (typeof spot.lat !== 'number' || typeof spot.lng !== 'number')) {
+      let active = true;
+      const query = `${spot.name || ''}, ${city}`;
+      fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`)
+        .then(res => res.json())
+        .then(data => {
+          if (active && data && data.length > 0 && data[0].lat && data[0].lon) {
+            setGeocodedCoords([parseFloat(data[0].lat), parseFloat(data[0].lon)]);
+          }
+        })
+        .catch(() => {});
+      return () => { active = false; };
+    } else {
+      setGeocodedCoords(null);
+    }
+  }, [spot, city]);
 
   // Check saved state in localStorage
   useEffect(() => {
@@ -111,9 +178,13 @@ export const PlaceDetailPage = () => {
     }
   }, [spot]);
 
+  const effectiveLat = typeof spot?.lat === 'number' ? spot.lat : (geocodedCoords ? geocodedCoords[0] : null);
+  const effectiveLng = typeof spot?.lng === 'number' ? spot.lng : (geocodedCoords ? geocodedCoords[1] : null);
+  const hasCoords = effectiveLat !== null && effectiveLng !== null;
+
   // User geolocation for distance calculation
   useEffect(() => {
-    if (navigator.geolocation && spot && spot.lat && spot.lng) {
+    if (navigator.geolocation && hasCoords) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           const uLat = pos.coords.latitude;
@@ -122,9 +193,9 @@ export const PlaceDetailPage = () => {
 
           // Haversine formula
           const R = 6371;
-          const dLat = (spot.lat - uLat) * Math.PI / 180;
-          const dLng = (spot.lng - uLng) * Math.PI / 180;
-          const a = Math.sin(dLat / 2) ** 2 + Math.cos(uLat * Math.PI / 180) * Math.cos(spot.lat * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+          const dLat = (effectiveLat! - uLat) * Math.PI / 180;
+          const dLng = (effectiveLng! - uLng) * Math.PI / 180;
+          const a = Math.sin(dLat / 2) ** 2 + Math.cos(uLat * Math.PI / 180) * Math.cos(effectiveLat! * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
           const dist = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
           setDistanceKm(dist);
         },
@@ -132,7 +203,7 @@ export const PlaceDetailPage = () => {
         { timeout: 5000 }
       );
     }
-  }, [spot]);
+  }, [spot, hasCoords, effectiveLat, effectiveLng]);
 
   // Save place to localStorage "saved_places"
   const toggleSaveSpot = () => {
@@ -146,7 +217,7 @@ export const PlaceDetailPage = () => {
       } else {
         saved.push({
           name: spot.name,
-          slug: spot.slug || spot.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+          slug: spot.slug || spot.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
           city,
           category: spot.category || 'spot',
           image: spot.image || '',
@@ -203,10 +274,10 @@ export const PlaceDetailPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center p-6">
+      <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center p-6 font-['Plus_Jakarta_Sans']">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-[#00695C] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-sm font-semibold text-gray-600">Loading spot details...</p>
+          <p className="text-sm font-semibold text-gray-600">Loading place details...</p>
         </div>
       </div>
     );
@@ -214,29 +285,28 @@ export const PlaceDetailPage = () => {
 
   if (error || !spot) {
     return (
-      <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center p-6">
+      <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center p-6 font-['Plus_Jakarta_Sans']">
         <div className="text-center max-w-md bg-white p-8 rounded-3xl border border-gray-200 shadow-sm">
           <AlertTriangle size={48} className="text-amber-500 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-gray-800 mb-2">Spot details unavailable</h2>
-          <p className="text-sm text-gray-500 mb-6">{error || 'Spot was not found.'}</p>
+          <h2 className="text-xl font-bold text-gray-800 mb-2">Place details unavailable</h2>
+          <p className="text-sm text-gray-500 mb-6 font-medium">{error || 'Spot was not found.'}</p>
           <div className="flex gap-3">
-            <button onClick={fetchSpotDetails} className="flex-1 py-3 bg-[#00695C] text-white font-bold rounded-xl hover:bg-[#004D40] transition cursor-pointer">Retry</button>
-            <button onClick={() => navigate(`/city/${encodeURIComponent(city)}`)} className="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition cursor-pointer">Back to {city || 'City'}</button>
+            <button onClick={fetchSpotDetails} className="flex-1 py-3.5 bg-[#00695C] text-white font-bold rounded-xl hover:bg-[#004D40] transition cursor-pointer min-h-[44px]">Retry</button>
+            <button onClick={() => navigate(`/city/${encodeURIComponent(city)}`)} className="flex-1 py-3.5 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition cursor-pointer min-h-[44px]">Back to {city || 'City'}</button>
           </div>
         </div>
       </div>
     );
   }
 
-  const hasCoords = typeof spot.lat === 'number' && typeof spot.lng === 'number';
   const googleMapsUrl = hasCoords 
-    ? `https://www.google.com/maps/search/?api=1&query=${spot.lat},${spot.lng}`
-    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(spot.name + ' ' + city)}`;
+    ? `https://www.google.com/maps/search/?api=1&query=${effectiveLat},${effectiveLng}`
+    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((spot.name || '') + ' ' + city)}`;
 
-  const centerCoords: [number, number] = hasCoords ? [spot.lat, spot.lng] : [20.5937, 78.9629];
+  const centerCoords: [number, number] = hasCoords ? [effectiveLat!, effectiveLng!] : [20.5937, 78.9629];
   const highlightsList: string[] = spot.highlights && spot.highlights.length > 0
     ? spot.highlights
-    : (spot.bestThing ? [spot.bestThing, spot.blurb] : [spot.blurb]);
+    : (spot.bestThing ? [spot.bestThing, spot.blurb] : [spot.blurb || 'A verified local spot in ' + city]);
 
   return (
     <div className="min-h-screen bg-[#FAF7F2] flex flex-col">
@@ -604,6 +674,12 @@ export const PlaceDetailPage = () => {
     </div>
   );
 };
+
+export const PlaceDetailPage = () => (
+  <SpotErrorBoundary>
+    <PlaceDetailPageInner />
+  </SpotErrorBoundary>
+);
 
 
 // ─── LUGGAGE RADAR PAGE ───
