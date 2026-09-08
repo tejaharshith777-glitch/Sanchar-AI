@@ -1760,4 +1760,107 @@ router.post('/user/verify-pin', async (req, res) => {
   }
 });
 
+// ---------------------------
+// PARTNER PUBLISH & ISSUE REPORTS
+// ---------------------------
+router.post('/partner-publish', async (req, res) => {
+  try {
+    const { role, city, type, name, category, area, hours, cost, description, photo, checkInTip, contact, bestWayToArrive, publisherName } = req.body;
+    if (!name || !city || !role || !type) {
+      return res.status(400).json({ error: 'Missing required fields: name, city, role, type' });
+    }
+
+    const newItem = {
+      _id: 'partner_' + Math.random().toString(36).substring(2, 11),
+      role,
+      city,
+      type,
+      name,
+      category,
+      area,
+      hours: hours || 'check locally',
+      cost: cost || 'check locally',
+      description,
+      photo,
+      checkInTip,
+      contact,
+      bestWayToArrive,
+      publisherName: publisherName || role,
+      publishedAt: new Date()
+    };
+
+    if (isMemoryFallback) {
+      memoryStore.partnerPublishes.unshift(newItem);
+    } else {
+      const doc = new PartnerPublish(newItem);
+      await doc.save();
+    }
+
+    return res.status(201).json({ message: 'Published successfully with partner label.', item: newItem });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message || 'Failed to publish partner content' });
+  }
+});
+
+router.get('/partner-publish', async (req, res) => {
+  try {
+    const city = (req.query.city as string) || '';
+    let items: any[] = [];
+    if (isMemoryFallback) {
+      items = memoryStore.partnerPublishes.filter((p: any) => !city || p.city.toLowerCase() === city.toLowerCase());
+    } else {
+      const query = city ? { city: new RegExp(`^${city}$`, 'i') } : {};
+      items = await PartnerPublish.find(query).sort({ publishedAt: -1 });
+    }
+    return res.json({ city, items, count: items.length });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message || 'Failed to fetch partner content' });
+  }
+});
+
+router.post('/issue-reports', async (req, res) => {
+  try {
+    const { city, category, note, spotSlug } = req.body;
+    if (!city || !category) {
+      return res.status(400).json({ error: 'Missing required fields: city, category' });
+    }
+
+    const newReport = {
+      _id: 'issue_' + Math.random().toString(36).substring(2, 11),
+      city,
+      category,
+      note,
+      spotSlug,
+      createdAt: new Date()
+    };
+
+    if (isMemoryFallback) {
+      memoryStore.issueReports.unshift(newReport);
+    } else {
+      const doc = new IssueReport(newReport);
+      await doc.save();
+    }
+
+    return res.status(201).json({ message: 'Issue reported successfully.', report: newReport });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message || 'Failed to submit issue report' });
+  }
+});
+
+router.get('/issue-reports/summary', async (req, res) => {
+  try {
+    const city = (req.query.city as string) || '';
+    let reports: any[] = [];
+    if (isMemoryFallback) {
+      reports = memoryStore.issueReports.filter((r: any) => !city || r.city.toLowerCase() === city.toLowerCase());
+    } else {
+      const query = city ? { city: new RegExp(`^${city}$`, 'i') } : {};
+      reports = await IssueReport.find(query);
+    }
+    return res.json({ city, total: reports.length, reports });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message || 'Failed to fetch issue report summary' });
+  }
+});
+
 export default router;

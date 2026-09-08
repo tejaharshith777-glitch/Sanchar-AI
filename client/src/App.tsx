@@ -850,7 +850,12 @@ const CitySpotlightPage = () => {
 
     // Industry layer: Fetch partner items & issue count for city
     axios.get(`/api/partner-publish?city=${encodeURIComponent(formattedCity)}`)
-      .then(res => { if (!cancelled && Array.isArray(res.data)) setPartnerItems(res.data); })
+      .then(res => {
+        if (!cancelled) {
+          const items = Array.isArray(res.data) ? res.data : (res.data?.items || []);
+          setPartnerItems(items);
+        }
+      })
       .catch(() => {});
     axios.get(`/api/issue-reports/summary?city=${encodeURIComponent(formattedCity)}`)
       .then(res => { if (!cancelled && typeof res.data?.total === 'number') setIssueTotal(res.data.total); })
@@ -1882,7 +1887,7 @@ const LandingPage = () => {
                 <p className="text-xs text-[#64748B]">Pre-downloaded on-device local translation and phrases support.</p>
               </div>
               <span className="text-xs font-bold text-[#00695C] mt-2 inline-flex items-center gap-1">
-                {isConnecting && !stats ? '—' : <AnimatedCounter value={stats ? stats.languagesSupported : 6} />} Local languages
+                {isConnecting && !stats ? '—' : <AnimatedCounter value={stats ? stats.languagesSupported : 0} />} Local languages
               </span>
             </div>
             <div className="card-retreat bg-white p-8 rounded-3xl border border-gray-150 shadow-xs flex flex-col justify-between h-48 hover:shadow-md transition">
@@ -1968,7 +1973,7 @@ const LandingPage = () => {
             <div className="card-retreat p-6 bg-white border border-gray-100">
               <p className="text-xs text-muted font-bold uppercase tracking-wider mb-2">Trips Recorded</p>
               <h3 className="font-display font-bold text-4xl text-[#00695C]">
-                {isConnecting && !stats ? '—' : <AnimatedCounter value={stats ? stats.tripsRecorded : 12} />}
+                {isConnecting && !stats ? '—' : <AnimatedCounter value={stats ? stats.tripsRecorded : 0} />}
               </h3>
             </div>
             <div className="card-retreat p-6 bg-white border border-gray-100">
@@ -1980,13 +1985,13 @@ const LandingPage = () => {
             <div className="card-retreat p-6 bg-white border border-gray-100">
               <p className="text-xs text-muted font-bold uppercase tracking-wider mb-2">Languages</p>
               <h3 className="font-display font-bold text-4xl text-[#00695C]">
-                {isConnecting && !stats ? '—' : <AnimatedCounter value={stats ? stats.languagesSupported : 6} />}
+                {isConnecting && !stats ? '—' : <AnimatedCounter value={stats ? stats.languagesSupported : 0} />}
               </h3>
             </div>
             <div className="card-retreat p-6 bg-white border border-gray-100">
               <p className="text-xs text-muted font-bold uppercase tracking-wider mb-2">Safety checks</p>
               <h3 className="font-display font-bold text-4xl text-[#00695C]">
-                {isConnecting && !stats ? '—' : <AnimatedCounter value={stats ? stats.safetyChecks : 180} />}
+                {isConnecting && !stats ? '—' : <AnimatedCounter value={stats ? stats.safetyChecks : 0} />}
               </h3>
             </div>
           </div>
@@ -2172,13 +2177,13 @@ const LandingPage = () => {
                         <span className="text-[#F59E0B]">👥</span> {spot.category}
                       </div>
                       <div className="flex items-center gap-2 pt-1">
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-[#00695C] bg-[#00695C]/10 py-0.5 px-2 rounded-full">Curated · verify locally</span>
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-300 bg-white/10 border border-white/20 py-0.5 px-2 rounded-full">Curated · verify locally</span>
                       </div>
                     </div>
                   </div>
 
                   <div className="mt-5">
-                    <div className="w-full md:w-auto inline-flex bg-[#142A2A] hover:bg-[#1E3E3E] text-white text-xs font-bold px-5 py-3 rounded-full items-center justify-between gap-3 border border-teal-800/80 transition-all group-hover:border-[#F59E0B]/40 font-['Plus_Jakarta_Sans']">
+                    <div className="w-full md:w-auto inline-flex bg-[#00695C] hover:bg-[#004D40] text-white text-xs font-bold px-5 py-3 rounded-full items-center justify-between gap-3 shadow-md transition-all font-['Plus_Jakarta_Sans'] cursor-pointer">
                       <span>Explore Spot</span>
                       <span className="text-[#F59E0B] text-sm group-hover:translate-x-1 transition-transform">→</span>
                     </div>
