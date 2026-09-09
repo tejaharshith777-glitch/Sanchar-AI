@@ -17,20 +17,22 @@ const app = express();
 app.set('trust proxy', 1);
 const port = parseInt(process.env.PORT || '3000', 10);
 
-app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin) return callback(null, true);
-    const envOrigins = (process.env.CLIENT_ORIGIN || '').split(',').map(s => s.trim()).filter(Boolean);
-    const allowed = ['https://sanchar-ai.vercel.app', ...envOrigins, 'http://localhost:5173', 'http://127.0.0.1:5173'];
-    if (allowed.includes(origin) || process.env.NODE_ENV !== 'production') {
-      return callback(null, origin);
-    }
-    return callback(null, false);
-  },
-  methods: ['GET','HEAD','PUT','PATCH','POST','DELETE','OPTIONS'],
-  allowedHeaders: ['Content-Type','Authorization','Idempotency-Key'],
-  credentials: true,
-}));
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  } else {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, PUT, PATCH, POST, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Idempotency-Key');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(204).end();
+  }
+  next();
+});
 app.use(express.json());
 
 app.use('/api', apiRoutes);
