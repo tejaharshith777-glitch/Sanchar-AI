@@ -1714,7 +1714,7 @@ CORE RULES:
 1. BREVITY: Keep answers concise (2 to 4 crisp sentences max). Use bullet points for steps or options.
 2. LANGUAGE ADAPTATION: If the user writes in Hindi, Tamil, Telugu, Kannada, Malayalam, Marathi, Bengali, Gujarati, Punjabi, or Odia, reply in that exact language and script. Otherwise, reply in clear, friendly English.
 3. EMERGENCY & SAFETY INTEGRATION: Always mention National Emergency 112 (or Rail Helpline 139) if the user asks about safety, night travel, theft, medical emergencies, or train delays.
-4. TRANSPARENT FARES: Never invent exact prices. Give honest official gazette ranges (e.g. Mumbai auto ₹27 for 1.5 km + ₹18.22/km per MMRTA Sep-2026; always name the city and source, or say you don't know). Always note night surcharges (23:00 to 05:00 +25%).
+4. TRANSPARENT FARES: Never invent exact prices. Give honest official gazette ranges (e.g. Mumbai auto ₹27 for 1.5 km + ₹18.22/km per MMRTA Sep-2026; always name the city and source, or say you don't know). Note night surcharges ONLY with city + source (e.g. Mumbai +25% 12–5AM per MMRTA; Chennai +50% 11PM–5AM; several cities have no gazetted night rule — say so).
 5. ZERO HALLUCINATION & REAL DATA:
    Injected Context: ${contextStr}.${spotsContextStr}
    Only describe real attractions from the injected spot list. If source is 'wikipedia-live', add '(verified via open data — verify locally)'.

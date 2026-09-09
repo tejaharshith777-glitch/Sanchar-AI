@@ -71,8 +71,8 @@ export const VERIFIED_TARIFFS: Record<string, { auto?: TariffDetails; taxi?: Tar
       nightHours: 'No gazetted night rule',
       nightDisabled: true,
       nightNote: 'No gazetted night rule',
-      officialCitation: 'App fares dynamic — compare in-app',
-      notes: 'App fares dynamic — compare in-app',
+      officialCitation: 'Illustrative only, not a tariff',
+      notes: 'Illustrative only, not a tariff. App fares dynamic — compare in-app',
       isOfficial: false
     }
   },

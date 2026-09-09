@@ -714,6 +714,7 @@ export const LuggageRadarPage = () => {
     }
 
     try {
+      setGeocodeError(null);
       let res = await fetch(`/api/geocode?q=${encodeURIComponent(city + ", India")}`);
       let data = res.ok ? await res.json() : null;
 
@@ -733,11 +734,13 @@ export const LuggageRadarPage = () => {
       } else {
         setMapCenter([22.4, 79.2]);
         setMapZoom(5);
+        setGeocodeError(`Could not locate ${city} — try a city name in India.`);
         return null;
       }
     } catch {
       setMapCenter([22.4, 79.2]);
       setMapZoom(5);
+      setGeocodeError(`Could not locate ${city} — try a city name in India.`);
       return null;
     }
   };
