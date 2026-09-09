@@ -309,17 +309,17 @@ export default function SancharChatbot({ activeTrip }: SancharChatbotProps) {
       {/* Floating Action Button */}
       <button
         onClick={() => setIsOpen(true)}
-        className={`fixed bottom-6 right-6 z-50 bg-gradient-to-r from-[#FF6F00] to-[#E65100] text-white p-4 rounded-full shadow-2xl hover:scale-105 transition-all duration-300 flex items-center gap-2 group border-2 border-orange-300/30 ${
+        className={`fixed bottom-16 right-4 sm:bottom-6 sm:right-6 z-40 bg-gradient-to-r from-[#FF6F00] to-[#E65100] text-white p-3 sm:p-4 rounded-full shadow-2xl hover:scale-105 transition-all duration-300 flex items-center gap-2 group border-2 border-orange-300/30 ${
           isOpen ? 'scale-0 opacity-0 pointer-events-none' : 'scale-100 opacity-100'
         }`}
-        style={{ minWidth: '48px', minHeight: '48px' }}
+        style={{ minWidth: '44px', minHeight: '44px' }}
         title="Ask Sanchar AI"
       >
         <div className="relative">
-          <Bot size={26} className="text-orange-100 group-hover:rotate-12 transition-transform" />
-          <span className={`absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-[#FF6F00] animate-pulse ${isOnline ? 'bg-emerald-400' : 'bg-amber-400'}`} />
+          <Bot size={22} className="text-orange-100 group-hover:rotate-12 transition-transform" />
+          <span className={`absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full border-2 border-[#FF6F00] animate-pulse ${isOnline ? 'bg-emerald-400' : 'bg-amber-400'}`} />
         </div>
-        <span className="font-bold text-sm hidden sm:inline pr-1">🤖 Ask Sanchar AI</span>
+        <span className="font-bold text-xs sm:text-sm pr-1">Ask AI</span>
       </button>
 
       {/* Chat Panel */}

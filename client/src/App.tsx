@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route, useNavigate, Link, useParams, useSearchPa
 import {
   Shield, MapPin, Navigation2, Camera, Smartphone, WifiOff,
   Zap, Globe, Lock, IndianRupee, Phone,
-  ChevronRight, ChevronDown, Check, AlertTriangle, Share2, Sparkles, X,
+  ChevronRight, ChevronDown, Check, AlertTriangle, Share2, Sparkles, X, Menu,
   BookOpen, BarChart3, Compass, HelpCircle,
   Mic, History as HistoryIcon, Plus, Unlock, Bot, Send, Loader2, Upload,
   Star, Clock
@@ -293,7 +293,7 @@ const App = () => {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<LandingPage />} />
-          <Route path="/city/:cityName" element={<CitySpotlightPage />} />
+          <Route path="/city/:cityName" element={<AppShell><CitySpotlightPage /></AppShell>} />
           <Route path="/create" element={<AppShell><CreateTrip /></AppShell>} />
           <Route path="/active/:id" element={<AppShell><ActiveTrip /></AppShell>} />
           <Route path="/scan/:id" element={<AppShell><CameraScanner /></AppShell>} />
@@ -325,12 +325,13 @@ const App = () => {
 const AppShell = ({ children }: { children: React.ReactNode }) => {
   const { activeTrip } = useContext(HealthContext);
   return (
-    <div className="min-h-screen bg-[#FAFAF7] flex flex-col relative">
+    <div className="min-h-screen bg-[#FAFAF7] flex flex-col relative pb-20 md:pb-0">
       <InnerNav />
       <main className="flex-1 max-w-2xl mx-auto w-full mt-4">
         {children}
       </main>
       <SancharChatbot activeTrip={activeTrip} />
+      <MobileBottomNav />
     </div>
   );
 };
@@ -580,23 +581,30 @@ const ConnectivityHeaderChip = () => {
 
 const InnerNav = () => {
   const { activeTrip } = useContext(HealthContext);
+  const [isOpen, setIsOpen] = useState(false);
+  const location = useLocation();
+
+  useEffect(() => {
+    setIsOpen(false);
+  }, [location.pathname]);
+
   return (
-    <nav className="sticky top-0 z-50 glass-nav border-b border-gray-150">
+    <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-150 shadow-xs">
       <div className="max-w-4xl mx-auto px-4 md:px-6 flex justify-between h-16 items-center">
         <Link to="/" className="flex items-center gap-2.5 no-underline">
-          <div className="w-8 h-8 bg-[#00695C] rounded-lg flex items-center justify-center">
+          <div className="w-8 h-8 bg-[#00695C] rounded-lg flex items-center justify-center shadow-xs">
             <Shield size={16} className="text-white" />
           </div>
           <span className="font-['Plus_Jakarta_Sans'] font-bold text-[#1F2937] text-lg tracking-tight">Sanchar AI</span>
         </Link>
-        <div className="flex items-center gap-2 sm:gap-4">
+        <div className="hidden md:flex items-center gap-4">
           <ConnectivityHeaderChip />
-          <Link to="/marketplace" className="text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline hidden md:inline">Marketplace</Link>
-          <Link to="/hotel-partner" className="text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline hidden md:inline">Hotels</Link>
-          <Link to="/crowd-radar" className="text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline hidden sm:inline">Visit Planner</Link>
-          <Link to="/green-credits" className="text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline hidden sm:inline">Green</Link>
-          <Link to="/maps" className="text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline hidden sm:inline">Maps</Link>
-          <Link to="/dashboard" className="text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline hidden sm:inline">Dashboard</Link>
+          <Link to="/marketplace" className="text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline">Marketplace</Link>
+          <Link to="/hotel-partner" className="text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline">Hotels</Link>
+          <Link to="/crowd-radar" className="text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline">Visit Planner</Link>
+          <Link to="/green-credits" className="text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline">Green</Link>
+          <Link to="/maps" className="text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline">Maps</Link>
+          <Link to="/dashboard" className="text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline">Dashboard</Link>
           
           {activeTrip && (
             <Link
@@ -608,7 +616,95 @@ const InnerNav = () => {
             </Link>
           )}
         </div>
+
+        {/* Mobile menu button */}
+        <div className="flex md:hidden items-center gap-2">
+          <ConnectivityHeaderChip />
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            className="p-2 rounded-xl text-gray-700 hover:bg-gray-100 transition cursor-pointer border border-gray-200"
+            aria-label="Toggle mobile menu"
+          >
+            {isOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+        </div>
       </div>
+
+      {/* Mobile Drawer Panel */}
+      {isOpen && (
+        <div className="md:hidden bg-white border-b border-gray-200 px-4 py-4 space-y-3 shadow-xl animate-fade-in-down max-h-[80vh] overflow-y-auto">
+          {activeTrip && (
+            <Link
+              to={`/active/${activeTrip._id}`}
+              onClick={() => setIsOpen(false)}
+              className="badge bg-[#E0F2F1] text-[#00695C] border border-[#B2DFDB] text-xs font-bold p-3 rounded-xl flex items-center gap-2 no-underline w-full"
+            >
+              <span className="w-2.5 h-2.5 rounded-full bg-[#00695C] animate-pulse" />
+              Active Trip ({activeTrip.originCity} → {activeTrip.destinationCity})
+            </Link>
+          )}
+
+          <div className="grid grid-cols-2 gap-2 text-xs font-bold">
+            <Link to="/" onClick={() => setIsOpen(false)} className="p-3 bg-gray-50 rounded-xl hover:bg-teal-50 hover:text-[#00695C] text-gray-700 flex items-center gap-2 no-underline">
+              <Shield size={16} className="text-[#00695C]" /> Home
+            </Link>
+            <Link to="/crowd-radar" onClick={() => setIsOpen(false)} className="p-3 bg-gray-50 rounded-xl hover:bg-teal-50 hover:text-[#00695C] text-gray-700 flex items-center gap-2 no-underline">
+              <Compass size={16} className="text-[#00695C]" /> Visit Planner
+            </Link>
+            <Link to="/maps" onClick={() => setIsOpen(false)} className="p-3 bg-gray-50 rounded-xl hover:bg-teal-50 hover:text-[#00695C] text-gray-700 flex items-center gap-2 no-underline">
+              <MapPin size={16} className="text-[#00695C]" /> Offline Maps
+            </Link>
+            <Link to="/marketplace" onClick={() => setIsOpen(false)} className="p-3 bg-gray-50 rounded-xl hover:bg-teal-50 hover:text-[#00695C] text-gray-700 flex items-center gap-2 no-underline">
+              <Zap size={16} className="text-[#00695C]" /> Marketplace
+            </Link>
+            <Link to="/hotel-partner" onClick={() => setIsOpen(false)} className="p-3 bg-gray-50 rounded-xl hover:bg-teal-50 hover:text-[#00695C] text-gray-700 flex items-center gap-2 no-underline">
+              <BookOpen size={16} className="text-[#00695C]" /> Partner Hotels
+            </Link>
+            <Link to="/green-credits" onClick={() => setIsOpen(false)} className="p-3 bg-gray-50 rounded-xl hover:bg-teal-50 hover:text-[#00695C] text-gray-700 flex items-center gap-2 no-underline">
+              <Sparkles size={16} className="text-[#00695C]" /> Green Credits
+            </Link>
+            <Link to="/luggage" onClick={() => setIsOpen(false)} className="p-3 bg-gray-50 rounded-xl hover:bg-teal-50 hover:text-[#00695C] text-gray-700 flex items-center gap-2 no-underline">
+              <Smartphone size={16} className="text-[#00695C]" /> Luggage Radar
+            </Link>
+            <Link to="/dashboard" onClick={() => setIsOpen(false)} className="p-3 bg-gray-50 rounded-xl hover:bg-teal-50 hover:text-[#00695C] text-gray-700 flex items-center gap-2 no-underline">
+              <BarChart3 size={16} className="text-[#00695C]" /> Dashboard
+            </Link>
+          </div>
+        </div>
+      )}
+    </nav>
+  );
+};
+
+export const MobileBottomNav = () => {
+  const location = useLocation();
+
+  const navItems = [
+    { label: 'Home', path: '/', icon: Shield },
+    { label: 'Planner', path: '/crowd-radar', icon: Compass },
+    { label: 'Maps', path: '/maps', icon: MapPin },
+    { label: 'Marketplace', path: '/marketplace', icon: Zap },
+    { label: 'Dashboard', path: '/dashboard', icon: BarChart3 }
+  ];
+
+  return (
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-gray-200 py-1.5 px-2 flex justify-around items-center shadow-lg">
+      {navItems.map((item) => {
+        const Icon = item.icon;
+        const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path));
+        return (
+          <Link
+            key={item.path}
+            to={item.path}
+            className={`flex flex-col items-center gap-0.5 no-underline py-1 px-2.5 rounded-xl transition-all ${
+              isActive ? 'text-[#00695C] font-extrabold scale-105' : 'text-gray-500 font-semibold hover:text-gray-800'
+            }`}
+          >
+            <Icon size={18} className={isActive ? 'text-[#00695C]' : 'text-gray-400'} />
+            <span className="text-[10px] tracking-tight">{item.label}</span>
+          </Link>
+        );
+      })}
     </nav>
   );
 };
@@ -922,20 +1018,15 @@ const CitySpotlightPage = () => {
         </div>
       )}
 
-      {/* Navigation Header */}
-      <nav className="sticky top-0 z-50 glass-nav border-b border-gray-150">
-        <div className="max-w-[1180px] mx-auto flex justify-between items-center h-16 px-5 md:px-8">
-          <Link to="/" className="flex items-center gap-2 text-sm font-bold text-[#00695C] hover:text-[#004D40] transition-colors no-underline min-h-[44px]">
-            <ChevronRight size={16} className="rotate-180" /> Back to home
+      {/* City Breadcrumb Bar */}
+      <div className="bg-white border-b border-gray-150 py-3 px-4 md:px-8">
+        <div className="max-w-[1180px] mx-auto flex justify-between items-center">
+          <Link to="/" className="flex items-center gap-1.5 text-xs font-bold text-[#00695C] hover:text-[#004D40] transition-colors no-underline">
+            <ChevronRight size={14} className="rotate-180" /> Back to home
           </Link>
-          <Link to="/" className="flex items-center gap-2 no-underline">
-            <div className="w-8 h-8 bg-[#00695C] rounded-lg flex items-center justify-center shadow-sm">
-              <Shield size={16} className="text-white" />
-            </div>
-            <span className="font-['Plus_Jakarta_Sans'] font-extrabold text-[#1F2937] text-lg tracking-tight">Sanchar AI</span>
-          </Link>
+          <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">{formattedCity} Spotlight</span>
         </div>
-      </nav>
+      </div>
 
       <main className="max-w-[1180px] mx-auto px-5 md:px-8 py-10 space-y-10">
         {loading && (
@@ -1601,6 +1692,12 @@ const LandingPage = () => {
   const [stats, setStats] = useState<any>(null);
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [savedPlaces, setSavedPlaces] = useState<any[]>([]);
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const location = useLocation();
+
+  useEffect(() => {
+    setIsMobileNavOpen(false);
+  }, [location.pathname]);
 
   const navigate = useNavigate();
 
@@ -1727,27 +1824,82 @@ const LandingPage = () => {
       )}
 
       {/* ── Sticky Nav ── */}
-      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrollY > 50 ? 'bg-cream/90 backdrop-blur-md border-b border-gray-150 shadow-xs' : 'bg-transparent'}`}>
-        <div className="max-w-[1200px] mx-auto flex justify-between items-center h-16 px-5 md:px-8">
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrollY > 50 || isMobileNavOpen ? 'bg-cream/95 backdrop-blur-md border-b border-gray-150 shadow-xs' : 'bg-transparent'}`}>
+        <div className="max-w-[1200px] mx-auto flex justify-between items-center h-16 px-4 md:px-8">
           <Link to="/" className="flex items-center gap-2.5 no-underline">
             <div className="w-9 h-9 bg-[#00695C] rounded-xl flex items-center justify-center shadow-sm">
               <Shield size={18} className="text-white" />
             </div>
             <span className="font-display font-bold text-[#1F2937] text-xl tracking-tight">Sanchar AI</span>
           </Link>
-          <div className="flex items-center gap-3 sm:gap-6">
+          <div className="hidden md:flex items-center gap-4 lg:gap-6">
             <ConnectivityHeaderChip />
-            <Link to="/features" className="hidden md:inline text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline">Features</Link>
-            <Link to="/privacy" className="hidden md:inline text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline">Privacy</Link>
+            <Link to="/marketplace" className="text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline">Marketplace</Link>
+            <Link to="/hotel-partner" className="text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline">Hotels</Link>
+            <Link to="/crowd-radar" className="text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline">Visit Planner</Link>
+            <Link to="/green-credits" className="text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline">Green</Link>
+            <Link to="/maps" className="text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline">Maps</Link>
+            <Link to="/dashboard" className="text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline">Dashboard</Link>
             <Link to="/history" className="text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline">History</Link>
-            <Link to="/maps" className="hidden sm:inline text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline">Maps</Link>
-            <Link to="/luggage" className="hidden sm:inline text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline">Luggage</Link>
-            <Link to="/dashboard" className="hidden sm:inline text-xs font-semibold text-[#64748B] hover:text-[#00695C] transition-colors no-underline">Dashboard</Link>
             <Link to="/create" className="btn-primary text-xs !py-2 !px-5 no-underline">
               Start Trip <ChevronRight size={12} />
             </Link>
           </div>
+
+          {/* Mobile controls */}
+          <div className="flex md:hidden items-center gap-2">
+            <ConnectivityHeaderChip />
+            <button
+              onClick={() => setIsMobileNavOpen(!isMobileNavOpen)}
+              className="p-2 rounded-xl text-gray-700 bg-white/80 hover:bg-white transition cursor-pointer border border-gray-200"
+              aria-label="Toggle mobile menu"
+            >
+              {isMobileNavOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
+          </div>
         </div>
+
+        {/* Mobile Dropdown Panel */}
+        {isMobileNavOpen && (
+          <div className="md:hidden bg-white/95 backdrop-blur-md border-b border-gray-200 px-4 py-4 space-y-3 shadow-xl animate-fade-in-down max-h-[80vh] overflow-y-auto">
+            <Link to="/create" onClick={() => setIsMobileNavOpen(false)} className="btn-primary text-xs w-full justify-center !py-3 mb-2 no-underline shadow-md">
+              🚀 Start New Trip <ChevronRight size={14} />
+            </Link>
+            
+            <div className="grid grid-cols-2 gap-2 text-xs font-bold">
+              <Link to="/crowd-radar" onClick={() => setIsMobileNavOpen(false)} className="p-3 bg-teal-50/60 rounded-xl hover:bg-teal-100 text-[#00695C] flex items-center gap-2 no-underline">
+                <Compass size={16} /> Visit Planner
+              </Link>
+              <Link to="/maps" onClick={() => setIsMobileNavOpen(false)} className="p-3 bg-teal-50/60 rounded-xl hover:bg-teal-100 text-[#00695C] flex items-center gap-2 no-underline">
+                <MapPin size={16} /> Offline Maps
+              </Link>
+              <Link to="/marketplace" onClick={() => setIsMobileNavOpen(false)} className="p-3 bg-teal-50/60 rounded-xl hover:bg-teal-100 text-[#00695C] flex items-center gap-2 no-underline">
+                <Zap size={16} /> Marketplace
+              </Link>
+              <Link to="/hotel-partner" onClick={() => setIsMobileNavOpen(false)} className="p-3 bg-teal-50/60 rounded-xl hover:bg-teal-100 text-[#00695C] flex items-center gap-2 no-underline">
+                <BookOpen size={16} /> Partner Hotels
+              </Link>
+              <Link to="/green-credits" onClick={() => setIsMobileNavOpen(false)} className="p-3 bg-teal-50/60 rounded-xl hover:bg-teal-100 text-[#00695C] flex items-center gap-2 no-underline">
+                <Sparkles size={16} /> Green Credits
+              </Link>
+              <Link to="/luggage" onClick={() => setIsMobileNavOpen(false)} className="p-3 bg-teal-50/60 rounded-xl hover:bg-teal-100 text-[#00695C] flex items-center gap-2 no-underline">
+                <Smartphone size={16} /> Luggage Radar
+              </Link>
+              <Link to="/dashboard" onClick={() => setIsMobileNavOpen(false)} className="p-3 bg-teal-50/60 rounded-xl hover:bg-teal-100 text-[#00695C] flex items-center gap-2 no-underline">
+                <BarChart3 size={16} /> Dashboard
+              </Link>
+              <Link to="/history" onClick={() => setIsMobileNavOpen(false)} className="p-3 bg-teal-50/60 rounded-xl hover:bg-teal-100 text-[#00695C] flex items-center gap-2 no-underline">
+                <HistoryIcon size={16} /> Journey History
+              </Link>
+              <Link to="/features" onClick={() => setIsMobileNavOpen(false)} className="p-3 bg-teal-50/60 rounded-xl hover:bg-teal-100 text-[#00695C] flex items-center gap-2 no-underline">
+                <Compass size={16} /> Features
+              </Link>
+              <Link to="/privacy" onClick={() => setIsMobileNavOpen(false)} className="p-3 bg-teal-50/60 rounded-xl hover:bg-teal-100 text-[#00695C] flex items-center gap-2 no-underline">
+                <Lock size={16} /> Vault & Privacy
+              </Link>
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* Active Trip Banner */}
@@ -2613,6 +2765,7 @@ const LandingPage = () => {
           </footer>
         </div>
       </section>
+      <MobileBottomNav />
     </div>
   );
 };
