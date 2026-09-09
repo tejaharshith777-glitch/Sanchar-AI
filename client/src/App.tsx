@@ -445,6 +445,9 @@ const VaultGuard = ({ children }: { children: React.ReactNode }) => {
           
           <form onSubmit={handleAuth} className="w-full flex flex-col gap-4">
             <input 
+              id="vault-email"
+              name="email"
+              aria-label="Email address"
               type="email" 
               placeholder="Email address"
               value={email}
@@ -453,6 +456,9 @@ const VaultGuard = ({ children }: { children: React.ReactNode }) => {
               required
             />
             <input 
+              id="vault-password"
+              name="password"
+              aria-label="Password"
               type="password" 
               placeholder="Password"
               value={password}
@@ -484,6 +490,9 @@ const VaultGuard = ({ children }: { children: React.ReactNode }) => {
           Protect your photos and stories with a 4-digit PIN.
         </p>
         <input 
+          id="vault-pin-setup"
+          name="pinSetup"
+          aria-label="4-digit PIN setup"
           type="password" 
           maxLength={4} 
           placeholder="4-digit PIN"
@@ -506,6 +515,9 @@ const VaultGuard = ({ children }: { children: React.ReactNode }) => {
         <h2 className="text-xl font-bold mb-6">Private Vault Locked</h2>
         
         <input 
+          id="vault-pin-verify"
+          name="pinVerify"
+          aria-label="Enter 4-digit PIN"
           type="password" 
           maxLength={4} 
           placeholder="Enter 4-digit PIN"

@@ -18,12 +18,16 @@ app.set('trust proxy', 1);
 const port = parseInt(process.env.PORT || '3000', 10);
 
 app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (origin) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-  } else {
-    res.setHeader('Access-Control-Allow-Origin', '*');
+  const rawOrigin = req.headers.origin;
+  let singleOrigin = '*';
+
+  if (rawOrigin) {
+    const originStr = Array.isArray(rawOrigin) ? rawOrigin[0] : rawOrigin;
+    // Extract first origin if multiple comma-separated values exist (from proxies)
+    singleOrigin = originStr.split(',')[0].trim();
   }
+
+  res.setHeader('Access-Control-Allow-Origin', singleOrigin);
   res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, PUT, PATCH, POST, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Idempotency-Key');
   res.setHeader('Access-Control-Allow-Credentials', 'true');

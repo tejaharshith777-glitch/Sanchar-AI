@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useId } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Sparkles, MapPin } from 'lucide-react';
 import { ALL_INDIAN_CITIES, LAUNCH_CITIES } from '../data/indianCities';
@@ -34,10 +34,12 @@ export const CityAutocomplete: React.FC<CityAutocompleteProps> = ({
   buttonClassName = "",
   showSearchIcon = true,
   autoFocus = false,
-  id = "city-autocomplete-input",
+  id: customId,
   ariaLabel = "Search any city in India",
   variant = 'compact'
 }) => {
+  const generatedId = useId();
+  const inputId = customId || `city-autocomplete-${generatedId.replace(/:/g, '')}`;
   const navigate = useNavigate();
   const [internalValue, setInternalValue] = useState(externalValue || '');
   const [isOpen, setIsOpen] = useState(false);
@@ -192,7 +194,8 @@ export const CityAutocomplete: React.FC<CityAutocompleteProps> = ({
         )}
 
         <input
-          id={id}
+          id={inputId}
+          name={inputId}
           type="text"
           value={internalValue}
           onChange={handleInputChange}
@@ -259,13 +262,18 @@ export const CityAutocomplete: React.FC<CityAutocompleteProps> = ({
           ) : (
             <div
               onClick={() => handleSelect(query)}
-              className={`px-4 py-3 cursor-pointer transition-colors min-h-[44px] flex items-center gap-2 ${
+              className={`px-4 py-3 cursor-pointer transition-colors min-h-[44px] flex items-center justify-between ${
                 selectedIndex === 0 ? 'bg-teal-50 text-[#00695C]' : 'hover:bg-gray-50 text-gray-700'
               }`}
             >
-              <Search size={14} className="text-amber-500 shrink-0" />
-              <span className="text-xs text-gray-600 font-medium">
-                Not in the quick list — press <kbd className="px-1.5 py-0.5 bg-gray-100 text-gray-800 rounded font-mono text-[10px] border border-gray-300">Enter</kbd> to search anyway
+              <div className="flex items-center gap-2.5 min-w-0">
+                <Search size={15} className="text-[#00695C] shrink-0" />
+                <span className="text-xs sm:text-sm font-medium text-gray-800 truncate">
+                  Explore <strong>"{query}"</strong> places & details
+                </span>
+              </div>
+              <span className="text-[10px] bg-teal-50 text-[#00695C] border border-[#B2DFDB] font-bold px-2 py-0.5 rounded-full shrink-0">
+                Search Any City
               </span>
             </div>
           )}

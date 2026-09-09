@@ -464,6 +464,9 @@ export default function SancharChatbot({ activeTrip }: SancharChatbotProps) {
           <div className="p-3 bg-white border-t border-gray-100 flex flex-col gap-1 shrink-0">
             <div className="flex items-center gap-2">
               <input
+                id="chatbot-input"
+                name="chatbotInput"
+                aria-label="Ask about travel, safety, fares..."
                 type="text"
                 placeholder="Ask about travel, safety, fares..."
                 value={input}

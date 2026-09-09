@@ -431,7 +431,7 @@ async function getOrCreateCitySpots(cityName: string): Promise<any> {
     }
   }
 
-  // Fallback to Wikipedia Category API if spotsList is still sparse
+  // Fallback to Wikipedia Category & OpenSearch API if spotsList is still sparse
   if (spotsList.length < 5) {
     try {
       const catUrl = `https://en.wikipedia.org/w/api.php?action=query&list=categorymembers&cmtitle=Category:Tourist_attractions_in_${encodeURIComponent(city)}&cmlimit=25&cmtype=page&format=json`;
@@ -440,6 +440,28 @@ async function getOrCreateCitySpots(cityName: string): Promise<any> {
       if (catData.query && catData.query.categorymembers) {
         for (const member of catData.query.categorymembers) {
           addSpot(member.title, `A verified tourist attraction in ${city}.`);
+        }
+      }
+    } catch (err) {
+      // ignore
+    }
+  }
+
+  // OpenSearch fallback for any of the 8,000+ towns/cities in India
+  if (spotsList.length < 5) {
+    try {
+      const searchUrl = `https://en.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(city)}&limit=12&format=json`;
+      const searchRes = await fetch(searchUrl, { headers: { 'User-Agent': 'SancharAI/1.0' }, signal: AbortSignal.timeout(2500) });
+      const searchData = await searchRes.json();
+      if (Array.isArray(searchData) && Array.isArray(searchData[1])) {
+        const titles = searchData[1];
+        const descriptions = searchData[2] || [];
+        for (let i = 0; i < titles.length; i++) {
+          const itemTitle = titles[i];
+          const itemDesc = descriptions[i] || `A notable landmark in ${city}.`;
+          if (itemTitle && !itemTitle.toLowerCase().includes('district') && !itemTitle.toLowerCase().includes('demographics')) {
+            addSpot(itemTitle, itemDesc);
+          }
         }
       }
     } catch (err) {
