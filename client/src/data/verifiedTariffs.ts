@@ -20,6 +20,7 @@ export interface TariffDetails {
 
 export const VERIFIED_TARIFFS: Record<string, { auto?: TariffDetails; taxi?: TariffDetails; generalNote?: string }> = {
   Mumbai: {
+    // source: MMRTA Gazette Notification w.e.f 01/09/2026
     auto: {
       city: 'Mumbai',
       vehicleType: 'auto',
@@ -27,11 +28,12 @@ export const VERIFIED_TARIFFS: Record<string, { auto?: TariffDetails; taxi?: Tar
       minDistKm: 1.5,
       perKm: 18.22,
       nightSurchargePct: 25,
-      nightHours: '11:00 PM – 5:00 AM (+25%)',
+      nightHours: '12:00 AM – 5:00 AM (+25%)',
       officialCitation: 'MMRTA Gazette Notification w.e.f 01/09/2026',
       notes: 'Meters recalibrating till 30/11/2026. Insist on electronic tariff card.',
       isOfficial: true
     },
+    // source: MMRTA Gazette Notification w.e.f 01/09/2026
     taxi: {
       city: 'Mumbai',
       vehicleType: 'taxi',
@@ -39,13 +41,14 @@ export const VERIFIED_TARIFFS: Record<string, { auto?: TariffDetails; taxi?: Tar
       minDistKm: 1.5,
       perKm: 21.90,
       nightSurchargePct: 25,
-      nightHours: '11:00 PM – 5:00 AM (+25%)',
+      nightHours: '12:00 AM – 5:00 AM (+25%)',
       officialCitation: 'MMRTA Gazette Notification w.e.f 01/09/2026',
       notes: 'Black-and-Yellow (Kali-Peeli) meter taxi.',
       isOfficial: true
     }
   },
   Chennai: {
+    // source: Tamil Nadu Transport Dept Gazette Chart 2023
     auto: {
       city: 'Chennai',
       vehicleType: 'auto',
@@ -64,14 +67,17 @@ export const VERIFIED_TARIFFS: Record<string, { auto?: TariffDetails; taxi?: Tar
       minFare: 100,
       minDistKm: 4.0,
       perKm: 20.00,
-      nightSurchargePct: 25,
-      nightHours: '11:00 PM – 5:00 AM',
+      nightSurchargePct: 0,
+      nightHours: 'No gazetted night rule',
+      nightDisabled: true,
+      nightNote: 'No gazetted night rule',
       officialCitation: 'App fares dynamic — compare in-app',
-      notes: 'No gazetted city taxi meter rate in TN. App fares dynamic, compare in-app.',
+      notes: 'App fares dynamic — compare in-app',
       isOfficial: false
     }
   },
   Bengaluru: {
+    // source: Bengaluru RTA Notification 14/07/2025 (eff. 01/08/2025)
     auto: {
       city: 'Bengaluru',
       vehicleType: 'auto',
@@ -90,14 +96,17 @@ export const VERIFIED_TARIFFS: Record<string, { auto?: TariffDetails; taxi?: Tar
       minFare: 100,
       minDistKm: 4.0,
       perKm: 24.00,
-      nightSurchargePct: 10,
-      nightHours: 'Dynamic app capping',
+      nightSurchargePct: 0,
+      nightHours: 'No gazetted night rule',
+      nightDisabled: true,
+      nightNote: 'No gazetted night rule',
       officialCitation: 'App-capped, indicative only',
-      notes: 'App-capped tariffs vary by demand. Use app pricing as indicative benchmark.',
+      notes: 'App fares dynamic — compare in-app',
       isOfficial: false
     }
   },
   Delhi: {
+    // source: Delhi Govt Transport Dept Notification 09/01/2023
     auto: {
       city: 'Delhi',
       vehicleType: 'auto',
@@ -110,6 +119,7 @@ export const VERIFIED_TARIFFS: Record<string, { auto?: TariffDetails; taxi?: Tar
       notes: 'First 1.5 km ₹30 minimum fare.',
       isOfficial: true
     },
+    // source: Delhi Govt Transport Dept Notification 09/01/2023
     taxi: {
       city: 'Delhi',
       vehicleType: 'taxi',
@@ -124,6 +134,7 @@ export const VERIFIED_TARIFFS: Record<string, { auto?: TariffDetails; taxi?: Tar
     }
   },
   Hyderabad: {
+    // source: TG Transport Gazette 2014 Tariff
     auto: {
       city: 'Hyderabad',
       vehicleType: 'auto',
@@ -144,8 +155,10 @@ export const VERIFIED_TARIFFS: Record<string, { auto?: TariffDetails; taxi?: Tar
       minFare: 40,
       minDistKm: 2.0,
       perKm: 21.00,
-      nightSurchargePct: 20,
-      nightHours: '11:00 PM – 5:00 AM',
+      nightSurchargePct: 0,
+      nightHours: 'No gazetted night rule',
+      nightDisabled: true,
+      nightNote: 'No gazetted night rule',
       officialCitation: 'Indicative reported rate',
       notes: 'Indicative rate based on pre-paid station counter tariffs.',
       isOfficial: false
@@ -159,19 +172,24 @@ export const VERIFIED_TARIFFS: Record<string, { auto?: TariffDetails; taxi?: Tar
       minDistKm: 1.0,
       perKm: 0,
       nightSurchargePct: 0,
-      nightHours: 'Fixed route fare',
-      officialCitation: 'WB Transport Dept Route Chart (2529-WT 11/06/2018)',
-      notes: 'Kolkata autos operate on fixed shared routes with fixed per-seat fares, not distance meters.',
-      isOfficial: true
+      nightHours: 'No gazetted night rule',
+      nightDisabled: true,
+      nightNote: 'No gazetted night rule',
+      officialCitation: 'Reported per-seat range (unverified)',
+      notes: 'route-wise fixed fares — ask before boarding',
+      isOfficial: false
     },
+    // source: WB Transport Dept Gazette Notification 2529-WT 11/06/2018
     taxi: {
       city: 'Kolkata',
       vehicleType: 'taxi',
       minFare: 30,
       minDistKm: 2.0,
       perKm: 15.00,
-      nightSurchargePct: 15,
-      nightHours: '10:00 PM – 6:00 AM',
+      nightSurchargePct: 0,
+      nightHours: 'Night rule unverified',
+      nightDisabled: true,
+      nightNote: 'Night rule unverified — confirm on meter.',
       officialCitation: 'WB Transport Dept Gazette Notification 2529-WT 11/06/2018',
       notes: 'Yellow Taxi meter rate (apply meter multiplier if applicable).',
       isOfficial: true
@@ -205,9 +223,9 @@ export function calculateVerifiedFare(city: string, vehicleType: 'auto' | 'taxi'
     return {
       min: 15,
       max: 25,
-      isOfficial: true,
-      citation: tariff.officialCitation,
-      note: tariff.notes
+      isOfficial: false,
+      citation: 'Reported per-seat range (unverified)',
+      note: 'route-wise fixed fares — ask before boarding'
     };
   }
 

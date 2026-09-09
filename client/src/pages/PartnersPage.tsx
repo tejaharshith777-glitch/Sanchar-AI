@@ -177,7 +177,7 @@ export const PartnersPage: React.FC = () => {
           </div>
 
           <div className="pt-2">
-            <label className="block text-xs font-bold text-gray-700 mb-1">Target City in India (~800 fast search / ~8,000 deep search)</label>
+            <label className="block text-xs font-bold text-gray-700 mb-1">Target City in India (145+ Indian cities, deep search coming)</label>
             <CityAutocomplete
               variant="compact"
               value={customCity || city}

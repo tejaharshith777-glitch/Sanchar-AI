@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Shield, Calculator, MessageSquare, AlertTriangle, CheckCircle, Navigation, Volume2, Copy, Clock, ExternalLink } from 'lucide-react';
+import { Shield, Calculator, MessageSquare, AlertTriangle, CheckCircle, Navigation, Volume2, Copy, Clock } from 'lucide-react';
 import axios from 'axios';
 import { CityAutocomplete } from '../components/CityAutocomplete';
 import { VERIFIED_TARIFFS, calculateVerifiedFare } from '../data/verifiedTariffs';
@@ -228,14 +228,14 @@ export const FareGuardianPage: React.FC = () => {
               </span>
             </div>
 
-            {rateCard ? (
+            {fareResult.citation ? (
               <div className="text-[11px] text-teal-100/90 space-y-1 pt-2 border-t border-teal-800/80 font-medium">
-                <p><strong>Source:</strong> {rateCard.source} (Effective: {rateCard.effectiveDate})</p>
-                <p>Base: ₹{fareResult.tariff?.minFare} for first {fareResult.tariff?.minDistKm} km · ₹{fareResult.tariff?.perKm}/km thereafter</p>
-                {rateCard.sourceUrl && (
-                  <a href={rateCard.sourceUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-amber-300 underline font-semibold mt-1">
-                    View official gazette notice <ExternalLink size={10} />
-                  </a>
+                <p><strong>Source:</strong> {fareResult.citation}</p>
+                {fareResult.tariff && fareResult.tariff.perKm > 0 && (
+                  <p>Base: ₹{fareResult.tariff.minFare} for first {fareResult.tariff.minDistKm} km · ₹{fareResult.tariff.perKm}/km thereafter</p>
+                )}
+                {fareResult.note && (
+                  <p className="text-amber-200/90 text-[10.5px]">Note: {fareResult.note}</p>
                 )}
               </div>
             ) : (

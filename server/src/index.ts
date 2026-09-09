@@ -41,15 +41,6 @@ app.use(express.json());
 
 app.use('/api', apiRoutes);
 
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'ok', 
-    time: new Date(), 
-    db: isMemoryFallback ? `memory (fallback: ${fallbackReason})` : 'atlas' 
-  });
-});
-
 process.on('uncaughtException', (err) => {
   console.error('CRITICAL: Uncaught Exception:', err);
   if (!isMemoryFallback) {

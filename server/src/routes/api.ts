@@ -66,10 +66,14 @@ async function recalculateTripBudget(tripId: string): Promise<number> {
 const SERVER_BUILT_AT = new Date().toISOString();
 
 router.get('/health', (req, res) => {
+  const commitSha = process.env.VERCEL_GIT_COMMIT_SHA || process.env.RENDER_GIT_COMMIT_SHA || process.env.COMMIT_REF;
+  if (!commitSha) {
+    console.warn('[HEALTH] COMMIT_SHA / RENDER_GIT_COMMIT env var missing, using fallback "unknown"');
+  }
   res.json({
     status: 'ok',
     db: isMemoryFallback ? `memory (fallback: ${fallbackReason})` : 'atlas',
-    sha: process.env.VERCEL_GIT_COMMIT_SHA || process.env.RENDER_GIT_COMMIT_SHA || process.env.COMMIT_REF || 'c60151d',
+    sha: commitSha || 'unknown',
     builtAt: SERVER_BUILT_AT,
     timestamp: new Date()
   });
@@ -499,7 +503,7 @@ async function getOrCreateCitySpots(cityName: string): Promise<any> {
     }
   }
 
-  // OpenSearch fallback for any of the 8,000+ towns/cities in India
+  // OpenSearch fallback for any of the 145+ towns/cities in India
   if (spotsList.length < 5) {
     try {
       const searchUrl = `https://en.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(city)}&limit=12&format=json`;
@@ -1686,7 +1690,7 @@ router.post('/ai/chat', aiLimiter, async (req, res) => {
       const mode = tripContext.currentMode || 'transit';
       const highlights = Array.isArray(tripContext.topAttractions) ? tripContext.topAttractions.slice(0, 5).join(', ') : 'City highlights';
       const phrases = Array.isArray(tripContext.keyPhrases) ? tripContext.keyPhrases.slice(0, 3).join(', ') : 'Local phrases';
-      const fares = tripContext.typicalFares || 'Auto ₹30-50/km';
+      const fares = tripContext.typicalFares || 'City-specific gazette card';
 
       contextStr = `${origin} → ${dest} · day ${day} · budget ${budget} · remaining ${remaining} · current segment ${mode} · destination highlights: ${highlights} · key phrases: ${phrases} · typical fares: ${fares}`;
 
@@ -1710,7 +1714,7 @@ CORE RULES:
 1. BREVITY: Keep answers concise (2 to 4 crisp sentences max). Use bullet points for steps or options.
 2. LANGUAGE ADAPTATION: If the user writes in Hindi, Tamil, Telugu, Kannada, Malayalam, Marathi, Bengali, Gujarati, Punjabi, or Odia, reply in that exact language and script. Otherwise, reply in clear, friendly English.
 3. EMERGENCY & SAFETY INTEGRATION: Always mention National Emergency 112 (or Rail Helpline 139) if the user asks about safety, night travel, theft, medical emergencies, or train delays.
-4. TRANSPARENT FARES: Never invent exact prices. Give honest official gazette ranges (e.g. Auto ₹30 base + ₹14/km, Taxi ₹50 base + ₹18/km). Always note night surcharges (23:00 to 05:00 +25%).
+4. TRANSPARENT FARES: Never invent exact prices. Give honest official gazette ranges (e.g. Mumbai auto ₹27 for 1.5 km + ₹18.22/km per MMRTA Sep-2026; always name the city and source, or say you don't know). Always note night surcharges (23:00 to 05:00 +25%).
 5. ZERO HALLUCINATION & REAL DATA:
    Injected Context: ${contextStr}.${spotsContextStr}
    Only describe real attractions from the injected spot list. If source is 'wikipedia-live', add '(verified via open data — verify locally)'.

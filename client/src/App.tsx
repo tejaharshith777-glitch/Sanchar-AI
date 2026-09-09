@@ -3414,12 +3414,14 @@ async function geocodeCityName(city: string): Promise<[number, number] | null> {
   const key = city.trim();
   if (cityCoordsCache[key]) return cityCoordsCache[key];
   try {
-    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(key + ", India")}`);
-    const data = await res.json();
-    if (data && data.length > 0) {
-      const coords: [number, number] = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
-      cityCoordsCache[key] = coords;
-      return coords;
+    const res = await fetch(`/api/geocode?q=${encodeURIComponent(key + ", India")}`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data && typeof data.lat === 'number' && typeof data.lng === 'number') {
+        const coords: [number, number] = [data.lat, data.lng];
+        cityCoordsCache[key] = coords;
+        return coords;
+      }
     }
   } catch (err) {
     console.warn('Geocoding failed for', key, err);

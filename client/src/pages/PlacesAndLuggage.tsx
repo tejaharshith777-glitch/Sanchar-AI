@@ -148,16 +148,16 @@ const PlaceDetailPageInner = () => {
     fetchSpotDetails();
   }, [city, slug]);
 
-  // Live Nominatim geocoding fallback when coordinates are absent
+  // Live server geocoding fallback when coordinates are absent
   useEffect(() => {
     if (spot && (typeof spot.lat !== 'number' || typeof spot.lng !== 'number')) {
       let active = true;
       const query = `${spot.name || ''}, ${city}`;
-      fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`)
-        .then(res => res.json())
+      fetch(`/api/geocode?q=${encodeURIComponent(query)}`)
+        .then(res => res.ok ? res.json() : null)
         .then(data => {
-          if (active && data && data.length > 0 && data[0].lat && data[0].lon) {
-            setGeocodedCoords([parseFloat(data[0].lat), parseFloat(data[0].lon)]);
+          if (active && data && typeof data.lat === 'number' && typeof data.lng === 'number') {
+            setGeocodedCoords([data.lat, data.lng]);
           }
         })
         .catch(() => {});
@@ -714,18 +714,18 @@ export const LuggageRadarPage = () => {
     }
 
     try {
-      let res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(city + ", India")}`);
-      let data = await res.json();
+      let res = await fetch(`/api/geocode?q=${encodeURIComponent(city + ", India")}`);
+      let data = res.ok ? await res.json() : null;
 
-      if (data.length === 0) {
-        await delay(1000);
-        res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(city + " railway station, India")}`);
-        data = await res.json();
+      if (!data || typeof data.lat !== 'number') {
+        await delay(500);
+        res = await fetch(`/api/geocode?q=${encodeURIComponent(city + " railway station, India")}`);
+        data = res.ok ? await res.json() : null;
       }
 
-      if (data.length > 0) {
-        const lat = parseFloat(data[0].lat);
-        const lng = parseFloat(data[0].lon);
+      if (data && typeof data.lat === 'number' && typeof data.lng === 'number') {
+        const lat = data.lat;
+        const lng = data.lng;
         localStorage.setItem(cacheKey, JSON.stringify({ lat, lng }));
         setMapCenter([lat, lng]);
         setMapZoom(11);
@@ -733,10 +733,9 @@ export const LuggageRadarPage = () => {
       } else {
         setMapCenter([22.4, 79.2]);
         setMapZoom(5);
-        setGeocodeError(`Could not locate ${city} — try a city name in India.`);
         return null;
       }
-    } catch (e) {
+    } catch {
       setMapCenter([22.4, 79.2]);
       setMapZoom(5);
       return null;
