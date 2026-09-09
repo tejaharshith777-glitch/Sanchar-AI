@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Leaf, ChevronLeft, Award, Info } from 'lucide-react';
 import { HealthContext } from '../App';
@@ -7,10 +7,14 @@ export const EcoRewardsPage: React.FC = () => {
   const navigate = useNavigate();
   const { activeTrip } = useContext(HealthContext);
 
-  // Derive distance from active trip or default to zero
-  const walkKm = 3.5;
-  const metroKm = 12.0;
-  const trainKm = 45.0;
+  // HONESTY: distances are entered by the user for now — automatic per-mode
+  // distances from tracked trips arrive with the segments API (see roadmap).
+  const [walkInput, setWalkInput] = useState('3.5');
+  const [metroInput, setMetroInput] = useState('12.0');
+  const [trainInput, setTrainInput] = useState('45.0');
+  const walkKm = Math.max(0, Number(walkInput) || 0);
+  const metroKm = Math.max(0, Number(metroInput) || 0);
+  const trainKm = Math.max(0, Number(trainInput) || 0);
 
   // Emission factors (g CO2 per km) vs private car (~170g/km)
   // Walking: 0g, Metro: ~30g, Train: ~40g -> savings vs car
@@ -36,7 +40,7 @@ export const EcoRewardsPage: React.FC = () => {
           </span>
           <h1 className="text-2xl md:text-4xl font-display font-bold">Green Sanchar Eco Impact</h1>
           <p className="text-xs md:text-sm text-emerald-100 max-w-2xl leading-relaxed">
-            Track your sustainable transit choices (walking, metro, rail) calculated from your actual journey tracking.
+            Estimate the CO₂ you avoid by choosing walking, metro and rail — enter your distances below.
           </p>
         </div>
       </div>
@@ -59,19 +63,19 @@ export const EcoRewardsPage: React.FC = () => {
                 Active Trip: {activeTrip.originCity} → {activeTrip.destinationCity}
               </span>
             ) : (
-              <span className="text-xs text-gray-500 font-medium">Recorded from your personal journey logs</span>
+              <span className="text-xs text-gray-500 font-medium">Manual estimate — automatic trip sync coming soon</span>
             )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-100 space-y-1">
-              <span className="text-[10px] font-bold uppercase text-emerald-800">Walking Tracked</span>
+              <span className="text-[10px] font-bold uppercase text-emerald-800">Walking · you log</span>
               <div className="text-2xl font-bold text-[#00695C]">{walkKm} km</div>
               <div className="text-[11px] text-gray-600">Zero emission mobility</div>
             </div>
 
             <div className="p-4 rounded-2xl bg-teal-50/70 border border-teal-100 space-y-1">
-              <span className="text-[10px] font-bold uppercase text-teal-800">Metro / Rail Tracked</span>
+              <span className="text-[10px] font-bold uppercase text-teal-800">Metro / Rail · you log</span>
               <div className="text-2xl font-bold text-[#00695C]">{(metroKm + trainKm).toFixed(1)} km</div>
               <div className="text-[11px] text-gray-600">Low-carbon mass transit</div>
             </div>
@@ -81,6 +85,25 @@ export const EcoRewardsPage: React.FC = () => {
               <div className="text-2xl font-bold text-[#F59E0B]">{co2SavedKg} kg CO₂</div>
               <div className="text-[11px] text-gray-600">Avoided vs private vehicle</div>
             </div>
+          </div>
+
+          {/* Manual distance inputs — the ONLY source of the numbers below */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <label className="block">
+              <span className="text-[11px] font-bold uppercase text-gray-600">Walking (km)</span>
+              <input type="number" min="0" step="0.1" value={walkInput} onChange={e => setWalkInput(e.target.value)}
+                className="input-field mt-1 w-full" aria-label="Walking distance in kilometres" />
+            </label>
+            <label className="block">
+              <span className="text-[11px] font-bold uppercase text-gray-600">Metro (km)</span>
+              <input type="number" min="0" step="0.1" value={metroInput} onChange={e => setMetroInput(e.target.value)}
+                className="input-field mt-1 w-full" aria-label="Metro distance in kilometres" />
+            </label>
+            <label className="block">
+              <span className="text-[11px] font-bold uppercase text-gray-600">Rail (km)</span>
+              <input type="number" min="0" step="0.1" value={trainInput} onChange={e => setTrainInput(e.target.value)}
+                className="input-field mt-1 w-full" aria-label="Rail distance in kilometres" />
+            </label>
           </div>
 
           {/* Explicit Visible Formula Box */}
@@ -109,7 +132,7 @@ export const EcoRewardsPage: React.FC = () => {
             <div>
               <span className="text-xs uppercase tracking-widest text-emerald-200 font-bold block mb-1">Eco Score Balance</span>
               <div className="text-4xl font-display font-bold">{greenPoints} Points</div>
-              <p className="text-xs text-emerald-100 mt-1">Earned solely through your logged foot steps and train segments.</p>
+              <p className="text-xs text-emerald-100 mt-1">Estimated from distances you enter above. Automatic sync from tracked trips is coming soon.</p>
             </div>
             <div className="bg-white/10 p-4 rounded-xl border border-white/20 text-xs space-y-1">
               <div className="font-bold text-emerald-300">Score Breakdown:</div>

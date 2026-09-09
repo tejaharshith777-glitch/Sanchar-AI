@@ -218,12 +218,15 @@ function useGPSTracker(tripId: string | null) {
   const [confidence, setConfidence] = useState(0);
   const [permDenied, setPermDenied] = useState(false);
   const batchRef = useRef<any[]>([]);
+  const lastPointRef = useRef<any | null>(null);
 
   useEffect(() => {
     if (!tripId || !navigator.geolocation) return;
 
     const id = navigator.geolocation.watchPosition(
       (pos) => {
+        // Drop low-accuracy fixes (>50m): indoor drift otherwise inflates distance.
+        if (pos.coords.accuracy != null && pos.coords.accuracy > 50) return;
         const rawSpeed = pos.coords.speed !== null ? pos.coords.speed * 3.6 : 0;
         setSpeed(rawSpeed);
 
@@ -241,15 +244,18 @@ function useGPSTracker(tripId: string | null) {
           source: 'gps'
         };
 
-        setPoints(prev => {
-          const updated = [...prev, point];
-          if (prev.length > 0) {
-            const last = prev[prev.length - 1];
-            const d = haversine(last.lat, last.lng, point.lat, point.lng);
-            setDistance(prevD => prevD + d);
-          }
-          return updated;
-        });
+        // Distance is computed OUTSIDE the updater (updaters must be pure —
+        // side effects inside them double-fire under StrictMode/concurrent mode).
+        const lastPt = lastPointRef.current;
+        if (lastPt) {
+          const d = haversine(lastPt.lat, lastPt.lng, point.lat, point.lng);
+          if (Number.isFinite(d)) setDistance(prevD => prevD + d);
+        }
+        lastPointRef.current = point;
+
+        // Cap in-memory points: batches are already sent/queued, so keeping the
+        // full history in React state only causes O(n^2) re-renders on long trips.
+        setPoints(prev => [...prev.slice(-499), point]);
 
         batchRef.current.push(point);
         if (batchRef.current.length >= 5) {
@@ -2049,9 +2055,13 @@ const LandingPage = () => {
         <div className="relative w-full flex items-center overflow-hidden py-2 select-none">
           <div className="animate-marquee flex gap-6">
             {[...CAROUSEL_CITIES, ...CAROUSEL_CITIES].map((item, idx) => (
-              <div 
-                key={idx} 
+              <div
+                key={idx}
                 onClick={() => handleOpenCity(item.name)}
+                // The marquee renders the list twice for a seamless loop —
+                // hide the duplicate half from screen readers & keyboard.
+                aria-hidden={idx >= CAROUSEL_CITIES.length}
+                tabIndex={idx >= CAROUSEL_CITIES.length ? -1 : undefined}
                 className="w-64 h-36 rounded-3xl overflow-hidden relative shadow-sm flex-shrink-0 group hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer"
               >
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent z-10" />

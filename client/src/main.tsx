@@ -22,12 +22,23 @@ axios.interceptors.response.use(
       return Promise.reject(error);
     }
 
+    // Never blind-retry mutating requests unless they carry an Idempotency-Key:
+    // retrying e.g. pilot signups on a 500 would create duplicates server-side.
+    const method = (config.method || 'get').toLowerCase();
+    const headers: any = config.headers;
+    const hasIdemKey = !!(headers && (typeof headers.get === 'function'
+      ? (headers.get('Idempotency-Key') || headers.get('idempotency-key'))
+      : (headers['Idempotency-Key'] || headers['idempotency-key'])));
+    if ((method === 'post' || method === 'put' || method === 'patch' || method === 'delete') && !hasIdemKey) {
+      return Promise.reject(error);
+    }
+
     config.retryAttempt = config.retryAttempt || 0;
 
     if (config.retryAttempt < 3) {
       config.retryAttempt += 1;
       
-      const delays = [5000, 10000, 20000];
+      const delays = [3000, 8000, 15000];
       const delay = delays[config.retryAttempt - 1] || 20000;
       
       window.dispatchEvent(new CustomEvent('axios-retry-start', { 

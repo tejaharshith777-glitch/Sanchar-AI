@@ -1,10 +1,8 @@
 import express from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import apiRoutes from './routes/api';
-import { connectDB, isMemoryFallback, fallbackReason, setMemoryFallback } from './services/db';
+import { connectDB, isMemoryFallback, setMemoryFallback } from './services/db';
 
 mongoose.set('bufferCommands', false);
 
@@ -19,14 +17,17 @@ const port = parseInt(process.env.PORT || '3000', 10);
 
 app.use((req, res, next) => {
   const origin = req.headers.origin;
+  res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, PUT, PATCH, POST, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Idempotency-Key');
   if (origin) {
+    // Echo the caller's origin so credentialed requests work; NEVER combine
+    // Access-Control-Allow-Origin:* with Allow-Credentials (browsers reject it).
     res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Vary', 'Origin');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
   } else {
     res.setHeader('Access-Control-Allow-Origin', '*');
   }
-  res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, PUT, PATCH, POST, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Idempotency-Key');
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
 
   if (req.method === 'OPTIONS') {
     return res.status(204).end();
@@ -36,15 +37,8 @@ app.use((req, res, next) => {
 app.use(express.json());
 
 app.use('/api', apiRoutes);
-
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'ok', 
-    time: new Date(), 
-    db: isMemoryFallback ? `memory (fallback: ${fallbackReason})` : 'atlas' 
-  });
-});
+// NOTE: GET /api/health is served by the router (routes/api.ts) — do not
+// re-register it here; the duplicate was dead code with a different shape.
 
 process.on('uncaughtException', (err) => {
   console.error('CRITICAL: Uncaught Exception:', err);
