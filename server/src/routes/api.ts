@@ -598,6 +598,23 @@ router.post('/partner-publish', async (req, res) => {
   }
 });
 
+// DELETE /api/partner-publish/:id
+router.delete('/partner-publish/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (isMemoryFallback) {
+      memoryStore.partnerPublishes = (memoryStore.partnerPublishes || []).filter(
+        p => String(p._id) !== String(id)
+      );
+    } else {
+      await PartnerPublish.deleteOne({ _id: id });
+    }
+    res.json({ message: 'Deleted successfully', id });
+  } catch (error: any) {
+    res.status(500).json({ error: error?.message || 'Failed to delete partner item.' });
+  }
+});
+
 // ---------------------------
 // COMMUNITY ISSUE REPORTS
 // ---------------------------

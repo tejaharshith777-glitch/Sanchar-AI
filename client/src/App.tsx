@@ -4,7 +4,7 @@ import {
   Shield, MapPin, Navigation2, Camera, Smartphone, WifiOff,
   Zap, Globe, Lock, IndianRupee, Phone,
   ChevronRight, ChevronDown, Check, AlertTriangle, Share2, Sparkles, X,
-  BookOpen, BarChart3, Search, Compass, HelpCircle,
+  BookOpen, BarChart3, Compass, HelpCircle,
   Mic, History as HistoryIcon, Plus, Unlock, Bot, Send, Loader2, Upload,
   Star, Clock
 } from 'lucide-react';
@@ -22,6 +22,7 @@ import { HotelPartnerPage } from './pages/HotelPartnerPage';
 import { MarketplacePage } from './pages/MarketplacePage';
 import { CrowdRadarPage } from './pages/CrowdRadarPage';
 import { EcoRewardsPage } from './pages/EcoRewardsPage';
+import { CityAutocomplete } from './components/CityAutocomplete';
 
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
@@ -1825,40 +1826,39 @@ const LandingPage = () => {
             One companion. Any city in India. Even offline.
           </p>
 
-          {/* SCREEN 0 — Combined Search Bar & ONE Primary Action Button */}
+          {/* SCREEN 0 — Combined CityAutocomplete Search & ONE Primary Action Button */}
           <div className="max-w-xl mx-auto mb-10 w-full">
-            <form 
-              onSubmit={(e) => {
-                e.preventDefault();
-                const form = e.currentTarget;
-                const inputEl = form.elements.namedItem('homeCitySearch') as HTMLInputElement;
-                const val = inputEl ? inputEl.value.trim() : '';
-                if (val) {
-                  navigate(`/city/${encodeURIComponent(val.toLowerCase())}`);
+            <CityAutocomplete
+              variant="hero"
+              placeholder="Search any city in India… (try Chennai or Ooty)"
+              buttonText="Start Safe Trip"
+              buttonIcon={<Zap size={16} className="text-[#F59E0B]" />}
+              onSelectCity={(selectedCity) => {
+                if (selectedCity) {
+                  navigate(`/city/${encodeURIComponent(selectedCity)}`);
                 } else {
                   navigate('/create');
                 }
               }}
-              className="bg-white/95 backdrop-blur-md p-2 rounded-full border border-white/30 shadow-2xl flex items-center gap-2"
-            >
-              <Search className="text-[#00695C] shrink-0 ml-3" size={18} />
-              <input
-                name="homeCitySearch"
-                type="text"
-                placeholder="Where are you going? (any city in India)"
-                className="flex-1 text-sm text-[#1F2937] placeholder:text-gray-500 bg-transparent focus:outline-none px-2 py-2 font-['Plus_Jakarta_Sans'] font-medium"
-                aria-label="Where are you going? (any city in India)"
-              />
-              <button
-                type="submit"
-                className="btn-primary !py-3 !px-7 text-xs sm:text-sm font-bold shrink-0 !rounded-full bg-[#00695C] hover:bg-[#004D40] text-white cursor-pointer min-h-[44px] flex items-center gap-2 shadow-md"
-                aria-label="Start Safe Trip"
-              >
-                <Zap size={16} className="text-[#F59E0B]" /> Start Safe Trip
-              </button>
-            </form>
+            />
+
+            {/* Quick-Tap Chips (Chennai, Ooty, Jaipur, Varanasi) */}
+            <div className="flex items-center justify-center gap-2 mt-3 flex-wrap text-xs text-teal-100 font-medium">
+              <span className="text-teal-200/90 font-semibold">Try:</span>
+              {['Chennai', 'Ooty', 'Jaipur', 'Varanasi'].map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => navigate(`/city/${encodeURIComponent(c)}`)}
+                  className="bg-white/15 hover:bg-white/30 border border-white/30 text-white px-3 py-1 rounded-full text-xs font-semibold transition cursor-pointer shadow-xs"
+                >
+                  {c}
+                </button>
+              ))}
+            </div>
+
             {/* One small gray guidance line */}
-            <p className="text-xs text-teal-100/90 mt-2 text-center font-medium">
+            <p className="text-xs text-teal-100/90 mt-2.5 text-center font-medium">
               Search any city or tap Start Safe Trip to begin.
             </p>
           </div>
@@ -2042,31 +2042,18 @@ const LandingPage = () => {
 
           {/* Search bar & quick cities */}
           <div className="mt-8 max-w-md">
-            <div className="bg-black/50 backdrop-blur-md p-2.5 rounded-full border border-white/20 shadow-xl flex items-center gap-2">
-              <Search className="text-amber-400 shrink-0 ml-2" size={16} />
-              <input
-                type="text"
-                placeholder="Explore any Indian city (e.g. Jaipur, Kochi…)"
-                value={searchCityInput}
-                onChange={(e) => {
-                  setSearchCityInput(e.target.value);
-                  setSearchError('');
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleOpenCity(searchCityInput);
-                  }
-                }}
-                className="flex-1 text-xs text-white focus:outline-hidden placeholder-gray-300 bg-transparent w-full px-1"
-              />
-              <button
-                onClick={() => handleOpenCity(searchCityInput)}
-                className="btn-primary !py-2 !px-5 text-[11px] font-bold whitespace-nowrap cursor-pointer !rounded-full bg-[#F59E0B] hover:bg-[#D97706] text-[#1F2937]"
-              >
-                Explore Pack
-              </button>
-            </div>
+            <CityAutocomplete
+              variant="destinations"
+              value={searchCityInput}
+              onChange={(val) => {
+                setSearchCityInput(val);
+                setSearchError('');
+              }}
+              placeholder="Explore any Indian city (e.g. Jaipur, Kochi…)"
+              buttonText="Explore Pack"
+              buttonClassName="btn-primary !py-2 !px-5 text-[11px] font-bold whitespace-nowrap cursor-pointer !rounded-full bg-[#F59E0B] hover:bg-[#D97706] text-[#1F2937]"
+              onSelectCity={(city) => handleOpenCity(city)}
+            />
             {searchError && (
               <div className="text-center text-red-400 text-xs font-bold mt-2">
                 {searchError}

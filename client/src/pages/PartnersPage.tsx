@@ -2,12 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Building2, Hotel, Store, Plus, Check, ChevronLeft, Sparkles, AlertCircle } from 'lucide-react';
 import axios from 'axios';
+import { CityAutocomplete } from '../components/CityAutocomplete';
 
-const CITIES = [
-  'Chennai', 'Coimbatore', 'Madurai', 'Kochi', 'Bengaluru',
-  'Mumbai', 'Pune', 'Delhi', 'Jaipur', 'Kolkata',
-  'Bhubaneswar', 'Ahmedabad', 'Guwahati', 'Varanasi'
-];
+
 
 export const PartnersPage: React.FC = () => {
   const navigate = useNavigate();
@@ -179,27 +176,21 @@ export const PartnersPage: React.FC = () => {
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">Select Launch City</label>
-              <select
-                value={city}
-                onChange={(e) => { setCity(e.target.value); setCustomCity(''); }}
-                className="w-full p-3 rounded-xl border border-gray-300 text-sm font-semibold focus:ring-2 focus:ring-[#00695C]"
-              >
-                {CITIES.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">Or Type Any City in India (~8,000)</label>
-              <input
-                type="text"
-                value={customCity}
-                onChange={(e) => setCustomCity(e.target.value)}
-                placeholder="e.g. Ooty, Manali, Shimla..."
-                className="w-full p-3 rounded-xl border border-gray-300 text-sm font-medium focus:ring-2 focus:ring-[#00695C]"
-              />
-            </div>
+          <div className="pt-2">
+            <label className="block text-xs font-bold text-gray-700 mb-1">Target City in India (~800 fast search / ~8,000 deep search)</label>
+            <CityAutocomplete
+              variant="compact"
+              value={customCity || city}
+              onChange={(val) => {
+                setCustomCity(val);
+                setCity(val);
+              }}
+              onSelectCity={(val) => {
+                setCustomCity(val);
+                setCity(val);
+              }}
+              placeholder="Search or type any city in India (e.g. Chennai, Ooty, Jaipur...)"
+            />
           </div>
         </div>
 

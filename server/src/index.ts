@@ -17,8 +17,16 @@ const app = express();
 app.set('trust proxy', 1);
 const port = parseInt(process.env.PORT || '3000', 10);
 
-app.use(helmet());
-app.use(cors({ origin: process.env.CLIENT_ORIGIN || '*' }));
+app.use(cors({
+  origin: (origin, callback) => {
+    const allowed = ['https://sanchar-ai.vercel.app', process.env.CLIENT_ORIGIN, 'http://localhost:5173', 'http://127.0.0.1:5173'].filter(Boolean);
+    if (!origin || allowed.includes(origin)) return callback(null, true); // echoes the requester's OWN single origin — the browser-legal form
+    return callback(null, false);
+  },
+  methods: ['GET','HEAD','PUT','PATCH','POST','DELETE','OPTIONS'],
+  allowedHeaders: ['Content-Type','Authorization','Idempotency-Key'],
+  credentials: true,
+}));
 app.use(express.json());
 
 app.use('/api', apiRoutes);

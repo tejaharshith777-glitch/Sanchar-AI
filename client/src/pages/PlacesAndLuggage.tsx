@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import SancharMap from '../components/SancharMap';
+import { CityAutocomplete } from '../components/CityAutocomplete';
 import { 
   Compass, MapPin, Navigation, Info, Clock, AlertTriangle, ShieldCheck, 
   ChevronLeft, Check, Save, Share2, Sparkles
@@ -866,20 +867,19 @@ export const LuggageRadarPage = () => {
           <h2 className="font-display font-bold text-base text-gray-800">Verify Cloakrooms & Metro Lockers</h2>
           <p className="text-xs text-gray-600">Curated locations · community-reported availability status</p>
         </div>
-        <div className="flex gap-2 w-full sm:w-auto shrink-0">
-          <input
-            type="text"
-            placeholder="Search city (e.g. Chennai)"
+        <div className="w-full sm:w-80 shrink-0">
+          <CityAutocomplete
+            variant="compact"
             value={cityInput}
-            onChange={e => setCityInput(e.target.value)}
-            className="flex-1 sm:w-48 bg-gray-50 text-xs sm:text-sm text-gray-800 p-2 border border-gray-200 rounded-xl focus:outline-none"
+            onChange={(val) => setCityInput(val)}
+            placeholder="Search city (e.g. Chennai or Ooty)"
+            buttonText="Search"
+            buttonClassName="bg-[#00695C] text-white font-bold text-xs px-4 py-2 rounded-xl hover:bg-teal-800 cursor-pointer min-h-[44px] shrink-0"
+            onSelectCity={(city) => {
+              setCityInput(city);
+              setSelectedCity(city);
+            }}
           />
-          <button 
-            onClick={() => setSelectedCity(cityInput)}
-            className="bg-[#00695C] text-white font-bold text-xs px-4 py-2 rounded-xl hover:bg-teal-800 cursor-pointer min-h-[44px]"
-          >
-            Search
-          </button>
         </div>
       </div>
 
