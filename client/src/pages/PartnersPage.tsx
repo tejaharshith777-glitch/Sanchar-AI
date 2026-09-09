@@ -214,10 +214,12 @@ export const PartnersPage: React.FC = () => {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">
+                <label htmlFor="partner-pub-name" className="block text-xs font-bold text-gray-700 mb-1">
                   {type === 'hotel' ? 'Hotel / Property Name *' : 'Place / Attraction Name *'}
                 </label>
                 <input
+                  id="partner-pub-name"
+                  name="publisherItemName"
                   type="text"
                   required
                   value={name}
@@ -228,8 +230,10 @@ export const PartnersPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">Publisher Name / Organization</label>
+                <label htmlFor="partner-pub-org" className="block text-xs font-bold text-gray-700 mb-1">Publisher Name / Organization</label>
                 <input
+                  id="partner-pub-org"
+                  name="publisherOrg"
                   type="text"
                   value={publisherName}
                   onChange={(e) => setPublisherName(e.target.value)}
@@ -243,8 +247,10 @@ export const PartnersPage: React.FC = () => {
               <>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1">Category</label>
+                    <label htmlFor="partner-pub-cat" className="block text-xs font-bold text-gray-700 mb-1">Category</label>
                     <select
+                      id="partner-pub-cat"
+                      name="category"
                       value={category}
                       onChange={(e) => setCategory(e.target.value)}
                       className="w-full p-3 rounded-xl border border-gray-300 text-sm font-semibold"
@@ -257,8 +263,10 @@ export const PartnersPage: React.FC = () => {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1">Area / Neighborhood</label>
+                    <label htmlFor="partner-pub-area" className="block text-xs font-bold text-gray-700 mb-1">Area / Neighborhood</label>
                     <input
+                      id="partner-pub-area"
+                      name="area"
                       type="text"
                       value={area}
                       onChange={(e) => setArea(e.target.value)}
@@ -267,8 +275,10 @@ export const PartnersPage: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1">Timings ("or check locally")</label>
+                    <label htmlFor="partner-pub-hours" className="block text-xs font-bold text-gray-700 mb-1">Timings ("or check locally")</label>
                     <input
+                      id="partner-pub-hours"
+                      name="hours"
                       type="text"
                       value={hours}
                       onChange={(e) => setHours(e.target.value)}
@@ -279,8 +289,10 @@ export const PartnersPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Entry / Guide Cost ("or check locally")</label>
+                  <label htmlFor="partner-pub-cost" className="block text-xs font-bold text-gray-700 mb-1">Entry / Guide Cost ("or check locally")</label>
                   <input
+                    id="partner-pub-cost"
+                    name="cost"
                     type="text"
                     value={cost}
                     onChange={(e) => setCost(e.target.value)}
@@ -290,8 +302,10 @@ export const PartnersPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Short Description (Real & Honest)</label>
+                  <label htmlFor="partner-pub-desc" className="block text-xs font-bold text-gray-700 mb-1">Short Description (Real & Honest)</label>
                   <textarea
+                    id="partner-pub-desc"
+                    name="description"
                     rows={3}
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
@@ -304,8 +318,10 @@ export const PartnersPage: React.FC = () => {
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1">Area / Full Address</label>
+                    <label htmlFor="partner-pub-addr" className="block text-xs font-bold text-gray-700 mb-1">Area / Full Address</label>
                     <input
+                      id="partner-pub-addr"
+                      name="areaAddress"
                       type="text"
                       value={area}
                       onChange={(e) => setArea(e.target.value)}
@@ -314,8 +330,10 @@ export const PartnersPage: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1">Contact Phone (Optional)</label>
+                    <label htmlFor="partner-pub-phone" className="block text-xs font-bold text-gray-700 mb-1">Contact Phone (Optional)</label>
                     <input
+                      id="partner-pub-phone"
+                      name="contactPhone"
                       type="text"
                       value={contact}
                       onChange={(e) => setContact(e.target.value)}
@@ -326,8 +344,10 @@ export const PartnersPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Best Way to Arrive (Station/Airport → Hotel)</label>
+                  <label htmlFor="partner-pub-arrive" className="block text-xs font-bold text-gray-700 mb-1">Best Way to Arrive (Station/Airport → Hotel)</label>
                   <input
+                    id="partner-pub-arrive"
+                    name="bestWayToArrive"
                     type="text"
                     value={bestWayToArrive}
                     onChange={(e) => setBestWayToArrive(e.target.value)}

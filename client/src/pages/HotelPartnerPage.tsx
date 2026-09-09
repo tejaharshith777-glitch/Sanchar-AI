@@ -186,8 +186,10 @@ export const HotelPartnerPage: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">Property Name</label>
+              <label htmlFor="hotel-prop-name" className="block text-xs font-bold text-gray-700 mb-1">Property Name</label>
               <input
+                id="hotel-prop-name"
+                name="propertyName"
                 type="text"
                 value={propertyName}
                 onChange={(e) => setPropertyName(e.target.value)}
@@ -195,8 +197,10 @@ export const HotelPartnerPage: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">Total Rooms</label>
+              <label htmlFor="hotel-rooms-count" className="block text-xs font-bold text-gray-700 mb-1">Total Rooms</label>
               <input
+                id="hotel-rooms-count"
+                name="roomsCount"
                 type="number"
                 value={roomsCount}
                 onChange={(e) => setRoomsCount(Math.max(1, parseInt(e.target.value) || 1))}
@@ -204,8 +208,10 @@ export const HotelPartnerPage: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">Base Nightly Rate (₹)</label>
+              <label htmlFor="hotel-base-rate" className="block text-xs font-bold text-gray-700 mb-1">Base Nightly Rate (₹)</label>
               <input
+                id="hotel-base-rate"
+                name="baseRate"
                 type="number"
                 value={baseRate}
                 onChange={(e) => setBaseRate(Math.max(100, parseInt(e.target.value) || 500))}
@@ -409,8 +415,10 @@ export const HotelPartnerPage: React.FC = () => {
           <form onSubmit={handlePublishHotel} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">City</label>
+                <label htmlFor="pub-form-city" className="block text-xs font-bold text-gray-700 mb-1">City</label>
                 <input
+                  id="pub-form-city"
+                  name="formCity"
                   type="text"
                   value={formCity}
                   onChange={(e) => setFormCity(e.target.value)}
@@ -420,8 +428,10 @@ export const HotelPartnerPage: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">Property / Hotel Name</label>
+                <label htmlFor="pub-hotel-name" className="block text-xs font-bold text-gray-700 mb-1">Property / Hotel Name</label>
                 <input
+                  id="pub-hotel-name"
+                  name="hotelName"
                   type="text"
                   value={hotelName}
                   onChange={(e) => setHotelName(e.target.value)}
@@ -434,8 +444,10 @@ export const HotelPartnerPage: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">Area / Landmark</label>
+                <label htmlFor="pub-area-landmark" className="block text-xs font-bold text-gray-700 mb-1">Area / Landmark</label>
                 <input
+                  id="pub-area-landmark"
+                  name="area"
                   type="text"
                   value={area}
                   onChange={(e) => setArea(e.target.value)}
@@ -444,8 +456,10 @@ export const HotelPartnerPage: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">Direct Reception / Contact</label>
+                <label htmlFor="pub-reception-contact" className="block text-xs font-bold text-gray-700 mb-1">Direct Reception / Contact</label>
                 <input
+                  id="pub-reception-contact"
+                  name="contact"
                   type="text"
                   value={contact}
                   onChange={(e) => setContact(e.target.value)}

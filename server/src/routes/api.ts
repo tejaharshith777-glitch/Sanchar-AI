@@ -238,33 +238,42 @@ const CURATED_CITY_SPOTS: Record<string, string[]> = {
   ]
 };
 
+// Word-boundary keyword matcher: avoids substring false positives
+// ("Adam's" is not a dam, "Jubilee Hills" is not a lake, "Bharat" is not art).
+function spotHas(n: string, ...words: string[]): boolean {
+  return words.some(w => new RegExp(`\\b${w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i').test(n));
+}
+
 function getCategoryForSpot(name: string): string {
   const n = name.toLowerCase();
-  if (n.includes('temple') || n.includes('mandir') || n.includes('church') || n.includes('mosque') || n.includes('basilica') || n.includes('synagogue') || n.includes('dargah') || n.includes('gurudwara') || n.includes('cathedral') || n.includes('stupa') || n.includes('deekshabhoomi') || n.includes('ashram')) {
+  if (spotHas(n, 'temple', 'mandir', 'church', 'mosque', 'basilica', 'synagogue', 'dargah', 'gurudwara', 'cathedral', 'stupa', 'deekshabhoomi', 'ashram', 'shrine', 'mutt')) {
     return 'Temple';
   }
-  if (n.includes('fort') || n.includes('palace') || n.includes('castle') || n.includes('monument') || n.includes('tomb') || n.includes('mahal') || n.includes('ruins')) {
+  if (spotHas(n, 'fort', 'palace', 'castle', 'monument', 'tomb', 'mahal', 'ruins', 'qila', 'haveli')) {
     return 'Fort';
   }
-  if (n.includes('beach') || n.includes('island') || n.includes('lake') || n.includes('dam') || n.includes('tank') || n.includes('lagoon') || n.includes('backwaters') || n.includes('falls') || n.includes('waterfalls') || n.includes('bil') || n.includes('river')) {
+  if (spotHas(n, 'beach', 'island', 'lagoon', 'backwaters', 'sea face', 'coast')) {
     return 'Beach';
   }
-  if (n.includes('museum') || n.includes('gallery') || n.includes('science') || n.includes('planetarium') || n.includes('art')) {
+  if (spotHas(n, 'lake', 'dam', 'tank', 'river', 'falls', 'waterfalls', 'reservoir', 'bund', 'sagar', 'sarovar', 'kund')) {
+    return 'Lake';
+  }
+  if (spotHas(n, 'museum', 'gallery', 'science', 'planetarium', 'art')) {
     return 'Museum';
   }
-  if (n.includes('park') || n.includes('zoo') || n.includes('garden') || n.includes('sanctuary') || n.includes('forest') || n.includes('hills') || n.includes('hill')) {
+  if (spotHas(n, 'park', 'zoo', 'garden', 'sanctuary', 'forest', 'hills', 'hill', 'valley', 'safari')) {
     return 'Park';
   }
-  if (n.includes('bazaar') || n.includes('market') || n.includes('street') || n.includes('shopping') || n.includes('mall') || n.includes('square') || n.includes('chowk')) {
+  if (spotHas(n, 'bazaar', 'market', 'street', 'shopping', 'mall', 'square', 'chowk', 'haat')) {
     return 'Market';
   }
-  if (n.includes('restaurant') || n.includes('food') || n.includes('shack') || n.includes('cuisine') || n.includes('snack') || n.includes('café') || n.includes('cafe')) {
+  if (spotHas(n, 'restaurant', 'food', 'shack', 'cuisine', 'snack', 'caf\u00e9', 'cafe', 'dhaba', 'eatery')) {
     return 'Food';
   }
-  if (n.includes('view') || n.includes('viewpoint') || n.includes('drive') || n.includes('sea face') || n.includes('link') || n.includes('promenade') || n.includes('bridge') || n.includes('ganges aarti') || n.includes('ghat')) {
+  if (spotHas(n, 'view', 'viewpoint', 'drive', 'sea face', 'link', 'promenade', 'bridge', 'ganges aarti', 'ghat', 'point')) {
     return 'Viewpoint';
   }
-  if (n.includes('day trip') || n.includes('excursion') || n.includes('pilgrimage') || n.includes('hajo') || n.includes('pobitora') || n.includes('mahabalipuram') || n.includes('mysore') || n.includes('srirangapatna')) {
+  if (spotHas(n, 'day trip', 'excursion', 'pilgrimage', 'hajo', 'pobitora', 'mahabalipuram', 'mysore', 'srirangapatna')) {
     return 'Day trip';
   }
   return '';
@@ -274,6 +283,7 @@ function getCuratedBlurbForSpot(name: string, category: string, city: string): s
   switch (category) {
     case 'Temple': return `A sacred spiritual temple and architectural wonder in ${city}.`;
     case 'Beach': return `A scenic waterfront attraction offering beautiful views and relaxation in ${city}.`;
+    case 'Lake': return `A scenic lake, river, or waterfront attraction in ${city}.`;
     case 'Museum': return `A repository of history, art, and cultural heritage in ${city}.`;
     case 'Park': return `A lush green park and scenic natural retreat in ${city}.`;
     case 'Market': return `A bustling local marketplace famous for shopping and souvenirs in ${city}.`;
@@ -284,26 +294,28 @@ function getCuratedBlurbForSpot(name: string, category: string, city: string): s
   }
 }
 
-function isInvalidSpot(name: string): boolean {
+function isInvalidSpot(name: string, blurb: string = ''): boolean {
   const n = name.toLowerCase();
-  
+  const hay = `${n} ${blurb.toLowerCase()}`;
+
   // 1. Is a person
   if (/\((actor|singer|chess player|politician|writer|director|producer|musician|cricketer|athlete|scientist)\)/i.test(n) || n.includes('born in')) return true;
-  
-  // 2. Is an administrative entity
-  if (n.includes('municipal corporation') || n.includes('city corporation') || n.includes('region') || n.includes('district') || n.includes('urban agglomeration') || n.includes('mandal') || n.includes('panchayat')) return true;
-  
+
+  // 2. Is an administrative entity (word-bounded so "Regional Science Centre" survives)
+  if (spotHas(n, 'municipal corporation', 'city corporation', 'region', 'district', 'urban agglomeration', 'mandal', 'panchayat', 'assembly', 'constituency', 'taluk', 'tehsil')) return true;
+
   // 3. Media / infrastructure
-  if (/\b(fm|radio|am station|television|tv channel|newspaper|magazine|bus depot|airport terminal|airport|railway station)\b/i.test(n)) return true;
-  
-  // 4. Spot-like nature
-  const validKeywords = ['park', 'temple', 'fort', 'beach', 'lake', 'museum', 'monument', 'market', 'ghat', 'garden', 'square', 'road', 'bridge', 'zoo', 'stadium', 'palace', 'church', 'mosque', 'stepwell', 'island', 'hill', 'dam', 'bazaar', 'viewpoint', 'food street', 'walk', 'sanctuary', 'falls', 'waterfalls', 'cave', 'caves', 'stupa', 'ashram', 'tomb', 'mahal', 'memorial', 'shrine', 'basilica', 'synagogue', 'cathedral', 'river'];
-  
-  const hasNature = validKeywords.some(kw => n.includes(kw));
+  if (/\b(fm|radio|am station|television|tv channel|newspaper|magazine|bus depot|airport terminal|airport|railway station|metro station)\b/i.test(n)) return true;
+
+  // 4. Spot-like nature — checked against NAME + BLURB so famous names
+  // without generic keywords ("Charminar", "Victoria Memorial") survive.
+  const validKeywords = ['park', 'temple', 'fort', 'beach', 'lake', 'museum', 'monument', 'market', 'ghat', 'garden', 'square', 'road', 'bridge', 'zoo', 'stadium', 'palace', 'church', 'mosque', 'stepwell', 'island', 'hill', 'dam', 'bazaar', 'viewpoint', 'food street', 'walk', 'sanctuary', 'falls', 'waterfalls', 'cave', 'caves', 'stupa', 'ashram', 'tomb', 'mahal', 'memorial', 'shrine', 'basilica', 'synagogue', 'cathedral', 'river', 'statue', 'tower', 'minar'];
+
+  const hasNature = validKeywords.some(kw => hay.includes(kw));
   if (!hasNature) {
     return true;
   }
-  
+
   return false;
 }
 
@@ -319,6 +331,21 @@ const CITY_CENTERS_MAP: Record<string, [number, number]> = {
   Guntur: [16.3067, 80.4365],
   Indore: [22.7196, 75.8577],
   Nagpur: [21.1458, 79.0882],
+  Ooty: [11.4102, 76.6997],
+  Udaipur: [24.5854, 73.7125],
+  Varanasi: [25.3176, 82.9739],
+  Agra: [27.1767, 78.0081],
+  Amritsar: [31.6340, 74.8723],
+  Shimla: [31.1048, 77.1734],
+  Panaji: [15.4909, 73.8278],
+  Mysuru: [12.2958, 76.6394],
+  Madurai: [9.9252, 78.1198],
+  Coimbatore: [11.0168, 76.9558],
+  Pondicherry: [11.9416, 79.8083],
+  Lucknow: [26.8467, 80.9462],
+  Bhopal: [23.2599, 77.4126],
+  Patna: [25.5941, 85.1376],
+  Bhubaneswar: [20.2961, 85.8245],
 };
 
 function normalizeCityName(str: string): string {
@@ -344,6 +371,19 @@ async function fetchWikiCoordinates(spotName: string): Promise<{ lat: number; ln
     // ignore fetch timeout
   }
   return null;
+}
+
+// Cache version for generated city-spot records. Bump when the scraper,
+// category engine, or coordinate validation changes so stale/poisoned
+// records are purged and regenerated exactly once.
+const CITY_SPOTS_CACHE_VERSION = 2;
+
+function haversineKmServer(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
 import { curatedSpotsData } from '../data/spotsData';
@@ -372,8 +412,23 @@ async function getOrCreateCitySpots(cityName: string): Promise<any> {
     cached = await CitySpot.findOne({ city: new RegExp(`^${city}$`, 'i') });
   }
 
+  // Cache version gate: poisoned/stale records (e.g. wrong-city coordinates
+  // cached by older builds) are purged and regenerated exactly once.
   if (cached) {
-    return cached;
+    if ((cached as any).cacheVersion === CITY_SPOTS_CACHE_VERSION) {
+      return cached;
+    }
+    console.warn(`[WIKI SCRAPER] Purging stale cache v${(cached as any).cacheVersion} for ${city}.`);
+    try {
+      if (isMemoryFallback) {
+        const idx = memoryStore.citySpots.findIndex((c: any) => c.city.toLowerCase() === city.toLowerCase());
+        if (idx !== -1) memoryStore.citySpots.splice(idx, 1);
+      } else if ((cached as any)._id) {
+        await CitySpot.deleteOne({ _id: (cached as any)._id });
+      }
+    } catch (err) {
+      console.warn('Failed to purge stale city spots cache:', err);
+    }
   }
 
   // 3. Wikipedia Live attraction scraper
@@ -402,9 +457,9 @@ async function getOrCreateCitySpots(cityName: string): Promise<any> {
   };
 
   const addSpot = (name: string, desc: string) => {
-    if (name && !/^(file|image|category|special|media|wikipedia):/i.test(name) && !isInvalidSpot(name)) {
+    if (name && !/^(file|image|category|special|media|wikipedia):/i.test(name) && !isInvalidSpot(name, desc)) {
       if (!spotsList.some(s => s.name.toLowerCase() === name.toLowerCase())) {
-        const category = getCategoryForSpot(name).toLowerCase();
+        const category = getCategoryForSpot(`${name} ${desc}`).toLowerCase();
         spotsList.push({
           name,
           slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
@@ -463,6 +518,33 @@ async function getOrCreateCitySpots(cityName: string): Promise<any> {
     }
   }
 
+  // OpenSearch fallback for the long tail of Indian towns/cities.
+  // Hardened: titles must independently look like attractions (checked against
+  // the title + Wikipedia's own description, NOT our template text).
+  if (spotsList.length < 5) {
+    try {
+      const searchUrl = `https://en.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(city)}&limit=12&format=json`;
+      const searchRes = await fetch(searchUrl, { headers: { 'User-Agent': 'SancharAI/1.0' }, signal: AbortSignal.timeout(2500) });
+      const searchData = await searchRes.json();
+      if (Array.isArray(searchData) && Array.isArray(searchData[1])) {
+        const titles: string[] = searchData[1];
+        const descriptions: string[] = searchData[2] || [];
+        for (let i = 0; i < titles.length; i++) {
+          const itemTitle = (titles[i] || '').trim();
+          const realDesc = (descriptions[i] || '').trim();
+          if (!itemTitle) continue;
+          const low = itemTitle.toLowerCase();
+          if (low.includes('district') || low.includes('demographics')) continue;
+          if (isInvalidSpot(itemTitle, realDesc)) continue;
+          addSpot(itemTitle, realDesc || `A notable landmark in ${city}.`);
+          if (spotsList.length >= 8) break;
+        }
+      }
+    } catch (err) {
+      // ignore
+    }
+  }
+
   // Honesty rule: NEVER invent spots. If Wikipedia yields nothing, return an
   // honest empty record — the client shows the General India pack fallback.
   if (spotsList.length === 0) {
@@ -470,6 +552,7 @@ async function getOrCreateCitySpots(cityName: string): Promise<any> {
     const emptyRecord = {
       city,
       source: 'no-verified-data' as const,
+      cacheVersion: CITY_SPOTS_CACHE_VERSION,
       count: 0,
       spots: [],
       message: `No verified spot list for ${city} yet. General India guidance (112 · 139) still works everywhere.`,
@@ -484,11 +567,21 @@ async function getOrCreateCitySpots(cityName: string): Promise<any> {
 
   const finalSpots = spotsList.slice(0, 25);
 
-  // Fetch coordinates concurrently for top 8 spots
+  // Fetch coordinates concurrently for top 8 spots, validated against the
+  // known city center (Wikipedia sometimes resolves ambiguous titles to
+  // far-away places — never plot a spot >150 km from its city).
+  const cityCenter = CITY_CENTERS_MAP[city];
   await Promise.allSettled(
     finalSpots.slice(0, 8).map(async (spot) => {
       const coords = await fetchWikiCoordinates(spot.name);
       if (coords) {
+        if (cityCenter) {
+          const driftKm = haversineKmServer(cityCenter[0], cityCenter[1], coords.lat, coords.lng);
+          if (driftKm > 150) {
+            console.warn(`[WIKI SCRAPER] Discarding drifted coords for ${spot.name} (${city}): ${driftKm.toFixed(0)} km from city center.`);
+            return;
+          }
+        }
         spot.lat = coords.lat;
         spot.lng = coords.lng;
         spot.coords = coords;
@@ -499,17 +592,23 @@ async function getOrCreateCitySpots(cityName: string): Promise<any> {
   const record = {
     city,
     source: 'wikipedia-live' as const,
+    cacheVersion: CITY_SPOTS_CACHE_VERSION,
     count: finalSpots.length,
     spots: finalSpots,
     fetchedAt: new Date()
   };
 
   if (isMemoryFallback) {
-    memoryStore.citySpots.push(record);
+    const mIdx = memoryStore.citySpots.findIndex((c: any) => c.city && c.city.toLowerCase() === city.toLowerCase());
+    if (mIdx !== -1) memoryStore.citySpots[mIdx] = record;
+    else memoryStore.citySpots.push(record);
   } else {
     try {
-      const doc = new CitySpot(record);
-      await doc.save();
+      await CitySpot.findOneAndUpdate(
+        { city: new RegExp(`^${city}$`, 'i') },
+        record,
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      );
     } catch (err) {
       console.warn('Failed to cache generated city spots:', err);
     }
@@ -862,18 +961,28 @@ router.get('/site-stats', async (req, res) => {
   try {
     let tripsRecorded = 0;
     let cityPacksLive = 0;
-    let languagesSupported = 6;
+    let languagesSupported = 0;
     let safetyChecks = 0;
 
+    // Same honest filters as /api/mobility/summary: consented + non-junk trips,
+    // real distinct languages, safety checks + issue reports combined.
+    const consentFilter = (t: any) => t.analyticsConsent !== false && t.analyticsConsented !== false;
+    const langSet = new Set<string>();
     if (isMemoryFallback) {
-      tripsRecorded = memoryStore.trips.length;
-      cityPacksLive = memoryStore.cityPacks.length;
-      safetyChecks = memoryStore.safetyEvents.length;
+      tripsRecorded = (memoryStore.trips || []).filter((t: any) => consentFilter(t) && !isJunkTrip(t)).length;
+      cityPacksLive = (memoryStore.cityPacks || []).length;
+      safetyChecks = (memoryStore.safetyEvents || []).length + (memoryStore.issueReports || []).length;
+      (memoryStore.cityPacks || []).forEach((p: any) => (p.languages || []).forEach((l: string) => langSet.add(l)));
     } else {
-      tripsRecorded = await Trip.countDocuments();
+      const trips = await Trip.find({ $and: [{ analyticsConsent: { $ne: false } }, { analyticsConsented: { $ne: false } }] });
+      tripsRecorded = trips.filter(t => !isJunkTrip(t)).length;
       cityPacksLive = await CityPack.countDocuments();
-      safetyChecks = await SafetyEvent.countDocuments();
+      const [safetyCount, reportCount] = await Promise.all([SafetyEvent.countDocuments(), IssueReport.countDocuments()]);
+      safetyChecks = safetyCount + reportCount;
+      const packs = await CityPack.find({}, 'languages');
+      packs.forEach((p: any) => (p.languages || []).forEach((l: string) => langSet.add(l)));
     }
+    languagesSupported = langSet.size;
 
     res.json({
       tripsRecorded,
@@ -1386,6 +1495,22 @@ router.post('/sync/:tripId', async (req, res) => {
 });
 
 // NOTE: Dashboard endpoints NEVER read LocationPoints. They only read MobilityAggregates & consented Trip metadata.
+// Junk-trip filter: excludes obvious test/seed rows (same-city zero-budget
+// trips, end-before-start dates) from PUBLIC analytics. Raw trips stay in DB.
+function isJunkTrip(t: any): boolean {
+  if (!t) return true;
+  const o = (t.originCity || '').toString().trim().toLowerCase();
+  const d = (t.destinationCity || '').toString().trim().toLowerCase();
+  const budget = Number(t.budget);
+  if (o && d && o === d && !(budget > 0)) return true;
+  if (t.startTime && t.endTime) {
+    const s = new Date(t.startTime).getTime();
+    const e = new Date(t.endTime).getTime();
+    if (Number.isFinite(s) && Number.isFinite(e) && s > e) return true;
+  }
+  return false;
+}
+
 router.get('/mobility/summary', async (req, res) => {
   try {
     const filterCity = (req.query.city as string)?.trim()?.toLowerCase();
@@ -1402,7 +1527,7 @@ router.get('/mobility/summary', async (req, res) => {
       reports = memoryStore.issueReports || [];
     } else {
       trips = await Trip.find({
-        $or: [
+        $and: [
           { analyticsConsent: { $ne: false } },
           { analyticsConsented: { $ne: false } }
         ]
@@ -1421,13 +1546,23 @@ router.get('/mobility/summary', async (req, res) => {
       reports = reports.filter(r => r.city && r.city.toLowerCase() === filterCity);
     }
 
+    trips = trips.filter(t => !isJunkTrip(t));
     const totalTrips = trips.length;
     const citiesSet = new Set(trips.map(t => t.destinationCity || t.originCity).filter(Boolean));
     const totalCities = filterCity ? (totalTrips > 0 ? 1 : 0) : citiesSet.size;
     const safetyChecksCount = safetyEvents.length;
 
-    // a. Donut — mode share (walking / road / rail / still)
-    const modeCounts: Record<string, number> = { Walking: 0, Road: 0, Rail: 0, Still: 0 };
+    // Real distinct-language count from city packs (replaces the old cities*2 estimate).
+    let totalLanguages = 0;
+    try {
+      const langSet = new Set<string>();
+      const packs = isMemoryFallback ? (memoryStore.cityPacks || []) : await CityPack.find({}, 'languages');
+      packs.forEach((p: any) => (p.languages || []).forEach((l: string) => langSet.add(l)));
+      totalLanguages = langSet.size;
+    } catch { totalLanguages = 0; }
+
+    // a. Donut — mode share (walking / road / rail / still / other)
+    const modeCounts: Record<string, number> = { Walking: 0, Road: 0, Rail: 0, Still: 0, Other: 0 };
     aggregates.forEach(a => {
       const mode = (a.modeCategory || 'walking').toLowerCase();
       if (mode.includes('rail') || mode.includes('train') || mode.includes('metro')) modeCounts.Rail += (a.anonymousTripCount || 1);
@@ -1437,12 +1572,15 @@ router.get('/mobility/summary', async (req, res) => {
     });
 
     if (Object.values(modeCounts).reduce((a, b) => a + b, 0) === 0 && totalTrips > 0) {
+      // Fallback: exactly one vote per trip (the old code added Walking
+      // unconditionally, double-counting every trip).
       trips.forEach(t => {
         const mode = (t.transportMode || 'walking').toLowerCase();
         if (mode.includes('train') || mode.includes('rail') || mode.includes('metro')) modeCounts.Rail += 1;
-        else if (mode.includes('bus') || mode.includes('cab') || mode.includes('road') || mode.includes('car')) modeCounts.Road += 1;
-        else modeCounts.Still += 1;
-        modeCounts.Walking += 1;
+        else if (mode.includes('bus') || mode.includes('cab') || mode.includes('road') || mode.includes('car') || mode.includes('auto') || mode.includes('taxi')) modeCounts.Road += 1;
+        else if (mode.includes('still') || mode.includes('stop') || mode.includes('rest')) modeCounts.Still += 1;
+        else if (mode.includes('walk') || mode.includes('cycle') || mode.includes('trek') || mode.includes('hik')) modeCounts.Walking += 1;
+        else modeCounts.Other += 1;
       });
     }
 
@@ -1503,7 +1641,7 @@ router.get('/mobility/summary', async (req, res) => {
     res.json({
       totalTrips,
       totalCities,
-      totalLanguages: Math.max(totalCities * 2, totalCities ? 4 : 0),
+      totalLanguages,
       safetyChecks: safetyChecksCount + reports.length,
       modeShare,
       demandByHour,

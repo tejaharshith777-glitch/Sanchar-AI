@@ -4,7 +4,7 @@ export const curatedCities = [
     languages: ["Tamil", "English"],
     contentStatus: "curated-sample",
     emergencyNumbers: [{ label: "National Emergency", number: "112" }, { label: "Ambulance", number: "108" }, { label: "Police", number: "100" }],
-    transportGuidance: "Typical auto fare 3-6 km: ₹120-₹250 - confirm with driver. Metro available for longer routes.",
+    transportGuidance: "Autos run on meter: ₹25 for the first 1.8 km + ₹12/km (TN tariff) — insist on meter. Metro available for longer routes.",
     phrases: [
       { en: "Please take me to this address.", local: "தயவுசெய்து என்னை இந்த முகவரிக்கு அழைத்துச் செல்லுங்கள்.", localLang: "Tamil" },
       { en: "How much is the fare?", local: "கட்டணம் எவ்வளவு?", localLang: "Tamil" },
@@ -37,7 +37,7 @@ export const curatedCities = [
     languages: ["Malayalam", "English"],
     contentStatus: "curated-sample",
     emergencyNumbers: [{ label: "National Emergency", number: "112" }, { label: "Ambulance", number: "108" }, { label: "Police", number: "100" }],
-    transportGuidance: "Ferries are a fast way to cross between Fort Kochi and Ernakulam. Auto fare: ₹30 base + ₹15/km.",
+    transportGuidance: "Ferries are a fast way to cross between Fort Kochi and Ernakulam. Autos are metered — insist on meter and confirm fare before boarding.",
     phrases: [
       { en: "Please take me to this address.", local: "ദയവായി എന്നെ ഈ വിലാസത്തിൽ എത്തിക്കൂ.", localLang: "Malayalam" },
       { en: "How much is the fare?", local: "കൂലി എത്രയാണ്?", localLang: "Malayalam" },
@@ -68,7 +68,7 @@ export const curatedCities = [
     languages: ["Kannada", "English"],
     contentStatus: "curated-sample",
     emergencyNumbers: [{ label: "National Emergency", number: "112" }, { label: "Ambulance", number: "108" }, { label: "Police", number: "100" }],
-    transportGuidance: "Traffic can be heavy. Use Namma Metro when possible. Auto fare: ₹30 base + ₹15/km.",
+    transportGuidance: "Traffic can be heavy. Use Namma Metro when possible. Auto fare: ₹36 for 2 km + ₹18/km (Bengaluru RTA order Jul 2025).",
     phrases: [
       { en: "Please take me to this address.", local: "ದಯವಿಟ್ಟು ನನ್ನನ್ನು ಈ ವಿಳಾಸಕ್ಕೆ ಕರೆದೊಯ್ಯಿರಿ.", localLang: "Kannada" },
       { en: "How much is the fare?", local: "ಬಾಡಿಗೆ ಎಷ್ಟು?", localLang: "Kannada" },
@@ -192,7 +192,7 @@ export const curatedCities = [
     languages: ["Telugu", "Urdu", "Hindi", "English"],
     contentStatus: "curated-sample",
     emergencyNumbers: [{ label: "National Emergency", number: "112" }, { label: "Ambulance", number: "108" }, { label: "Police", number: "100" }],
-    transportGuidance: "MMTS local trains connect key areas. Hyderabad Metro runs key corridors. Auto fare: ₹25 base + ₹12/km.",
+    transportGuidance: "MMTS local trains connect key areas. Hyderabad Metro runs key corridors. Auto fare: ₹20 for 1.6 km + ₹11/km (2014 tariff; revision proposed Sep 2026, pending approval).",
     phrases: [
       { en: "Please take me to this address.", local: "దయచేసి నన్ను ఈ చిరునామాకు తీసుకెళ్ళండి.", localLang: "Telugu" },
       { en: "How much is the fare?", local: "చార్జ్ ఎంత?", localLang: "Telugu" },
@@ -241,7 +241,7 @@ export const curatedCities = [
       { matchPatterns: ["emergency", "help", "sos", "accident"], answer: "Emergency: Dial 112 · Ambulance: 108 · Police: 100. Major hospitals: SMS Hospital (Sawai Man Singh), Fortis Escorts Hospital, Manipal Hospital." },
       { matchPatterns: ["hospital", "doctor", "medical"], answer: "Jaipur hospitals: SMS Hospital (JLN Marg), Fortis Escorts, Manipal Hospital (Mansarovar), Narayana Multi-specialty. Ambulance: 108." },
       { matchPatterns: ["police", "theft", "stolen", "crime"], answer: "Police: Dial 100 or 112. Tourist Police present at major monuments. Railway Police: 139. Women helpline: 1091." },
-      { matchPatterns: ["fare", "auto", "cab", "taxi", "cost", "price"], answer: "Jaipur: Auto ₹25 base + ₹10/km. Cycle rickshaw old city: ₹30-80. Ola/Uber available. City bus: ₹5-15. Full-day auto hire: ₹800-1200. Always agree fare beforehand!" },
+      { matchPatterns: ["fare", "auto", "cab", "taxi", "cost", "price"], answer: "Jaipur: Auto roughly ₹25 base + ₹10/km (indicative — meters vary). Cycle rickshaw old city: ₹30-80. Ola/Uber available. City bus: ₹5-15. Full-day auto hire: ₹800-1200. Always agree fare beforehand!" },
       { matchPatterns: ["place", "visit", "see", "attraction", "sight", "tourist"], answer: "Top 5 Jaipur: 1) Amber Fort — stunning hilltop fort with mirror palace. 2) Hawa Mahal — Palace of Winds, iconic pink facade. 3) City Palace — royal residence with museum. 4) Jantar Mantar — UNESCO astronomical instruments. 5) Nahargarh Fort — panoramic city views." },
       { matchPatterns: ["phrase", "say", "speak", "language", "hindi", "rajasthani", "word"], answer: "Key Hindi/Rajasthani phrases: 1) 'Khamma Ghani' (खम्मा घणी) = Hello (Rajasthani). 2) 'Kitna?' (कितना?) = How much? 3) 'Dhanyavaad' (धन्यवाद) = Thank you." },
       { matchPatterns: ["food", "eat", "restaurant", "dish", "hungry"], answer: "Jaipur food staples: Dal Baati Churma, Laal Maas, Pyaaz Kachori (Rawat Mishthan), Ghewar, Lassi (Lassiwala since 1944). Visit Johari Bazaar for street food." },
