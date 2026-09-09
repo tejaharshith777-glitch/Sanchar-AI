@@ -7,16 +7,7 @@ import {
   ChevronLeft, Check, Save, Share2, Sparkles
 } from 'lucide-react';
 import axios from 'axios';
-import { getCachedCityPack } from '../store/db';const CITY_CENTERS: Record<string, [number, number]> = {
-  Chennai: [13.0827, 80.2707],
-  Kochi: [9.9312, 76.2673],
-  Bengaluru: [12.9716, 77.5946],
-  Mumbai: [18.9750, 72.8258],
-  Delhi: [28.6139, 77.2090],
-  Kolkata: [22.5726, 88.3639],
-  Hyderabad: [17.3850, 78.4867],
-  Jaipur: [26.9124, 75.7873],
-};
+import { getCachedCityPack } from '../store/db';
 
 class SpotErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
   constructor(props: any) {
@@ -790,31 +781,15 @@ export const LuggageRadarPage = () => {
             setWakingUp(false);
             return; // Success
           } else {
-            // offline cache mock
-            const pack = await getCachedCityPack(selectedCity);
+            // Offline honesty: NEVER invent a cloakroom. There is no cached
+            // real luggage data yet, so fail fast with guidance (and skip the
+            // remaining wake-retries instead of stalling ~65s while offline).
             if (isCancelled) return;
-            if (pack) {
-              const localCloakrooms = [
-                {
-                  _id: 'local_cloakroom_1',
-                  city: selectedCity,
-                  name: `${selectedCity} Railway Cloakroom`,
-                  type: 'railway_cloakroom',
-                  lat: CITY_CENTERS[selectedCity]?.[0] || 20.5937,
-                  lng: CITY_CENTERS[selectedCity]?.[1] || 78.9629,
-                  hours: '24 Hours',
-                  pricingPerBagHour: '₹15/day',
-                  requiredDocs: 'Original Train ticket & ID card',
-                  rules: 'Bags must be locked',
-                  verified: true,
-                  status: 'No recent reports (offline)',
-                  reportCount: 0
-                }
-              ];
-              setSpots(localCloakrooms);
-              setWakingUp(false);
-              return;
-            }
+            setSpots([]);
+            setWakingUp(false);
+            setLoading(false);
+            setError(`You are offline and no cloakroom data is cached for ${selectedCity}. Connect once to load verified spots — they will then be available offline.`);
+            return;
           }
         } catch (err: any) {
           if (attempt === backoffs.length - 1) {

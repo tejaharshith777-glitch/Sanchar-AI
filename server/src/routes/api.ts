@@ -18,6 +18,22 @@ router.use(apiLimiter);
 // Helper to generate IDs for memory store objects
 const generateId = () => 'mem_' + Math.random().toString(36).substring(2, 11);
 
+// Mass-assignment guard: PATCH handlers may only write whitelisted fields.
+// Protected fields (_id, tripId, amountSpent, createdAt, …) can never be overwritten.
+const pickAllowed = (body: any, allowed: string[]) => {
+  const out: any = {};
+  if (body && typeof body === 'object') {
+    for (const k of allowed) {
+      if (body[k] !== undefined) out[k] = body[k];
+    }
+  }
+  return out;
+};
+
+const TRIP_PATCH_FIELDS = ['status', 'budget', 'expectedArrival', 'trustedContactLabel', 'analyticsConsent', 'heavyLuggage', 'lastLateArrivalTriggerAt', 'lastRouteDeviationTriggerAt', 'notYetCount', 'endTime', 'destinationLatLng'];
+const SEGMENT_PATCH_FIELDS = ['mode', 'confidence', 'endTime', 'distanceKm', 'userCorrected'];
+const EXPENSE_PATCH_FIELDS = ['merchant', 'amount', 'category', 'date', 'source', 'confirmed', 'ocrRawText'];
+
 async function checkIdempotency(key: string): Promise<any | null> {
   if (!key) return null;
   if (isMemoryFallback) {
@@ -447,17 +463,23 @@ async function getOrCreateCitySpots(cityName: string): Promise<any> {
     }
   }
 
-  // Fallback if no spots extracted from Wikipedia
+  // Honesty rule: NEVER invent spots. If Wikipedia yields nothing, return an
+  // honest empty record — the client shows the General India pack fallback.
   if (spotsList.length === 0) {
-    const defaultSpots = [
-      { name: `${city} Central Fort`, category: 'fort', blurb: `Historic fort and landmark in ${city}.` },
-      { name: `${city} Old City Bazaar`, category: 'market', blurb: `Bustling local marketplace and heritage lanes in ${city}.` },
-      { name: `${city} Promenade Waterfront`, category: 'viewpoint', blurb: `Scenic waterfront promenade offering city views in ${city}.` },
-      { name: `${city} Heritage Temple`, category: 'temple', blurb: `Sacred local temple and spiritual center in ${city}.` }
-    ];
-    for (const d of defaultSpots) {
-      addSpot(d.name, d.blurb);
+    console.log(`[WIKI SCRAPER] No verified spots found for ${city} — returning honest empty record.`);
+    const emptyRecord = {
+      city,
+      source: 'no-verified-data' as const,
+      count: 0,
+      spots: [],
+      message: `No verified spot list for ${city} yet. General India guidance (112 · 139) still works everywhere.`,
+      fetchedAt: new Date()
+    };
+    // Cache the empty result briefly in memory only (do NOT persist empties to Mongo).
+    if (isMemoryFallback) {
+      memoryStore.citySpots.push(emptyRecord);
     }
+    return emptyRecord;
   }
 
   const finalSpots = spotsList.slice(0, 25);
@@ -983,14 +1005,15 @@ router.get('/trips/:id', async (req, res) => {
 router.patch('/trips/:id', async (req, res) => {
   try {
     const id = req.params.id;
+    const updates = pickAllowed(req.body, TRIP_PATCH_FIELDS);
     if (isMemoryFallback) {
       const tripIdx = memoryStore.trips.findIndex(t => t._id === id);
       if (tripIdx === -1) return res.status(404).json({ error: 'Trip not found' });
-      memoryStore.trips[tripIdx] = { ...memoryStore.trips[tripIdx], ...req.body };
+      memoryStore.trips[tripIdx] = { ...memoryStore.trips[tripIdx], ...updates };
       return res.json(memoryStore.trips[tripIdx]);
     }
 
-    const trip = await Trip.findByIdAndUpdate(id, req.body, { new: true });
+    const trip = await Trip.findByIdAndUpdate(id, updates, { new: true });
     res.json(trip);
   } catch (error) {
     res.status(400).json({ error: 'Invalid update' });
@@ -1036,13 +1059,16 @@ router.post('/trips/:id/complete', async (req, res) => {
 
     if (completedTrip && completedTrip.analyticsConsent) {
       if (isMemoryFallback) {
+        // Honesty: memory mode has no persistent spatial grid — record the
+        // consented trip count WITHOUT fabricating a geohash cell.
         memoryStore.mobilityAggregates.push({
           city: completedTrip.destinationCity,
-          areaCell: 'mem_geohash_' + Math.random().toString(36).substring(2, 5),
+          areaCell: 'memory-mode:no-spatial-grid',
+          spatialCell: false,
           timeBucket: new Date(),
-          modeCategory: 'road',
+          modeCategory: 'mixed',
           anonymousTripCount: 1,
-          issueCounts: new Map()
+          issueCounts: {}
         });
       } else {
         await processTripPrivacySync(completedTrip.id, completedTrip.destinationCity);
@@ -1058,7 +1084,14 @@ router.post('/trips/:id/complete', async (req, res) => {
 
 router.get('/trips/:id/points', async (req, res) => {
   try {
-    const points = await LocationPoint.find({ tripId: req.params.id }).sort({ timestamp: 1 });
+    const id = req.params.id;
+    if (isMemoryFallback) {
+      const points = memoryStore.locationPoints
+        .filter(p => String(p.tripId) === String(id))
+        .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+      return res.json(points);
+    }
+    const points = await LocationPoint.find({ tripId: id }).sort({ timestamp: 1 });
     res.json(points);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -1104,29 +1137,8 @@ router.post('/trips/:id/points', async (req, res) => {
   }
 });
 // ---------------------------
-// SAFETY EVENTS
+// SAFETY EVENTS (single canonical handler — idempotent + updates trip cooldowns; see below)
 // ---------------------------
-router.post('/trips/:id/safety-events', async (req, res) => {
-  try {
-    const id = req.params.id;
-    if (isMemoryFallback) {
-      const event = {
-        _id: generateId(),
-        ...req.body,
-        tripId: id,
-        triggeredAt: new Date()
-      };
-      memoryStore.safetyEvents.push(event);
-      return res.status(201).json(event);
-    }
-
-    const event = new SafetyEvent({ ...req.body, tripId: id, triggeredAt: new Date() });
-    await event.save();
-    res.status(201).json(event);
-  } catch (error) {
-    res.status(400).json({ error: 'Invalid safety event' });
-  }
-});
 
 // ---------------------------
 // SEGMENTS
@@ -1159,11 +1171,11 @@ router.patch('/segments/:id', async (req, res) => {
     if (isMemoryFallback) {
       const segIdx = memoryStore.journeySegments.findIndex(s => s._id === id);
       if (segIdx === -1) return res.status(404).json({ error: 'Segment not found' });
-      memoryStore.journeySegments[segIdx] = { ...memoryStore.journeySegments[segIdx], ...req.body };
+      memoryStore.journeySegments[segIdx] = { ...memoryStore.journeySegments[segIdx], ...pickAllowed(req.body, SEGMENT_PATCH_FIELDS) };
       return res.json(memoryStore.journeySegments[segIdx]);
     }
 
-    const segment = await JourneySegment.findByIdAndUpdate(id, req.body, { new: true });
+    const segment = await JourneySegment.findByIdAndUpdate(id, pickAllowed(req.body, SEGMENT_PATCH_FIELDS), { new: true });
     res.json(segment);
   } catch (error) {
     res.status(400).json({ error: 'Invalid update' });
@@ -1234,11 +1246,11 @@ router.patch('/expenses/:id', async (req, res) => {
     if (isMemoryFallback) {
       const expIdx = memoryStore.expenses.findIndex(e => String(e._id) === String(id));
       if (expIdx === -1) return res.status(404).json({ error: 'Expense not found' });
-      memoryStore.expenses[expIdx] = { ...memoryStore.expenses[expIdx], ...req.body };
+      memoryStore.expenses[expIdx] = { ...memoryStore.expenses[expIdx], ...pickAllowed(req.body, EXPENSE_PATCH_FIELDS) };
       updatedExpense = memoryStore.expenses[expIdx];
       tripId = updatedExpense.tripId;
     } else {
-      updatedExpense = await Expense.findByIdAndUpdate(id, req.body, { new: true });
+      updatedExpense = await Expense.findByIdAndUpdate(id, pickAllowed(req.body, EXPENSE_PATCH_FIELDS), { new: true });
       if (!updatedExpense) return res.status(404).json({ error: 'Expense not found' });
       tripId = updatedExpense.tripId;
     }
@@ -1344,13 +1356,16 @@ router.post('/sync/:tripId', async (req, res) => {
       destination = trip.destinationCity;
 
       if (consent) {
+        // Honesty: memory mode has no persistent spatial grid — record the
+        // consented trip count WITHOUT fabricating a geohash cell.
         memoryStore.mobilityAggregates.push({
           city: destination,
-          areaCell: 'mem_geohash_' + Math.random().toString(36).substring(2, 5),
+          areaCell: 'memory-mode:no-spatial-grid',
+          spatialCell: false,
           timeBucket: new Date(),
-          modeCategory: 'rail',
+          modeCategory: 'mixed',
           anonymousTripCount: 1,
-          issueCounts: new Map()
+          issueCounts: {}
         });
       }
     } else {
@@ -1503,8 +1518,9 @@ router.get('/mobility/summary', async (req, res) => {
 router.get('/mobility/heatmap', async (req, res) => {
   try {
     if (isMemoryFallback) {
-      // In memory fallback we mock data to make sure demo works smoothly
-      return res.json(memoryStore.mobilityAggregates);
+      // Honesty: only return real spatial cells; memory-mode aggregates carry
+      // spatialCell:false and are excluded from the map layer.
+      return res.json(memoryStore.mobilityAggregates.filter((a: any) => a.spatialCell !== false));
     }
 
     const heat = await MobilityAggregate.find({}, 'areaCell anonymousTripCount timeBucket modeCategory');
@@ -1590,6 +1606,12 @@ const aiLimiter = rateLimit({
 });
 
 router.post('/ai/chat', aiLimiter, async (req, res) => {
+  // Validate input BEFORE checking service config: bad requests get 400, not 503.
+  const { message, tripContext } = req.body || {};
+  if (!message || typeof message !== 'string' || !message.trim()) {
+    return res.status(400).json({ error: 'Message text is required.' });
+  }
+
   const apiKey = process.env.AI_API_KEY;
   const modelName = process.env.AI_MODEL || 'gemini-2.0-flash';
 
@@ -1599,10 +1621,6 @@ router.post('/ai/chat', aiLimiter, async (req, res) => {
   }
 
   try {
-    const { message, tripContext } = req.body || {};
-    if (!message || typeof message !== 'string' || !message.trim()) {
-      return res.status(400).json({ error: 'Message text is required.' });
-    }
 
     // Server-constructed system prompt
     let contextStr = 'None';
@@ -1700,7 +1718,13 @@ router.post('/ai/chat', aiLimiter, async (req, res) => {
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-jwt-key-for-sanchar-ai';
+if (!process.env.JWT_SECRET && process.env.NODE_ENV === 'production') {
+  throw new Error('FATAL: JWT_SECRET env var must be set in production — refusing to start with a default secret.');
+}
+const JWT_SECRET = process.env.JWT_SECRET || 'dev-only-insecure-jwt-secret';
+if (!process.env.JWT_SECRET) {
+  console.warn('⚠️ JWT_SECRET not set — using insecure DEV fallback. Set JWT_SECRET before any production deploy.');
+}
 
 router.post('/auth/signup', async (req, res) => {
   try {
@@ -1759,7 +1783,9 @@ router.post('/user/vault-pin', async (req, res) => {
     const user = await User.findById(decoded.userId);
     if (!user) return res.status(404).json({ error: 'User not found' });
 
-    user.vaultPin = pin;
+    // SECURITY: never store vault PINs in plaintext — bcrypt hash like passwords.
+    const salt = await bcrypt.genSalt(10);
+    user.vaultPin = await bcrypt.hash(pin, salt);
     await user.save();
     
     res.json({ success: true, hasVault: true });
@@ -1782,114 +1808,21 @@ router.post('/user/verify-pin', async (req, res) => {
     const user = await User.findById(decoded.userId);
     if (!user) return res.status(404).json({ error: 'User not found' });
 
-    if (user.vaultPin !== pin) return res.status(401).json({ error: 'Invalid PIN' });
+    // Compare against bcrypt hash (fresh pins) or legacy plaintext (pins saved before the security fix — re-hash on success).
+    let pinOk = false;
+    if (user.vaultPin && user.vaultPin.startsWith('$2')) {
+      pinOk = await bcrypt.compare(pin, user.vaultPin);
+    } else if (user.vaultPin === pin) {
+      pinOk = true;
+      const salt = await bcrypt.genSalt(10);
+      user.vaultPin = await bcrypt.hash(pin, salt);
+      await user.save();
+    }
+    if (!pinOk) return res.status(401).json({ error: 'Invalid PIN' });
     
     res.json({ success: true });
   } catch (error) {
     res.status(401).json({ error: 'Unauthorized' });
-  }
-});
-
-// ---------------------------
-// PARTNER PUBLISH & ISSUE REPORTS
-// ---------------------------
-router.post('/partner-publish', async (req, res) => {
-  try {
-    const { role, city, type, name, category, area, hours, cost, description, photo, checkInTip, contact, bestWayToArrive, publisherName } = req.body;
-    if (!name || !city || !role || !type) {
-      return res.status(400).json({ error: 'Missing required fields: name, city, role, type' });
-    }
-
-    const newItem = {
-      _id: 'partner_' + Math.random().toString(36).substring(2, 11),
-      role,
-      city,
-      type,
-      name,
-      category,
-      area,
-      hours: hours || 'check locally',
-      cost: cost || 'check locally',
-      description,
-      photo,
-      checkInTip,
-      contact,
-      bestWayToArrive,
-      publisherName: publisherName || role,
-      publishedAt: new Date()
-    };
-
-    if (isMemoryFallback) {
-      memoryStore.partnerPublishes.unshift(newItem);
-    } else {
-      const doc = new PartnerPublish(newItem);
-      await doc.save();
-    }
-
-    return res.status(201).json({ message: 'Published successfully with partner label.', item: newItem });
-  } catch (err: any) {
-    return res.status(500).json({ error: err.message || 'Failed to publish partner content' });
-  }
-});
-
-router.get('/partner-publish', async (req, res) => {
-  try {
-    const city = (req.query.city as string) || '';
-    let items: any[] = [];
-    if (isMemoryFallback) {
-      items = memoryStore.partnerPublishes.filter((p: any) => !city || p.city.toLowerCase() === city.toLowerCase());
-    } else {
-      const query = city ? { city: new RegExp(`^${city}$`, 'i') } : {};
-      items = await PartnerPublish.find(query).sort({ publishedAt: -1 });
-    }
-    return res.json({ city, items, count: items.length });
-  } catch (err: any) {
-    return res.status(500).json({ error: err.message || 'Failed to fetch partner content' });
-  }
-});
-
-router.post('/issue-reports', async (req, res) => {
-  try {
-    const { city, category, note, spotSlug } = req.body;
-    if (!city || !category) {
-      return res.status(400).json({ error: 'Missing required fields: city, category' });
-    }
-
-    const newReport = {
-      _id: 'issue_' + Math.random().toString(36).substring(2, 11),
-      city,
-      category,
-      note,
-      spotSlug,
-      createdAt: new Date()
-    };
-
-    if (isMemoryFallback) {
-      memoryStore.issueReports.unshift(newReport);
-    } else {
-      const doc = new IssueReport(newReport);
-      await doc.save();
-    }
-
-    return res.status(201).json({ message: 'Issue reported successfully.', report: newReport });
-  } catch (err: any) {
-    return res.status(500).json({ error: err.message || 'Failed to submit issue report' });
-  }
-});
-
-router.get('/issue-reports/summary', async (req, res) => {
-  try {
-    const city = (req.query.city as string) || '';
-    let reports: any[] = [];
-    if (isMemoryFallback) {
-      reports = memoryStore.issueReports.filter((r: any) => !city || r.city.toLowerCase() === city.toLowerCase());
-    } else {
-      const query = city ? { city: new RegExp(`^${city}$`, 'i') } : {};
-      reports = await IssueReport.find(query);
-    }
-    return res.json({ city, total: reports.length, reports });
-  } catch (err: any) {
-    return res.status(500).json({ error: err.message || 'Failed to fetch issue report summary' });
   }
 });
 

@@ -155,12 +155,14 @@ export async function removeQueueItem(idempotencyKey: string) {
 
 export async function cacheCityPack(city: string, packData: any) {
   const db = await initDB();
-  await db.put('cityPacks', { ...packData, city });
+  // Normalize the key: 'Chennai' vs 'chennai' previously created duplicate/missed entries.
+  const key = city.trim().toLowerCase();
+  await db.put('cityPacks', { ...packData, city: key, displayCity: packData.city || city });
 }
 
 export async function getCachedCityPack(city: string) {
   const db = await initDB();
-  return db.get('cityPacks', city);
+  return db.get('cityPacks', city.trim().toLowerCase());
 }
 
 // ─── PHOTOS (Gallery) ───

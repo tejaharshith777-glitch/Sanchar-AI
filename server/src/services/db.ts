@@ -138,12 +138,13 @@ export const connectDB = async () => {
     console.error('Error syncing SafetyEvents:', err?.message || err);
   }
 
-  // Idempotent auto-seed Trip if empty
+  // Idempotent auto-seed Trip if empty (skipped when there is no seed data —
+  // insertMany([]) throws, and empty collections show honest empty states).
   try {
     const { Trip } = await import('../models');
     const tripCount = await Trip.countDocuments();
-    if (tripCount === 0) {
-      console.log('Trip collection is empty. Auto-seeding 3 real consented trips...');
+    if (tripCount === 0 && seedTripsData.length > 0) {
+      console.log(`Trip collection is empty. Auto-seeding ${seedTripsData.length} trips...`);
       await Trip.insertMany(seedTripsData);
       console.log('Trips seeded successfully.');
     }
@@ -155,7 +156,7 @@ export const connectDB = async () => {
   try {
     const { JourneySegment } = await import('../models');
     const segmentCount = await JourneySegment.countDocuments();
-    if (segmentCount === 0) {
+    if (segmentCount === 0 && seedSegmentsData.length > 0) {
       console.log('JourneySegment collection is empty. Auto-seeding segments...');
       await JourneySegment.insertMany(seedSegmentsData);
       console.log('JourneySegments seeded successfully.');

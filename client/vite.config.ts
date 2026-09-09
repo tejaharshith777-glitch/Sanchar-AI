@@ -17,7 +17,7 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: 'script',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
+      includeAssets: ['favicon.svg'],
       workbox: {
         cacheId: `sanchar-v${BUILD_TIMESTAMP}`,
         cleanupOutdatedCaches: true,
@@ -78,14 +78,10 @@ export default defineConfig({
         theme_color: '#00695C',
         icons: [
           {
-            src: 'pwa-192x192.png',
-            sizes: '192x192',
-            type: 'image/png'
-          },
-          {
-            src: 'pwa-512x512.png',
-            sizes: '512x512',
-            type: 'image/png'
+            src: 'favicon.svg',
+            sizes: 'any',
+            type: 'image/svg+xml',
+            purpose: 'any'
           }
         ]
       }
@@ -93,6 +89,7 @@ export default defineConfig({
   ],
   server: {
     host: '0.0.0.0', // Allow external connections
+    allowedHosts: true, // Allow sandbox/proxy preview hosts in dev
     proxy: {
       '/api': {
         target: 'http://127.0.0.1:3000',
