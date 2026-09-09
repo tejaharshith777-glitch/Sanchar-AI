@@ -19,7 +19,8 @@ const port = parseInt(process.env.PORT || '3000', 10);
 
 app.use(cors({
   origin: (origin, callback) => {
-    const allowed = ['https://sanchar-ai.vercel.app', process.env.CLIENT_ORIGIN, 'http://localhost:5173', 'http://127.0.0.1:5173'].filter(Boolean);
+    const envOrigins = (process.env.CLIENT_ORIGIN || '').split(',').map(s => s.trim()).filter(Boolean);
+    const allowed = ['https://sanchar-ai.vercel.app', ...envOrigins, 'http://localhost:5173', 'http://127.0.0.1:5173'];
     if (!origin || allowed.includes(origin)) return callback(null, true); // echoes the requester's OWN single origin — the browser-legal form
     return callback(null, false);
   },
