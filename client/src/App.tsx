@@ -2787,7 +2787,7 @@ const LandingPage = () => {
             <h2 className="font-display text-4xl md:text-6xl font-extrabold text-white mb-6 tracking-tight">Your journey<br/>stays yours</h2>
             <p className="text-teal-200 text-lg md:text-xl mb-6 font-semibold">We build strictly private on-device pipelines.</p>
             <p className="text-gray-300 text-sm sm:text-base leading-relaxed mb-10 max-w-lg">
-              Explore freely across 28 States and 8 Union Territories in India. Your exact route coordinate log never leaves your device storage, journey sharing is strictly opt-in, and the first and last 500 meters of your journey are stripped instantly.
+              Explore freely across 28 States and 8 Union Territories in India. GPS points sync to our server for safety; precise trails are never shared publicly. Opt-in analytics use stripped, aggregated cells only.
             </p>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -2827,7 +2827,7 @@ const LandingPage = () => {
             />
             <FaqAccordionItem 
               question="Is my location data safe?" 
-              answer="Your exact route never leaves your device. Analytics are off by default and fully opt-in. When you opt in, we strip the first and last 500 m of your journey, bin the rest into anonymous grid cells, and suppress low-volume areas. No individual route is ever stored, sold, or shown. You can see exactly what would be shared in the Privacy section."
+              answer="GPS points sync to our server for safety; precise trails are never shared with third parties or shown publicly. Opt-in analytics use stripped, aggregated cells only."
             />
             <FaqAccordionItem 
               question="What does the AI see when I ask a question?" 
@@ -3527,16 +3527,30 @@ const ActiveTrip = () => {
     if (holdIntervalRef.current) clearInterval(holdIntervalRef.current);
   };
 
+  const [sosSentState, setSosSentState] = useState<string>('');
+
   useEffect(() => {
     if (sosCountdown === null) return;
     if (sosCountdown === 0) {
       setSosCountdown(null);
       setShowSosModal(true);
       const targetId = trip?._id || trip?.id || tripId;
-      axios.post(`/api/trips/${targetId}/safety-events`, {
+      const sosPayload = {
         type: 'user-initiated-sos',
-        resolvedAt: new Date()
-      }).catch(console.warn);
+        triggeredAt: new Date().toISOString()
+      };
+
+      if (navigator.onLine) {
+        axios.post(`/api/trips/${targetId}/safety-events`, sosPayload)
+          .then(() => setSosSentState(`SOS Sent ✓ ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`))
+          .catch(() => {
+            queueOfflineMutation({ url: `/api/trips/${targetId}/safety-events`, method: 'POST', body: sosPayload });
+            setSosSentState('SOS Queued (Offline) — will send when online');
+          });
+      } else {
+        queueOfflineMutation({ url: `/api/trips/${targetId}/safety-events`, method: 'POST', body: sosPayload });
+        setSosSentState('SOS Queued (Offline) — will send when online');
+      }
       return;
     }
     countdownTimerRef.current = setTimeout(() => {
@@ -4290,9 +4304,12 @@ const ActiveTrip = () => {
               <Phone size={28} />
             </div>
             <div>
+              <span className="text-[10px] font-extrabold bg-red-50 text-red-700 border border-red-200 px-3 py-1 rounded-full uppercase tracking-wider block mb-2">
+                {sosSentState || 'SOS Active'}
+              </span>
               <h3 className="font-['Plus_Jakarta_Sans'] font-extrabold text-xl text-[#1F2937]">Emergency Actions</h3>
               <p className="text-xs text-[#64748B] mt-1.5 leading-relaxed">
-                Emergency pipeline activated. Instant phone dialing & location options below.
+                SOS sends over internet when available, queues offline, and can fall back to SMS (needs cell signal). Always dial 112 in an emergency.
               </p>
             </div>
             <div className="flex flex-col gap-3 w-full">
@@ -4301,6 +4318,12 @@ const ActiveTrip = () => {
                 className="btn-danger w-full py-3.5 text-center text-sm font-bold no-underline rounded-2xl min-h-[44px] flex items-center justify-center gap-2"
               >
                 <Phone size={16} /> Call National Emergency (112)
+              </a>
+              <a
+                href={`sms:112?body=${encodeURIComponent(`EMERGENCY SOS ALERT! GPS: ${points.length > 0 ? `${points[points.length-1].lat},${points[points.length-1].lng}` : 'Live location'}. Trip: ${trip?._id || tripId}. Please respond!`)}`}
+                className="btn-secondary w-full py-3.5 text-center text-sm font-bold text-amber-900 bg-amber-50 border border-amber-200 no-underline rounded-2xl min-h-[44px] flex items-center justify-center gap-2"
+              >
+                <Smartphone size={16} /> Send SMS Emergency Alert (Cell Signal)
               </a>
               {trip?.trustedContactLabel && (
                 <a
@@ -4319,10 +4342,18 @@ const ActiveTrip = () => {
                 <MapPin size={16} /> Show Last Known Location
               </a>
               <button
-                onClick={() => setShowSosModal(false)}
-                className="text-xs text-[#64748B] mt-2 font-medium cursor-pointer"
+                onClick={() => {
+                  const targetId = trip?._id || trip?.id || tripId;
+                  axios.post(`/api/trips/${targetId}/safety-events`, {
+                    type: 'user-initiated-sos',
+                    userResponse: 'im-safe',
+                    resolvedAt: new Date().toISOString()
+                  }).catch(console.warn);
+                  setShowSosModal(false);
+                }}
+                className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-2xl cursor-pointer min-h-[44px] mt-1 shadow-sm"
               >
-                Close Sheet
+                Mark Safe / Resolve SOS
               </button>
             </div>
           </div>
@@ -5138,7 +5169,7 @@ const FaqPage = () => {
   const faqs = [
     { q: "How does Sanchar AI actually work offline?", a: "Three reasons: (1) your city pack — phrases, emergency numbers, transport tips and spot data — is downloaded to your device before you travel; (2) GPS is a radio signal, not internet — tracking works with zero network; (3) the OCR scanner and the offline AI helper run entirely on your device. When you're back online, anything saved locally syncs automatically with no duplicates." },
     { q: "How does the AI know about my city?", a: "Two layers. Launch cities get curated, verified packs we maintain. Every other Indian city gets real place data generated on first visit from open data (Wikipedia/Wikidata) and cached permanently. If a place genuinely has no data, we say so honestly and offer the General India pack (112 · 139 · basic guidance) — we never invent places or reviews." },
-    { q: "Is my location data safe?", a: "Your exact route never leaves your device. Analytics are off by default and fully opt-in. When you opt in, we strip the first and last 500 m of your journey, bin the rest into anonymous grid cells, and suppress low-volume areas. No individual route is ever stored, sold, or shown. You can see exactly what would be shared in the Privacy section." },
+    { q: "Is my location data safe?", a: "GPS points sync to our server for safety; precise trails are never shared with third parties or shown publicly. Opt-in analytics use stripped, aggregated cells only." },
     { q: "What does the AI see when I ask a question?", a: "Online: it uses the city context (pack + spot data) and our Gemini API — your chat is processed live and never stored on our servers. Offline: it answers only from your local city-pack knowledge base and clearly labels itself 'Local KB · offline'. It never sees your trip data or location." },
     { q: "Why are there no star ratings or 'trusted by' numbers?", a: "Because we don't fake social proof. Every count on this site is live from our own database — real trips recorded, real packs, real traveller reports. A hackathon product that shows invented ratings would be lying to you; we'd rather show real numbers, even if they're small." },
     { q: "What happens to my data while I'm offline?", a: "Everything you do offline — scans, check-ins, trip events — is saved on your device with a unique idempotency key. When connectivity returns, it syncs once and is de-duplicated server-side. Nothing is lost, nothing is duplicated, and you always see the state: 'Saved on device' → 'Syncing' → 'Synced'." },

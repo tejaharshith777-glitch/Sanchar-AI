@@ -23,7 +23,7 @@ export const CrowdRadarPage: React.FC = () => {
   // Categorize spots into quiet, typical, peak based on real timing/bestTime text
   const getSpotStatus = (spot: any) => {
     const timing = (spot.bestTime || spot.timing || '').toLowerCase();
-    if (timing.includes('7:00 am') || timing.includes('early morning') || timing.includes('sunrise')) {
+    if (timing.includes('7:00 am') || timing.includes('early morning') || timing.includes('sunrise') || timing.includes('5:00 am') || timing.includes('6:00 am')) {
       return { status: 'quiet', label: 'quiet window', color: '🟢', badgeBg: 'bg-emerald-50 text-emerald-800 border-emerald-200' };
     }
     if (timing.includes('10:00 am') || timing.includes('afternoon') || timing.includes('midday')) {
@@ -32,9 +32,15 @@ export const CrowdRadarPage: React.FC = () => {
     return { status: 'busy', label: 'typically busy', color: '🟡', badgeBg: 'bg-amber-50 text-amber-800 border-amber-200' };
   };
 
-  // Markers for Leaflet map
+  const sortedCitySpots = [...citySpots].sort((a, b) => {
+    const scoreA = getSpotStatus(a).status === 'quiet' ? 1 : 2;
+    const scoreB = getSpotStatus(b).status === 'quiet' ? 1 : 2;
+    return scoreA - scoreB;
+  });
+
+  // Markers for Leaflet map (ranked quiet spots first)
   const mapCenter = CITY_COORDS[selectedCity] || CITY_COORDS['Jaipur'];
-  const markers = citySpots.map((s: any) => {
+  const markers = sortedCitySpots.map((s: any) => {
     const st = getSpotStatus(s);
     return {
       position: [(typeof s.lat === 'number' ? s.lat : mapCenter[0]), (typeof s.lng === 'number' ? s.lng : mapCenter[1])] as [number, number],
