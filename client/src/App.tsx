@@ -23,6 +23,7 @@ import { MarketplacePage } from './pages/MarketplacePage';
 import { CrowdRadarPage } from './pages/CrowdRadarPage';
 import { EcoRewardsPage } from './pages/EcoRewardsPage';
 import { CityAutocomplete } from './components/CityAutocomplete';
+import { calculateVerifiedFare } from './data/verifiedTariffs';
 import React from 'react';
 
 const FareGuardianPage = React.lazy(() => import('./pages/FareGuardianPage'));
@@ -1000,22 +1001,12 @@ const CitySpotlightPage = () => {
   }, [formattedCity, retryCount]);
 
 
-  // Fare calculations
+  // Fare calculations using single VERIFIED_TARIFFS source of truth
   const calculateFareRange = () => {
     const d = Math.max(1, fareDist);
-    if (fareMode === 'auto') {
-      const min = Math.round(30 + Math.max(0, d - 1.5) * 14);
-      const max = Math.round(35 + Math.max(0, d - 1.5) * 17);
-      return `₹${min} – ₹${max}`;
-    } else if (fareMode === 'taxi') {
-      const min = Math.round(50 + Math.max(0, d - 2) * 18);
-      const max = Math.round(60 + Math.max(0, d - 2) * 22);
-      return `₹${min} – ₹${max}`;
-    } else {
-      const min = Math.round(20 + Math.max(0, d - 1) * 10);
-      const max = Math.round(25 + Math.max(0, d - 1) * 14);
-      return `₹${min} – ₹${max}`;
-    }
+    const mode = fareMode === 'taxi' ? 'taxi' : 'auto';
+    const res = calculateVerifiedFare(data?.city || formattedCity, mode, d);
+    return `₹${res.min} – ₹${res.max}`;
   };
 
   const handleReportFareDiff = async () => {
@@ -2672,7 +2663,7 @@ const LandingPage = () => {
                 </div>
               </div>
               <div className="bg-white border border-gray-150 p-3 rounded-2xl text-xs text-gray-800 rounded-bl-sm">
-                In Chennai: Auto fares are typically ₹25 base + ₹12-15/km. A typical 3-6 km ride is ₹120-250. Confirm with the driver or use rideshare apps.
+                In Chennai: Auto gazette rate is ₹25 base (first 1.8 km) + ₹12/km (+50% night surcharge from 11 PM to 5 AM). Use pre-paid counters or /fare-guardian to verify official rates.
               </div>
             </div>
             <div className="p-3 border-t border-gray-100 flex gap-2 shrink-0">

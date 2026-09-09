@@ -63,10 +63,14 @@ async function recalculateTripBudget(tripId: string): Promise<number> {
 // ---------------------------
 // HEALTH & UTILS
 // ---------------------------
+const SERVER_BUILT_AT = new Date().toISOString();
+
 router.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     db: isMemoryFallback ? `memory (fallback: ${fallbackReason})` : 'atlas',
+    sha: process.env.VERCEL_GIT_COMMIT_SHA || process.env.RENDER_GIT_COMMIT_SHA || process.env.COMMIT_REF || 'c60151d',
+    builtAt: SERVER_BUILT_AT,
     timestamp: new Date()
   });
 });
@@ -79,6 +83,54 @@ router.get('/cities', (req, res) => {
       "Bhubaneswar", "Ahmedabad", "Guwahati", "Varanasi", "Other City"
     ]
   });
+});
+
+const geocodeCache: Record<string, { lat: number; lng: number; displayName: string; timestamp: number }> = {};
+
+router.get('/geocode', async (req, res) => {
+  try {
+    const q = req.query.q ? String(req.query.q).trim() : '';
+    if (!q) return res.status(400).json({ error: 'Query parameter q is required.' });
+
+    const cacheKey = q.toLowerCase();
+    const now = Date.now();
+    if (geocodeCache[cacheKey] && (now - geocodeCache[cacheKey].timestamp < 30 * 86400000)) {
+      return res.json(geocodeCache[cacheKey]);
+    }
+
+    // Call Photon API (Komoot OpenStreetMap)
+    const photonUrl = `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=1`;
+    const response = await fetch(photonUrl, { headers: { 'User-Agent': 'SancharAI/1.0' }, signal: AbortSignal.timeout(3000) });
+    if (response.ok) {
+      const data: any = await response.json();
+      if (data.features && data.features.length > 0) {
+        const feat = data.features[0];
+        const [lng, lat] = feat.geometry.coordinates;
+        const displayName = feat.properties.name || q;
+        const result = { lat, lng, displayName, timestamp: now };
+        geocodeCache[cacheKey] = result;
+        return res.json(result);
+      }
+    }
+
+    // Fallback: Nominatim fallback with custom User-Agent and cache
+    const nomUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1`;
+    const nomRes = await fetch(nomUrl, { headers: { 'User-Agent': 'SancharAI-TravelCompanion/1.0' }, signal: AbortSignal.timeout(3000) });
+    if (nomRes.ok) {
+      const nomData: any = await nomRes.json();
+      if (Array.isArray(nomData) && nomData.length > 0) {
+        const lat = parseFloat(nomData[0].lat);
+        const lng = parseFloat(nomData[0].lon);
+        const result = { lat, lng, displayName: nomData[0].display_name || q, timestamp: now };
+        geocodeCache[cacheKey] = result;
+        return res.json(result);
+      }
+    }
+
+    return res.status(404).json({ error: 'Coordinates not found for specified place.' });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Geocoding failed.' });
+  }
 });
 
 router.get('/city-packs/:city', async (req, res) => {

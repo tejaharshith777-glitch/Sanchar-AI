@@ -2,66 +2,9 @@ import React, { useState } from 'react';
 import { Shield, Calculator, MessageSquare, AlertTriangle, CheckCircle, Navigation, Volume2, Copy, Clock, ExternalLink } from 'lucide-react';
 import axios from 'axios';
 import { CityAutocomplete } from '../components/CityAutocomplete';
+import { VERIFIED_TARIFFS, calculateVerifiedFare } from '../data/verifiedTariffs';
 
-interface RateCard {
-  city: string;
-  source: string;
-  sourceUrl?: string;
-  effectiveDate: string;
-  auto: { minFare: number; minDistKm: number; perKm: number; nightSurchargePct: number };
-  taxi: { minFare: number; minDistKm: number; perKm: number; nightSurchargePct: number };
-}
-
-const OFFICIAL_RATE_CARDS: Record<string, RateCard> = {
-  "Mumbai": {
-    city: "Mumbai",
-    source: "MMRTA Official Gazette",
-    sourceUrl: "https://transport.maharashtra.gov.in",
-    effectiveDate: "01/02/2025",
-    auto: { minFare: 26, minDistKm: 1.5, perKm: 17.14, nightSurchargePct: 25 },
-    taxi: { minFare: 31, minDistKm: 1.5, perKm: 21.43, nightSurchargePct: 25 }
-  },
-  "Chennai": {
-    city: "Chennai",
-    source: "Tamil Nadu Transport Dept Notification",
-    sourceUrl: "https://tnsta.gov.in",
-    effectiveDate: "15/10/2024",
-    auto: { minFare: 35, minDistKm: 1.8, perKm: 18.0, nightSurchargePct: 50 },
-    taxi: { minFare: 100, minDistKm: 4.0, perKm: 20.0, nightSurchargePct: 25 }
-  },
-  "Bengaluru": {
-    city: "Bengaluru",
-    source: "Karnataka State Transport Tariff",
-    sourceUrl: "https://transport.karnataka.gov.in",
-    effectiveDate: "01/12/2024",
-    auto: { minFare: 30, minDistKm: 2.0, perKm: 15.0, nightSurchargePct: 50 },
-    taxi: { minFare: 100, minDistKm: 4.0, perKm: 24.0, nightSurchargePct: 15 }
-  },
-  "Delhi": {
-    city: "Delhi",
-    source: "Delhi Transport Authority Notification",
-    sourceUrl: "https://transport.delhi.gov.in",
-    effectiveDate: "01/01/2025",
-    auto: { minFare: 30, minDistKm: 1.5, perKm: 11.0, nightSurchargePct: 25 },
-    taxi: { minFare: 50, minDistKm: 1.0, perKm: 17.0, nightSurchargePct: 25 }
-  },
-  "Hyderabad": {
-    city: "Hyderabad",
-    source: "Telangana Transport Department",
-    sourceUrl: "https://transport.telangana.gov.in",
-    effectiveDate: "10/11/2024",
-    auto: { minFare: 20, minDistKm: 1.6, perKm: 12.0, nightSurchargePct: 50 },
-    taxi: { minFare: 80, minDistKm: 3.0, perKm: 21.0, nightSurchargePct: 25 }
-  },
-  "Kolkata": {
-    city: "Kolkata",
-    source: "West Bengal Transport Department",
-    sourceUrl: "https://transport.wb.gov.in",
-    effectiveDate: "01/09/2024",
-    auto: { minFare: 15, minDistKm: 2.0, perKm: 8.0, nightSurchargePct: 20 },
-    taxi: { minFare: 50, minDistKm: 2.0, perKm: 15.0, nightSurchargePct: 25 }
-  }
-};
+const OFFICIAL_RATE_CARDS: any = VERIFIED_TARIFFS;
 
 const DISPUTE_PHRASES: Record<string, { lang: string; native: string; english: string; audioText: string }[]> = {
   "Hindi": [
@@ -118,34 +61,8 @@ export const FareGuardianPage: React.FC = () => {
 
   const rateCard = OFFICIAL_RATE_CARDS[selectedCity];
 
-  // Calculate Fare Range
-  const calculateFare = () => {
-    if (!rateCard) {
-      // Crowd fallback estimate if city not in official gazette list
-      const base = vehicleType === 'auto' ? 25 : 50;
-      const perKm = vehicleType === 'auto' ? 14 : 20;
-      const distEst = Math.round(base + Math.max(0, distanceKm - 1.5) * perKm);
-      const nightMult = isNight ? 1.25 : 1.0;
-      const min = Math.round(distEst * nightMult * 0.95);
-      const max = Math.round(distEst * nightMult * 1.1);
-      return { min, max, isOfficial: false };
-    }
-
-    const tariff = vehicleType === 'auto' ? rateCard.auto : rateCard.taxi;
-    const extraDist = Math.max(0, distanceKm - tariff.minDistKm);
-    const baseFare = tariff.minFare + extraDist * tariff.perKm;
-    const nightMult = isNight ? (1 + tariff.nightSurchargePct / 100) : 1.0;
-    const exactFare = Math.round(baseFare * nightMult);
-
-    return {
-      min: exactFare,
-      max: Math.round(exactFare * 1.08),
-      isOfficial: true,
-      tariff
-    };
-  };
-
-  const fareResult = calculateFare();
+  // Calculate Fare Range using single VERIFIED_TARIFFS module
+  const fareResult = calculateVerifiedFare(selectedCity, vehicleType, distanceKm, isNight);
 
   const handleSpeak = (text: string, index: number) => {
     if ('speechSynthesis' in window) {
