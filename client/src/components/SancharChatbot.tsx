@@ -31,23 +31,25 @@ interface SancharChatbotProps {
 
 // ─── QUICK-START CHIPS ───
 const QUICK_CHIPS = [
-  { label: '🚗 Typical auto fare?', text: 'Typical auto fare?' },
-  { label: '🗣️ 3 key phrases', text: '3 key phrases in this city' },
-  { label: '🏥 Nearest hospital', text: 'Where is the nearest hospital?' },
-  { label: '🍛 What to eat?', text: 'What to eat in this city?' },
-  { label: '🛡️ Safety tips here', text: 'Safety tips for this city' }
+  { label: '🛡️ Fare Guardian Rate Card', text: 'What are the official auto and taxi rates?' },
+  { label: '🚆 Train Station Wake Alarm', text: 'How does the offline train station alarm work?' },
+  { label: '🗣️ 3 Key Local Phrases', text: '3 key phrases in this city' },
+  { label: '🧳 Station Luggage Cloakroom', text: 'Where can I store my luggage?' },
+  { label: '🏥 Emergency & Safety 112', text: 'Emergency numbers and safety guidance' }
 ];
 
 // ─── GENERAL INDIA FALLBACK KB ───
 const GENERAL_INDIA_KB = [
-  { matchPatterns: ['emergency', 'help', 'sos', 'accident', 'danger'], answer: "India Emergency: 112 (all services) · Ambulance: 108 · Police: 100 · Fire: 101 · Railway: 139 · Women: 1091. Dial 112 from any phone." },
-  { matchPatterns: ['hospital', 'doctor', 'medical', 'sick', 'injury'], answer: "Dial 108 for ambulance anywhere in India. Government hospitals provide free emergency care. Carry basic first-aid supplies." },
-  { matchPatterns: ['police', 'theft', 'stolen', 'crime'], answer: "Police: 100 or 112. Railway Police: 139. Women helpline: 1091 / 181. File FIR at nearest police station." },
-  { matchPatterns: ['fare', 'auto', 'cab', 'taxi', 'cost', 'price'], answer: "General India: Auto ₹25-35 base + ₹10-15/km. Bus: ₹5-30. Train sleeper: ₹200-600 (500km). Confirm fare before boarding." },
-  { matchPatterns: ['phrase', 'say', 'speak', 'language', 'word'], answer: "Hindi: 'Namaste' = Hello · 'Kitna?' = How much? · 'Dhanyavaad' = Thank you." },
-  { matchPatterns: ['food', 'eat', 'restaurant', 'dish', 'hungry'], answer: "Prefer freshly cooked hot food. Drink bottled water only. Busy stalls = fresher food. Carry ORS for stomach issues." },
-  { matchPatterns: ['safe', 'safety', 'secure', 'night'], answer: "Emergency 112 works everywhere. Share live location. Use official pre-paid transport at stations. Carry ID copies." },
-  { matchPatterns: ['place', 'visit', 'see', 'attraction', 'tourist'], answer: "India is incredibly diverse! Popular: Rajasthan forts, Kerala backwaters, Tamil Nadu temples, Himachal mountains, Goa beaches." }
+  { matchPatterns: ['emergency', 'help', 'sos', 'accident', 'danger'], answer: "National Emergency: 112 (all services) · Ambulance: 108 · Police: 100 · Fire: 101 · Railway Enquiry: 139 · Women Helpline: 1091. Dial 112 from any mobile phone even without SIM/data." },
+  { matchPatterns: ['hospital', 'doctor', 'medical', 'sick', 'injury'], answer: "Dial 108 for ambulance anywhere in India. Primary government health centers provide free emergency care. Keep ORS and emergency medicines in your kit." },
+  { matchPatterns: ['police', 'theft', 'stolen', 'crime'], answer: "Police: 100 or 112. Railway Police: 139. Women helpline: 1091 / 181. File Zero FIR at the nearest police station." },
+  { matchPatterns: ['fare', 'auto', 'cab', 'taxi', 'rate', 'cost', 'price'], answer: "Official Fare Guardian: Auto ₹30 base (first 1.5 km) + ₹14-17/km. Taxi ₹50 base + ₹18-22/km. Night surcharge (11 PM - 5 AM): +25%. Check our /fare-guardian page for gazette rate cards!" },
+  { matchPatterns: ['train', 'station', 'alarm', 'geofence', 'rail'], answer: "Train Mode (/train-mode): Set an offline station approach alarm using GPS. It rings and vibrates 1km, 3km, or 5km before your stop even in airplane mode. Dial 139 for rail assistance." },
+  { matchPatterns: ['luggage', 'cloakroom', 'bag', 'store', 'lock'], answer: "Station Cloakrooms (/luggage): Available at major Indian railway stations (₹15-20/bag/24 hrs). Requires a valid train ticket, photo ID, and locked luggage." },
+  { matchPatterns: ['phrase', 'say', 'speak', 'language', 'word'], answer: "Hindi: 'Namaste' (Hello) · 'Kitna hua?' (How much?) · 'Dhanyavaad' (Thank you).\nTamil: 'Vanakkam' · 'Evvalavu?' · 'Nandri'.\nTelugu: 'Namaskaram' · 'Enta?' · 'Dhanayavadalu'." },
+  { matchPatterns: ['food', 'eat', 'restaurant', 'dish', 'hungry'], answer: "Enjoy hot regional thalis, street chats, and idli/dosa. Drink sealed bottled water only. Select busy local eateries for fresh food." },
+  { matchPatterns: ['safe', 'safety', 'secure', 'night'], answer: "Safety 112 is always active. Use official pre-paid auto/taxi counters at railway stations & airports. Share live location with family." },
+  { matchPatterns: ['place', 'visit', 'see', 'attraction', 'tourist'], answer: "India offers 8,000+ towns & cities! Explore Heritage Forts (Jaipur/Hyderabad), Coastal Beaches (Chennai/Kochi), Sacred Ghats (Varanasi), and Green Parks (Bengaluru)." }
 ];
 
 // ─── OFFLINE KB MATCHING ───
