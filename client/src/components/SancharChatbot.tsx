@@ -309,7 +309,7 @@ export default function SancharChatbot({ activeTrip }: SancharChatbotProps) {
       {/* Floating Action Button */}
       <button
         onClick={() => setIsOpen(true)}
-        className={`fixed bottom-16 right-4 sm:bottom-6 sm:right-6 z-40 bg-gradient-to-r from-[#FF6F00] to-[#E65100] text-white p-3 sm:p-4 rounded-full shadow-2xl hover:scale-105 transition-all duration-300 flex items-center gap-2 group border-2 border-orange-300/30 ${
+        className={`fixed bottom-20 right-3 sm:bottom-6 sm:right-6 z-40 bg-gradient-to-r from-[#FF6F00] to-[#E65100] text-white p-3 sm:p-4 rounded-full shadow-2xl hover:scale-105 transition-all duration-300 flex items-center gap-2 group border-2 border-orange-300/30 ${
           isOpen ? 'scale-0 opacity-0 pointer-events-none' : 'scale-100 opacity-100'
         }`}
         style={{ minWidth: '44px', minHeight: '44px' }}

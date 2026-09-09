@@ -325,9 +325,9 @@ const App = () => {
 const AppShell = ({ children }: { children: React.ReactNode }) => {
   const { activeTrip } = useContext(HealthContext);
   return (
-    <div className="min-h-screen bg-[#FAFAF7] flex flex-col relative pb-20 md:pb-0">
+    <div className="min-h-screen bg-[#FAFAF7] flex flex-col relative pb-32 md:pb-8">
       <InnerNav />
-      <main className="flex-1 max-w-2xl mx-auto w-full mt-4">
+      <main className="flex-1 max-w-6xl mx-auto w-full mt-4 px-3 sm:px-6">
         {children}
       </main>
       <SancharChatbot activeTrip={activeTrip} />
@@ -644,7 +644,7 @@ const InnerNav = () => {
 
       {/* Mobile Drawer Panel */}
       {isOpen && (
-        <div className="md:hidden bg-white border-b border-gray-200 px-4 py-4 space-y-3 shadow-xl animate-fade-in-down max-h-[80vh] overflow-y-auto">
+        <div className="md:hidden bg-white border-b border-gray-200 px-4 py-4 space-y-3 shadow-2xl animate-fade-in-down max-h-[80vh] overflow-y-auto">
           {activeTrip && (
             <Link
               to={`/active/${activeTrip._id}`}
@@ -656,30 +656,53 @@ const InnerNav = () => {
             </Link>
           )}
 
-          <div className="grid grid-cols-2 gap-2 text-xs font-bold">
-            <Link to="/" onClick={() => setIsOpen(false)} className="p-3 bg-gray-50 rounded-xl hover:bg-teal-50 hover:text-[#00695C] text-gray-700 flex items-center gap-2 no-underline">
+          <Link 
+            to="/create" 
+            onClick={() => setIsOpen(false)} 
+            className="w-full bg-[#00695C] hover:bg-[#004D40] text-white font-bold text-xs py-3 px-4 rounded-xl flex items-center justify-center gap-2 no-underline shadow-md"
+          >
+            🚀 Start New Trip <ChevronRight size={14} />
+          </Link>
+
+          <div className="grid grid-cols-2 gap-2 text-xs font-extrabold">
+            <Link to="/" onClick={() => setIsOpen(false)} className="p-3 bg-teal-50/70 border border-teal-100 rounded-xl text-[#00695C] flex items-center gap-2 no-underline">
               <Shield size={16} className="text-[#00695C]" /> Home
             </Link>
-            <Link to="/crowd-radar" onClick={() => setIsOpen(false)} className="p-3 bg-gray-50 rounded-xl hover:bg-teal-50 hover:text-[#00695C] text-gray-700 flex items-center gap-2 no-underline">
+            <Link to="/crowd-radar" onClick={() => setIsOpen(false)} className="p-3 bg-teal-50/70 border border-teal-100 rounded-xl text-[#00695C] flex items-center gap-2 no-underline">
               <Compass size={16} className="text-[#00695C]" /> Visit Planner
             </Link>
-            <Link to="/maps" onClick={() => setIsOpen(false)} className="p-3 bg-gray-50 rounded-xl hover:bg-teal-50 hover:text-[#00695C] text-gray-700 flex items-center gap-2 no-underline">
+            <Link to="/maps" onClick={() => setIsOpen(false)} className="p-3 bg-teal-50/70 border border-teal-100 rounded-xl text-[#00695C] flex items-center gap-2 no-underline">
               <MapPin size={16} className="text-[#00695C]" /> Offline Maps
             </Link>
-            <Link to="/marketplace" onClick={() => setIsOpen(false)} className="p-3 bg-gray-50 rounded-xl hover:bg-teal-50 hover:text-[#00695C] text-gray-700 flex items-center gap-2 no-underline">
+            <Link to="/marketplace" onClick={() => setIsOpen(false)} className="p-3 bg-teal-50/70 border border-teal-100 rounded-xl text-[#00695C] flex items-center gap-2 no-underline">
               <Zap size={16} className="text-[#00695C]" /> Marketplace
             </Link>
-            <Link to="/hotel-partner" onClick={() => setIsOpen(false)} className="p-3 bg-gray-50 rounded-xl hover:bg-teal-50 hover:text-[#00695C] text-gray-700 flex items-center gap-2 no-underline">
+            <Link to="/hotel-partner" onClick={() => setIsOpen(false)} className="p-3 bg-teal-50/70 border border-teal-100 rounded-xl text-[#00695C] flex items-center gap-2 no-underline">
               <BookOpen size={16} className="text-[#00695C]" /> Partner Hotels
             </Link>
-            <Link to="/green-credits" onClick={() => setIsOpen(false)} className="p-3 bg-gray-50 rounded-xl hover:bg-teal-50 hover:text-[#00695C] text-gray-700 flex items-center gap-2 no-underline">
+            <Link to="/green-credits" onClick={() => setIsOpen(false)} className="p-3 bg-teal-50/70 border border-teal-100 rounded-xl text-[#00695C] flex items-center gap-2 no-underline">
               <Sparkles size={16} className="text-[#00695C]" /> Green Credits
             </Link>
-            <Link to="/luggage" onClick={() => setIsOpen(false)} className="p-3 bg-gray-50 rounded-xl hover:bg-teal-50 hover:text-[#00695C] text-gray-700 flex items-center gap-2 no-underline">
+            <Link to="/luggage" onClick={() => setIsOpen(false)} className="p-3 bg-teal-50/70 border border-teal-100 rounded-xl text-[#00695C] flex items-center gap-2 no-underline">
               <Smartphone size={16} className="text-[#00695C]" /> Luggage Radar
             </Link>
-            <Link to="/dashboard" onClick={() => setIsOpen(false)} className="p-3 bg-gray-50 rounded-xl hover:bg-teal-50 hover:text-[#00695C] text-gray-700 flex items-center gap-2 no-underline">
+            <Link to="/dashboard" onClick={() => setIsOpen(false)} className="p-3 bg-teal-50/70 border border-teal-100 rounded-xl text-[#00695C] flex items-center gap-2 no-underline">
               <BarChart3 size={16} className="text-[#00695C]" /> Dashboard
+            </Link>
+            <Link to="/history" onClick={() => setIsOpen(false)} className="p-3 bg-teal-50/70 border border-teal-100 rounded-xl text-[#00695C] flex items-center gap-2 no-underline">
+              <HistoryIcon size={16} className="text-[#00695C]" /> History
+            </Link>
+            <Link to="/partners" onClick={() => setIsOpen(false)} className="p-3 bg-teal-50/70 border border-teal-100 rounded-xl text-[#00695C] flex items-center gap-2 no-underline">
+              <BookOpen size={16} className="text-[#00695C]" /> Partners
+            </Link>
+            <Link to="/privacy" onClick={() => setIsOpen(false)} className="p-3 bg-teal-50/70 border border-teal-100 rounded-xl text-[#00695C] flex items-center gap-2 no-underline">
+              <Lock size={16} className="text-[#00695C]" /> Vault & Privacy
+            </Link>
+            <Link to="/features" onClick={() => setIsOpen(false)} className="p-3 bg-teal-50/70 border border-teal-100 rounded-xl text-[#00695C] flex items-center gap-2 no-underline">
+              <Compass size={16} className="text-[#00695C]" /> Features
+            </Link>
+            <Link to="/faq" onClick={() => setIsOpen(false)} className="p-3 bg-teal-50/70 border border-teal-100 rounded-xl text-[#00695C] flex items-center gap-2 no-underline col-span-2 justify-center">
+              <HelpCircle size={16} className="text-[#00695C]" /> FAQ & Help
             </Link>
           </div>
         </div>
