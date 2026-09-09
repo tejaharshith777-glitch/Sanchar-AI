@@ -5,12 +5,28 @@ import { HealthContext } from '../App';
 
 export const EcoRewardsPage: React.FC = () => {
   const navigate = useNavigate();
-  const { activeTrip } = useContext(HealthContext);
+  const { activeTrip, lastCompletedTrip } = useContext(HealthContext);
 
-  // Derive distance from active trip or default to zero
-  const walkKm = 3.5;
-  const metroKm = 12.0;
-  const trainKm = 45.0;
+  const currentTrip = activeTrip || lastCompletedTrip;
+
+  // Compute live eco transit distance from trip segments or points
+  let walkKm = 0;
+  let metroKm = 0;
+  let trainKm = 0;
+
+  if (currentTrip && Array.isArray(currentTrip.segments) && currentTrip.segments.length > 0) {
+    currentTrip.segments.forEach((seg: any) => {
+      const mode = (seg.mode || '').toLowerCase();
+      const dist = typeof seg.distanceKm === 'number' ? seg.distanceKm : 0;
+      if (mode.includes('walk') || mode.includes('foot')) walkKm += dist;
+      else if (mode.includes('metro') || mode.includes('subway')) metroKm += dist;
+      else if (mode.includes('train') || mode.includes('rail')) trainKm += dist;
+    });
+  } else if (currentTrip && typeof currentTrip.totalDistanceKm === 'number' && currentTrip.totalDistanceKm > 0) {
+    // Estimate transit split based on recorded trip total
+    walkKm = parseFloat((currentTrip.totalDistanceKm * 0.1).toFixed(1));
+    trainKm = parseFloat((currentTrip.totalDistanceKm * 0.9).toFixed(1));
+  }
 
   // Emission factors (g CO2 per km) vs private car (~170g/km)
   // Walking: 0g, Metro: ~30g, Train: ~40g -> savings vs car

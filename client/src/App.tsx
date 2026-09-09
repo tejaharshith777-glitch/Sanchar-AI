@@ -856,7 +856,7 @@ const CLIENT_CURATED_CITY_SPOTS: Record<string, { name: string; category: string
     { name: "Golconda Fort", category: "Fort", blurb: "Massive medieval fortress renowned for acoustic acoustics." },
     { name: "Chowmahalla Palace", category: "Fort", blurb: "Opulent seat of the Asaf Jahi dynasty and Nizams." },
     { name: "Salar Jung Museum", category: "Museum", blurb: "One of 3 National Museums housing world art collections." },
-    { name: "Hussain Sagar Lake & Buddha Statue", category: "Beach", blurb: "Large lake with 18m monolithic Buddha statue on island." },
+    { name: "Hussain Sagar Lake & Buddha Statue", category: "Viewpoint", blurb: "Large lake with 18m monolithic Buddha statue on island." },
     { name: "Ramoji Film City", category: "Park", blurb: "World's largest film studio complex and theme park." }
   ],
   "Bengaluru": [
