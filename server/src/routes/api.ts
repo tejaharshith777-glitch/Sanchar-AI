@@ -622,12 +622,29 @@ router.get('/partner-publish', async (req, res) => {
 
     let items: any[] = [];
     if (isMemoryFallback) {
-      items = (memoryStore.partnerPublishes || []).filter(
+      memoryStore.partnerPublishes = (memoryStore.partnerPublishes || []).filter(
+        p => !['pub_1788933617084_25s6y', 'pub_1788933616711_30lko'].includes(p._id) && !/test/i.test(p.title || '')
+      );
+      items = memoryStore.partnerPublishes.filter(
         p => !city || (p && p.city && p.city.toLowerCase() === city.toLowerCase())
       );
     } else {
       try {
-        const query = city ? { city: new RegExp(`^${city}$`, 'i') } : {};
+        // One-time and standing purge of QA test partner publications
+        await PartnerPublish.deleteMany({
+          $or: [
+            { _id: { $in: ['pub_1788933617084_25s6y', 'pub_1788933616711_30lko'] } },
+            { title: { $regex: /test/i } }
+          ]
+        }).catch(() => {});
+
+        const query: any = {
+          _id: { $nin: ['pub_1788933617084_25s6y', 'pub_1788933616711_30lko'] },
+          title: { $not: /test/i }
+        };
+        if (city) {
+          query.city = new RegExp(`^${city}$`, 'i');
+        }
         items = await PartnerPublish.find(query).sort({ publishedAt: -1 });
       } catch (err) {
         console.error('Error fetching partner publishes:', err);

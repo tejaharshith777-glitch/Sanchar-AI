@@ -50,32 +50,50 @@ export const TrainModePage: React.FC = () => {
     s.city.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  useEffect(() => {
-    if (isAlarmActive && navigator.geolocation) {
-      setAlarmTriggered(false);
-      watchIdRef.current = navigator.geolocation.watchPosition(
-        (pos) => {
-          const uLat = pos.coords.latitude;
-          const uLng = pos.coords.longitude;
-          setUserPos({ lat: uLat, lng: uLng });
-          const dist = haversineKm(uLat, uLng, selectedStation.lat, selectedStation.lng);
-          setCurrentDist(dist);
+  const hasNativeBridge = typeof (window as any).AndroidBridge !== 'undefined';
 
-          if (dist <= alarmRadiusKm) {
-            setAlarmTriggered(true);
-            if ('vibrate' in navigator) {
-              navigator.vibrate([1000, 500, 1000, 500, 1000]);
+  useEffect(() => {
+    if (isAlarmActive) {
+      if (hasNativeBridge && (window as any).AndroidBridge.setTrainAlarm) {
+        try {
+          (window as any).AndroidBridge.setTrainAlarm(selectedStation.name, selectedStation.lat, selectedStation.lng, alarmRadiusKm);
+        } catch (e) {
+          console.warn('[Native Bridge Call Error]', e);
+        }
+      }
+      if (navigator.geolocation) {
+        setAlarmTriggered(false);
+        watchIdRef.current = navigator.geolocation.watchPosition(
+          (pos) => {
+            const uLat = pos.coords.latitude;
+            const uLng = pos.coords.longitude;
+            setUserPos({ lat: uLat, lng: uLng });
+            const dist = haversineKm(uLat, uLng, selectedStation.lat, selectedStation.lng);
+            setCurrentDist(dist);
+
+            if (dist <= alarmRadiusKm) {
+              setAlarmTriggered(true);
+              if ('vibrate' in navigator) {
+                navigator.vibrate([1000, 500, 1000, 500, 1000]);
+              }
+              if ('speechSynthesis' in window) {
+                const msg = new SpeechSynthesisUtterance(`Attention passenger! Approaching ${selectedStation.name}. Please prepare your luggage.`);
+                window.speechSynthesis.speak(msg);
+              }
             }
-            if ('speechSynthesis' in window) {
-              const msg = new SpeechSynthesisUtterance(`Attention passenger! Approaching ${selectedStation.name}. Please prepare your luggage.`);
-              window.speechSynthesis.speak(msg);
-            }
-          }
-        },
-        (err) => console.warn('[Train Alarm GPS Error]', err),
-        { enableHighAccuracy: true, maximumAge: 3000, timeout: 10000 }
-      );
+          },
+          (err) => console.warn('[Train Alarm GPS Error]', err),
+          { enableHighAccuracy: true, maximumAge: 3000, timeout: 10000 }
+        );
+      }
     } else {
+      if (hasNativeBridge && (window as any).AndroidBridge.clearTrainAlarm) {
+        try {
+          (window as any).AndroidBridge.clearTrainAlarm();
+        } catch {
+          // ignore
+        }
+      }
       if (watchIdRef.current !== null) {
         navigator.geolocation.clearWatch(watchIdRef.current);
         watchIdRef.current = null;
@@ -87,7 +105,7 @@ export const TrainModePage: React.FC = () => {
         navigator.geolocation.clearWatch(watchIdRef.current);
       }
     };
-  }, [isAlarmActive, selectedStation, alarmRadiusKm]);
+  }, [isAlarmActive, selectedStation, alarmRadiusKm, hasNativeBridge]);
 
   // Demo approach simulator for testing
   const simulateApproach = () => {
