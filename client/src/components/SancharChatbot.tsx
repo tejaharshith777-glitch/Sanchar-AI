@@ -165,8 +165,8 @@ export default function SancharChatbot({ activeTrip }: SancharChatbotProps) {
       originCity: activeTrip.originCity,
       destinationCity: activeTrip.destinationCity,
       dayNumber,
-      budgetTotal: activeTrip.budgetAmount,
-      budgetRemaining: activeTrip.budgetAmount ? activeTrip.budgetAmount - (activeTrip.amountSpent || 0) : undefined,
+      budgetTotal: activeTrip.budget || activeTrip.budgetAmount,
+      budgetRemaining: (activeTrip.budget || activeTrip.budgetAmount) ? (activeTrip.budget || activeTrip.budgetAmount) - (activeTrip.amountSpent || 0) : undefined,
       currentMode: activeTrip.transportMode || 'transit',
     };
   };
@@ -296,7 +296,8 @@ export default function SancharChatbot({ activeTrip }: SancharChatbotProps) {
   const tripChip = activeTrip ? (() => {
     const startDate = new Date(activeTrip.startedAt || activeTrip.createdAt);
     const dayNumber = Math.max(1, Math.ceil((Date.now() - startDate.getTime()) / 86400000));
-    const remaining = activeTrip.budgetAmount ? activeTrip.budgetAmount - (activeTrip.amountSpent || 0) : null;
+    const totalB = activeTrip.budget || activeTrip.budgetAmount;
+    const remaining = totalB ? totalB - (activeTrip.amountSpent || 0) : null;
     return (
       <span className="text-[10px] font-medium text-teal-700 bg-teal-50 px-2 py-0.5 rounded-full border border-teal-200 truncate max-w-[200px]">
         {activeTrip.originCity} → {activeTrip.destinationCity} · Day {dayNumber}{remaining !== null ? ` · ₹${remaining} left` : ''}

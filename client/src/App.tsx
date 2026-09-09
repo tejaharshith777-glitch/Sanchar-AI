@@ -2115,7 +2115,7 @@ const LandingPage = () => {
           </span>
           <HeroHeadline />
           <p className="text-teal-100 text-base sm:text-lg md:text-xl mb-6 max-w-xl mx-auto font-medium">
-            The travel companion that protects you when the network gives up. Safe trips, scam-proof fares, offline language, and zero-network SOS.
+            The travel companion that protects you when the network gives up. Safe trips, scam-proof fares, offline language, and offline-first SOS (works offline, syncs when online).
           </p>
 
           {/* Interactive Airplane-Mode Proof Widget */}
@@ -2785,7 +2785,7 @@ const LandingPage = () => {
           <div className="max-w-2xl">
             <span className="inline-block badge bg-white/10 text-teal-300 border border-white/20 mb-4 backdrop-blur-md">On-Device Privacy Standard</span>
             <h2 className="font-display text-4xl md:text-6xl font-extrabold text-white mb-6 tracking-tight">Your journey<br/>stays yours</h2>
-            <p className="text-teal-200 text-lg md:text-xl mb-6 font-semibold">We build strictly private on-device pipelines.</p>
+            <p className="text-teal-200 text-lg md:text-xl mb-6 font-semibold">Private by design.</p>
             <p className="text-gray-300 text-sm sm:text-base leading-relaxed mb-10 max-w-lg">
               Explore freely across 28 States and 8 Union Territories in India. GPS points sync to our server for safety; precise trails are never shared publicly. Opt-in analytics use stripped, aggregated cells only.
             </p>
@@ -3313,7 +3313,7 @@ const CreateTrip = () => {
                 <input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} className="mt-0.5 w-4 h-4 accent-[#00695C]" />
                 <span className="text-xs">
                   <strong className="text-[#1F2937]">Contribute anonymous mobility insights</strong> (Optional)<br />
-                  <span className="text-[#64748B] text-[11px]">Your exact route never leaves your device; only optional geohash grid aggregates are binned.</span>
+                  <span className="text-[#64748B] text-[11px]">Your exact route syncs to our server for safety; public analytics use opt-in aggregates only.</span>
                 </span>
               </label>
             </div>
@@ -5134,7 +5134,7 @@ const Diary = () => {
           <span className="text-[10px] text-teal-300/70 font-mono tracking-wider">Proof-of-Travel</span>
         </div>
         <p className="text-xs text-slate-300 mb-4 leading-relaxed">
-          Every GPS coordinate, station ping, and expense entry in this diary is hash-chained with SHA-256 cryptographic signatures to guarantee un-altered travel proof for official reimbursement & corporate claims.
+          Every GPS coordinate, station ping, and expense entry in this diary includes integrity hashes for personal records (not a legal/official certificate).
         </p>
         {proofResult && (
           <div className="bg-[#050A18] p-3 rounded-lg border border-slate-800 font-mono text-[11px] mb-4 space-y-1.5">
@@ -5172,12 +5172,12 @@ const FaqPage = () => {
     { q: "How does Sanchar AI actually work offline?", a: "Three reasons: (1) your city pack — phrases, emergency numbers, transport tips and spot data — is downloaded to your device before you travel; (2) GPS is a radio signal, not internet — tracking works with zero network; (3) the OCR scanner and the offline AI helper run entirely on your device. When you're back online, anything saved locally syncs automatically with no duplicates." },
     { q: "How does the AI know about my city?", a: "Two layers. Launch cities get curated, verified packs we maintain. Every other Indian city gets real place data generated on first visit from open data (Wikipedia/Wikidata) and cached permanently. If a place genuinely has no data, we say so honestly and offer the General India pack (112 · 139 · basic guidance) — we never invent places or reviews." },
     { q: "Is my location data safe?", a: "GPS points sync to our server for safety; precise trails are never shared with third parties or shown publicly. Opt-in analytics use stripped, aggregated cells only." },
-    { q: "What does the AI see when I ask a question?", a: "Online: it uses the city context (pack + spot data) and our Gemini API — your chat is processed live and never stored on our servers. Offline: it answers only from your local city-pack knowledge base and clearly labels itself 'Local KB · offline'. It never sees your trip data or location." },
+    { q: "What does the AI see when I ask a question?", a: "Online: it uses the city context (pack + spot data) and our Gemini API — your chat is processed live via API. Offline: it answers only from your local city-pack knowledge base and clearly labels itself 'Local KB · offline'. It receives your trip context (destination, budget segment) to personalize guidance, but never stores your live location history." },
     { q: "Why are there no star ratings or 'trusted by' numbers?", a: "Because we don't fake social proof. Every count on this site is live from our own database — real trips recorded, real packs, real traveller reports. A hackathon product that shows invented ratings would be lying to you; we'd rather show real numbers, even if they're small." },
     { q: "What happens to my data while I'm offline?", a: "Everything you do offline — scans, check-ins, trip events — is saved on your device with a unique idempotency key. When connectivity returns, it syncs once and is de-duplicated server-side. Nothing is lost, nothing is duplicated, and you always see the state: 'Saved on device' → 'Syncing' → 'Synced'." },
     { q: "What if my city has no data yet?", a: "You get an honest answer, not a fake one: 'No verified spot list for {city} yet.' The General India pack still works everywhere — 112 emergency, 139 rail enquiry, basic guidance. City coverage grows as real data is added, and we say clearly which data is curated vs live-generated." },
     { q: "How is this different from Google Maps or Google Translate?", a: "They're single-feature tools — navigation, or translation. Sanchar AI is a journey companion: it connects safety, language, tickets, budget and your travel story into one offline-first flow that follows you from home to hotel. You're not switching between five apps mid-journey." },
-    { q: "Do I need an account to use it?", a: "No — the full journey works without an account. An account (email + password) lets your trips sync to 'My Trips' across devices. No phone number, no OTP, no marketing list." },
+    { q: "Do I need an account to use it?", a: "No — the full journey works without an account. Account is device-local in this prototype; cross-device sync is on the roadmap." },
     { q: "Is this a real product or a demo?", a: "A working live prototype: real on-device OCR, real GPS tracking, real offline sync, real database, real AI. The numbers you see are live from our own system. What's ahead is the Android native layer for background tracking — and we're honest about exactly what's live vs what's next." }
   ];
 
@@ -5477,13 +5477,13 @@ const PrivacyPage = () => {
 
       {/* Security Promises */}
       <div className="card p-5 border border-gray-100 rounded-2xl bg-white shadow-sm">
-        <h3 className="font-bold text-sm text-[#1F2937] mb-3">On-Device Security Pipeline</h3>
+        <h3 className="font-bold text-sm text-[#1F2937] mb-3">Data Protection & Privacy Policy</h3>
         <ul className="text-xs sm:text-sm text-[#1F2937] space-y-3 font-medium">
-          <li className="flex items-start gap-2"><Check size={16} className="text-teal-600 mt-0.5 shrink-0" /> Your exact route stays on your device storage.</li>
+          <li className="flex items-start gap-2"><Check size={16} className="text-teal-600 mt-0.5 shrink-0" /> Your location and trip data sync to our secure backend when online for safety and multi-device access.</li>
           <li className="flex items-start gap-2"><Check size={16} className="text-teal-600 mt-0.5 shrink-0" /> Analytics off by default — requires explicit user opt-in.</li>
-          <li className="flex items-start gap-2"><Check size={16} className="text-teal-600 mt-0.5 shrink-0" /> First and last 300–500 meters are stripped automatically from any logs.</li>
-          <li className="flex items-start gap-2"><Check size={16} className="text-teal-600 mt-0.5 shrink-0" /> Photos & voice notes are encrypted with Web Crypto SHA-256 local PIN.</li>
-          <li className="flex items-start gap-2"><Check size={16} className="text-teal-600 mt-0.5 shrink-0" /> AI assistant chats are processed live and never stored on our servers or synced.</li>
+          <li className="flex items-start gap-2"><Check size={16} className="text-teal-600 mt-0.5 shrink-0" /> Opt-in analytics use stripped, aggregated geohash cells.</li>
+          <li className="flex items-start gap-2"><Check size={16} className="text-teal-600 mt-0.5 shrink-0" /> Photos & voice notes are stored securely on device storage.</li>
+          <li className="flex items-start gap-2"><Check size={16} className="text-teal-600 mt-0.5 shrink-0" /> AI assistant chats are processed live via API.</li>
         </ul>
       </div>
     </div>
