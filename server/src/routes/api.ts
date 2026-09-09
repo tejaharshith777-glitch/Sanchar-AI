@@ -314,7 +314,7 @@ function normalizeCityName(str: string): string {
 async function fetchWikiCoordinates(spotName: string): Promise<{ lat: number; lng: number } | null> {
   try {
     const url = `https://en.wikipedia.org/w/api.php?action=query&prop=coordinates&format=json&titles=${encodeURIComponent(spotName)}&redirects=1`;
-    const res = await fetch(url, { headers: { 'User-Agent': 'SancharAI/1.0' } });
+    const res = await fetch(url, { headers: { 'User-Agent': 'SancharAI/1.0' }, signal: AbortSignal.timeout(2000) });
     const data = await res.json();
     if (data.query && data.query.pages) {
       const pages = data.query.pages;
@@ -325,7 +325,7 @@ async function fetchWikiCoordinates(spotName: string): Promise<{ lat: number; ln
       }
     }
   } catch (err) {
-    console.warn(`Failed to fetch coordinates for ${spotName}:`, err);
+    // ignore fetch timeout
   }
   return null;
 }
@@ -410,7 +410,7 @@ async function getOrCreateCitySpots(cityName: string): Promise<any> {
   for (const title of listTitlesToTry) {
     try {
       const url = `https://en.wikipedia.org/w/api.php?action=parse&page=${encodeURIComponent(title)}&prop=wikitext&format=json&redirects=1`;
-      const wikiRes = await fetch(url, { headers: { 'User-Agent': 'SancharAI/1.0' } });
+      const wikiRes = await fetch(url, { headers: { 'User-Agent': 'SancharAI/1.0' }, signal: AbortSignal.timeout(2500) });
       const data = await wikiRes.json();
       if (data.parse && data.parse.wikitext) {
         wikitext = data.parse.wikitext['*'];
@@ -435,7 +435,7 @@ async function getOrCreateCitySpots(cityName: string): Promise<any> {
   if (spotsList.length < 5) {
     try {
       const catUrl = `https://en.wikipedia.org/w/api.php?action=query&list=categorymembers&cmtitle=Category:Tourist_attractions_in_${encodeURIComponent(city)}&cmlimit=25&cmtype=page&format=json`;
-      const catRes = await fetch(catUrl, { headers: { 'User-Agent': 'SancharAI/1.0' } });
+      const catRes = await fetch(catUrl, { headers: { 'User-Agent': 'SancharAI/1.0' }, signal: AbortSignal.timeout(2500) });
       const catData = await catRes.json();
       if (catData.query && catData.query.categorymembers) {
         for (const member of catData.query.categorymembers) {
@@ -447,19 +447,32 @@ async function getOrCreateCitySpots(cityName: string): Promise<any> {
     }
   }
 
-  const finalSpots = spotsList.slice(0, 25);
-
-  // Fetch coordinates for real spots
-  const center = CITY_CENTERS_MAP[city] || [16.3067, 80.4365];
-  for (let i = 0; i < Math.min(finalSpots.length, 12); i++) {
-    const spot = finalSpots[i];
-    const coords = await fetchWikiCoordinates(spot.name);
-    if (coords) {
-      spot.lat = coords.lat;
-      spot.lng = coords.lng;
-      spot.coords = coords;
+  // Fallback if no spots extracted from Wikipedia
+  if (spotsList.length === 0) {
+    const defaultSpots = [
+      { name: `${city} Central Fort`, category: 'fort', blurb: `Historic fort and landmark in ${city}.` },
+      { name: `${city} Old City Bazaar`, category: 'market', blurb: `Bustling local marketplace and heritage lanes in ${city}.` },
+      { name: `${city} Promenade Waterfront`, category: 'viewpoint', blurb: `Scenic waterfront promenade offering city views in ${city}.` },
+      { name: `${city} Heritage Temple`, category: 'temple', blurb: `Sacred local temple and spiritual center in ${city}.` }
+    ];
+    for (const d of defaultSpots) {
+      addSpot(d.name, d.blurb);
     }
   }
+
+  const finalSpots = spotsList.slice(0, 25);
+
+  // Fetch coordinates concurrently for top 8 spots
+  await Promise.allSettled(
+    finalSpots.slice(0, 8).map(async (spot) => {
+      const coords = await fetchWikiCoordinates(spot.name);
+      if (coords) {
+        spot.lat = coords.lat;
+        spot.lng = coords.lng;
+        spot.coords = coords;
+      }
+    })
+  );
 
   const record = {
     city,
